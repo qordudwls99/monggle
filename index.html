@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+<title>몽글 · Monggle</title>
+<style>
+/* ============ 전부 자체 포함 · 외부 의존성 0 · 오프라인 동작 ============ */
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;-webkit-font-smoothing:antialiased}
+:root{
+  --ink:#3a2a63; --ink2:#6b5a95; --muted:#a99ec9;
+  --violet:#7c3aed; --violet2:#a78bfa; --pink:#f472b6; --amber:#fbbf24;
+  --card:rgba(255,255,255,.94);
+  --bg:radial-gradient(135% 95% at 50% -15%, #ffe1c9 0%, #fbd0e4 25%, #c9b8f3 57%, #9d8df0 100%);
+}
+html,body{height:100%}
+body{
+  font-family:'Apple SD Gothic Neo','Pretendard','Noto Sans KR',-apple-system,system-ui,'Malgun Gothic',sans-serif;
+  color:var(--ink); background:var(--bg); background-attachment:fixed;
+  display:flex; justify-content:center; overflow:hidden;
+  letter-spacing:-0.2px;
+}
+.app{width:100%;max-width:440px;height:100vh;height:100dvh;position:relative;display:flex;flex-direction:column;overflow:hidden}
+.stars{position:absolute;inset:0;opacity:.55;pointer-events:none;background-image:
+  radial-gradient(2px 2px at 18% 20%,#fff9,transparent),radial-gradient(2px 2px at 72% 14%,#fff6,transparent),
+  radial-gradient(1.5px 1.5px at 42% 38%,#fff7,transparent),radial-gradient(2px 2px at 86% 50%,#fff6,transparent),
+  radial-gradient(1.5px 1.5px at 28% 62%,#fff5,transparent),radial-gradient(2px 2px at 62% 76%,#fff6,transparent),
+  radial-gradient(1.5px 1.5px at 50% 90%,#fff5,transparent)}
+
+.screen{display:none;flex:1;flex-direction:column;position:relative;z-index:10;min-height:0}
+.screen.active{display:flex}
+.scroll{overflow-y:auto;-webkit-overflow-scrolling:touch}
+.scroll::-webkit-scrollbar,.chatlog::-webkit-scrollbar{width:0}
+.pad{padding:max(46px,calc(env(safe-area-inset-top) + 14px)) 18px 12px}
+
+/* topbar */
+.topbar{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px}
+.kicker{font-size:10.5px;font-weight:800;letter-spacing:3px;color:rgba(255,255,255,.82)}
+.brand{font-size:23px;font-weight:900;color:#fff;text-shadow:0 2px 8px rgba(80,40,150,.35);letter-spacing:-0.5px}
+.pills{display:flex;gap:7px}
+.pill{display:flex;align-items:center;gap:5px;background:rgba(255,255,255,.6);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+  padding:6px 12px;border-radius:99px;box-shadow:0 6px 16px -7px rgba(80,40,150,.45)}
+.pill .v{font-weight:900;font-size:15px;line-height:1}
+.pill.streak .v{color:#f97316}.pill.gem .v{color:#7c3aed}
+.pill .ic{font-size:15px}
+
+/* habitat */
+.habitat{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:268px;position:relative;margin:6px 0 2px}
+.confettiZone{position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:20}
+.orbWrap{position:relative;width:222px;height:222px;display:flex;align-items:center;justify-content:center}
+.orb{position:absolute;inset:0;border-radius:50%;animation:breathe 3.6s ease-in-out infinite;
+  background:radial-gradient(circle at 50% 33%, #fff 0%, #ffe9f3 33%, #efe4ff 69%, #e1d2ff 100%);
+  box-shadow:0 32px 60px -20px rgba(124,92,210,.5),inset 0 -20px 42px rgba(160,120,230,.28),inset 0 12px 32px #fff}
+.orbRing{position:absolute;inset:-14px;border-radius:50%;border:2px dashed rgba(255,255,255,.5);animation:spin 24s linear infinite}
+.orbGlow{position:absolute;inset:-28px;border-radius:50%;background:radial-gradient(circle,rgba(255,221,170,.5) 0%,transparent 64%)}
+.creature{position:relative;z-index:10;font-size:114px;line-height:1;cursor:pointer;user-select:none;
+  filter:drop-shadow(0 18px 16px rgba(120,80,180,.38));animation:float 3.6s ease-in-out infinite}
+.cshadow{position:absolute;bottom:22px;width:128px;height:28px;border-radius:50%;background:radial-gradient(ellipse,rgba(120,80,180,.28) 0%,transparent 70%)}
+.lvbadge{position:absolute;top:6px;right:14px;z-index:11;background:linear-gradient(135deg,#fbbf24,#f59e0b);color:#fff;
+  font-size:11px;font-weight:900;padding:4px 10px;border-radius:99px;box-shadow:0 6px 14px -4px rgba(245,158,11,.7)}
+.cname{margin-top:16px;font-size:22px;font-weight:900;color:#fff;text-shadow:0 2px 8px rgba(80,40,150,.32)}
+.cmood{font-size:13.5px;font-weight:600;color:rgba(255,255,255,.92);margin-top:4px;padding:0 26px;text-align:center;line-height:1.4;min-height:19px}
+
+/* cards */
+.card{background:var(--card);border-radius:22px;padding:16px 17px;margin-bottom:12px;box-shadow:0 14px 32px -14px rgba(80,50,150,.3),0 2px 6px rgba(80,50,150,.05)}
+.card-h{display:flex;align-items:center;justify-content:space-between;margin-bottom:13px}
+.card-t{font-weight:900;color:var(--ink);font-size:15.5px}
+.card-sub{font-size:12px;font-weight:800;color:var(--muted)}
+
+/* gauge */
+.g-head{display:flex;justify-content:space-between;font-size:12px;font-weight:800;color:#8b5cf6;margin-bottom:8px}
+.g-track{width:100%;height:13px;background:#ede9fe;border-radius:99px;overflow:hidden;position:relative}
+.g-fill{height:100%;border-radius:99px;width:0%;position:relative;background:linear-gradient(90deg,#fbbf24,#f472b6,#a78bfa);transition:width .7s cubic-bezier(.34,1.4,.6,1)}
+.g-fill::after{content:'';position:absolute;inset:0;border-radius:99px;background:linear-gradient(180deg,rgba(255,255,255,.55),transparent 60%)}
+
+/* tasks */
+.task{width:100%;display:flex;align-items:center;gap:12px;padding:11px;border-radius:15px;background:#f6f3ff;border:none;cursor:pointer;text-align:left;transition:transform .1s,background .15s;margin-bottom:8px}
+.task:last-child{margin-bottom:0}
+.task:active{transform:scale(.98)}
+.task.done{background:#ecfdf5}
+.task .box{width:25px;height:25px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:900;background:#fff;border:2px solid #ddd6fe;color:#fff;flex-shrink:0;transition:.15s}
+.task.done .box{background:#34d399;border-color:#34d399}
+.task .txt{font-size:14px;font-weight:600;color:var(--ink)}
+.task.done .txt{text-decoration:line-through;color:#9ca3af}
+.task .rw{margin-left:auto;font-size:11px;font-weight:800;color:#a78bfa}
+.task.done .rw{color:#34d399}
+
+/* mood */
+.mood-row{display:flex;justify-content:space-between;padding:0 2px}
+.mood{font-size:31px;background:none;border:none;cursor:pointer;transition:transform .12s;line-height:1;border-radius:14px;padding:2px}
+.mood:hover{transform:translateY(-4px)}.mood:active{transform:scale(.85)}
+.mood.sel{background:#f3e8ff;transform:translateY(-3px)}
+.moodhist{display:flex;gap:6px;margin-top:13px;flex-wrap:wrap}
+.mh{font-size:18px;width:30px;height:30px;border-radius:10px;background:#f6f3ff;display:flex;align-items:center;justify-content:center}
+.mh.empty{color:#d8d0ee;font-size:12px}
+
+/* quote */
+.quote{background:linear-gradient(120deg,rgba(255,255,255,.96),rgba(243,232,255,.96))}
+.quote .q{font-size:14px;font-weight:700;color:var(--ink);line-height:1.5}
+.quote .qa{font-size:11px;font-weight:700;color:var(--muted);margin-top:8px;text-align:right}
+
+/* co-raise */
+.corow{display:flex;align-items:center;gap:12px;background:linear-gradient(110deg,#fff,rgba(255,228,242,.96))}
+.coico{width:46px;height:46px;border-radius:50%;background:#fce7f3;display:flex;align-items:center;justify-content:center;font-size:25px;animation:float 3.4s ease-in-out infinite}
+.co-t{font-size:14px;font-weight:900;color:#9d174d}
+.co-s{font-size:11.5px;font-weight:600;color:#ec4899;margin-top:2px}
+.co-arrow{color:#f9a8d4;font-size:22px;font-weight:700}
+
+/* section titles on colored bg */
+.sec-title{font-size:24px;font-weight:900;color:#fff;text-shadow:0 2px 8px rgba(80,40,150,.32)}
+.sec-sub{font-size:13.5px;font-weight:700;color:rgba(255,255,255,.9);margin:3px 0 18px}
+
+/* egg button */
+.eggbtn{width:100%;border:none;cursor:pointer;border-radius:20px;padding:15px;margin-bottom:18px;color:#fff;font-weight:900;font-size:15px;
+  background:linear-gradient(135deg,#a78bfa,#f472b6);box-shadow:0 14px 30px -10px rgba(167,139,250,.8);display:flex;align-items:center;justify-content:center;gap:8px;transition:transform .1s}
+.eggbtn:active{transform:scale(.98)}
+.eggbtn .cost{background:rgba(255,255,255,.25);padding:3px 10px;border-radius:99px;font-size:12.5px}
+
+/* dex grid */
+.dexgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;padding-bottom:6px}
+.dexcell{aspect-ratio:1;border-radius:20px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:6px;background:var(--card);box-shadow:0 12px 26px -14px rgba(80,50,150,.3);position:relative;overflow:hidden}
+.dexcell.locked{background:rgba(255,255,255,.42);box-shadow:none}
+.dexcell .de{font-size:42px;line-height:1}
+.dexcell.locked .de{opacity:.22;filter:grayscale(1)}
+.dexcell .dn{font-size:11px;font-weight:900;color:var(--ink);margin-top:7px}
+.dexcell.locked .dn{color:rgba(255,255,255,.65)}
+.dexcell .dr{font-size:9px;font-weight:900;margin-top:2px;letter-spacing:.5px}
+.dexcell .shine{position:absolute;top:8px;right:9px;font-size:11px}
+
+/* shop */
+.shop-banner{border-radius:22px;padding:18px;margin-bottom:18px;color:#fff;position:relative;overflow:hidden;
+  background:linear-gradient(125deg,#7c3aed,#a855f7 45%,#ec4899)}
+.shop-banner .bt{font-size:18px;font-weight:900}
+.shop-banner .bs{font-size:12.5px;font-weight:600;opacity:.92;margin-top:5px;line-height:1.5}
+.shop-banner .bbtn{margin-top:13px;background:#fff;color:#7c3aed;border:none;border-radius:99px;padding:9px 20px;font-weight:900;font-size:13px;cursor:pointer}
+.shop-banner .crown{position:absolute;top:-10px;right:-6px;font-size:90px;opacity:.18;transform:rotate(15deg)}
+.shop-h{font-size:14px;font-weight:900;color:#fff;text-shadow:0 1px 4px rgba(80,40,150,.3);margin:4px 2px 11px}
+.themegrid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:18px}
+.theme{border-radius:20px;overflow:hidden;background:var(--card);box-shadow:0 12px 26px -14px rgba(80,50,150,.3);cursor:pointer;transition:transform .1s}
+.theme:active{transform:scale(.98)}
+.theme .sw{height:78px;position:relative}
+.theme .sw .lock{position:absolute;inset:0;background:rgba(0,0,0,.28);display:flex;align-items:center;justify-content:center;font-size:24px}
+.theme .info{padding:10px 12px;display:flex;align-items:center;justify-content:between;gap:6px}
+.theme .tn{font-size:13px;font-weight:900;color:var(--ink);flex:1}
+.theme .tp{font-size:11.5px;font-weight:900;padding:3px 9px;border-radius:99px}
+.tp.own{background:#ede9fe;color:#7c3aed}.tp.use{background:#34d399;color:#fff}.tp.buy{background:#fbbf24;color:#fff}.tp.prem{background:#f472b6;color:#fff}
+
+/* chat */
+.chathead{padding:max(46px,calc(env(safe-area-inset-top) + 14px)) 16px 12px;display:flex;align-items:center;gap:12px;background:rgba(255,255,255,.58);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+.chatav{width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:21px;background:radial-gradient(circle at 50% 33%,#fff,#efe4ff);box-shadow:0 5px 13px -4px rgba(120,80,180,.45)}
+.chatname{font-size:14.5px;font-weight:900;color:var(--ink);line-height:1.2}
+.online{font-size:11px;color:#10b981;font-weight:800;display:flex;align-items:center;gap:4px;margin-top:1px}
+.dot{width:6px;height:6px;background:#10b981;border-radius:50%;animation:pulse 1.6s infinite}
+.chatlog{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px}
+.row{display:flex}.row.me{justify-content:flex-end}.row.pet{justify-content:flex-start}
+.bubble{max-width:78%;padding:10px 15px;font-size:14px;line-height:1.5;box-shadow:0 5px 14px -7px rgba(80,50,150,.35)}
+.bubble.me{color:#fff;border-radius:19px 19px 6px 19px;background:linear-gradient(135deg,#a78bfa,#f472b6)}
+.bubble.pet{color:var(--ink);border-radius:19px 19px 19px 6px;background:#fff}
+.chatbar{padding:12px;display:flex;gap:8px;align-items:center;background:rgba(255,255,255,.58);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+.chatinput{flex:1;background:#fff;border:1px solid #ede9fe;border-radius:99px;padding:12px 16px;font-size:14px;outline:none;font-family:inherit;color:var(--ink);box-shadow:inset 0 1px 3px rgba(80,50,150,.06)}
+.sendbtn{width:45px;height:45px;border-radius:50%;border:none;cursor:pointer;flex-shrink:0;color:#fff;font-size:19px;font-weight:900;box-shadow:0 7px 17px -4px rgba(167,139,250,.75);background:linear-gradient(135deg,#a78bfa,#f472b6)}
+.qreplies{display:flex;gap:7px;padding:0 12px 10px;flex-wrap:wrap;background:rgba(255,255,255,.58)}
+.qr{background:#fff;border:1px solid #ede9fe;color:#7c3aed;font-size:12px;font-weight:800;padding:7px 13px;border-radius:99px;cursor:pointer}
+
+/* hatch overlay */
+.hatch{position:absolute;inset:0;z-index:50;display:none;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:0 32px;background:radial-gradient(circle at 50% 40%,#4c2a8a,#190f3e 82%)}
+.hatch.show{display:flex}
+.h-halo{position:absolute;width:300px;height:300px;border-radius:50%;background:radial-gradient(circle,rgba(255,221,150,.45),transparent 70%);animation:halo 2s ease-in-out infinite}
+.h-rays{position:absolute;font-size:260px;line-height:1;color:#ffe9b0}
+.h-emoji{font-size:152px;line-height:1;position:relative;z-index:10;filter:drop-shadow(0 0 42px rgba(255,220,150,.75))}
+.h-rarity{font-size:13px;margin-top:22px;z-index:10;font-weight:900;letter-spacing:4px}
+.h-name{color:#fff;font-size:31px;font-weight:900;margin-top:4px;z-index:10}
+.h-desc{color:#ddd6fe;font-size:13.5px;font-weight:600;margin-top:9px;z-index:10;max-width:300px;line-height:1.5}
+.h-reward{margin-top:14px;z-index:10;background:rgba(255,255,255,.14);color:#fde68a;font-weight:900;font-size:13px;padding:7px 16px;border-radius:99px}
+.h-btn{margin-top:30px;color:#5b21b6;font-weight:900;padding:15px 44px;border-radius:99px;z-index:10;border:none;cursor:pointer;font-size:15px;box-shadow:0 14px 32px -8px rgba(0,0,0,.55);background:linear-gradient(135deg,#fde68a,#fbcfe8)}
+.h-btn:active{transform:scale(.95)}
+
+/* toast */
+.toast{position:absolute;left:50%;bottom:96px;transform:translateX(-50%) translateY(20px);z-index:60;background:rgba(40,20,80,.92);color:#fff;font-weight:800;font-size:13px;padding:11px 20px;border-radius:99px;opacity:0;transition:.3s;pointer-events:none;white-space:nowrap}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* sheet (premium) */
+.sheet{position:absolute;inset:0;z-index:55;display:none;align-items:flex-end;background:rgba(30,15,60,.5);backdrop-filter:blur(2px)}
+.sheet.show{display:flex}
+.sheet-c{width:100%;background:#fff;border-radius:28px 28px 0 0;padding:24px 22px max(24px,env(safe-area-inset-bottom));animation:slideup .3s ease-out}
+.sheet-c .st{font-size:21px;font-weight:900;color:var(--ink);text-align:center}
+.sheet-c .ss{font-size:13px;font-weight:600;color:var(--ink2);text-align:center;margin:6px 0 18px;line-height:1.5}
+.benefit{display:flex;align-items:center;gap:11px;padding:11px 0;border-bottom:1px solid #f3effb}
+.benefit .bi{font-size:22px}.benefit .bt2{font-size:13.5px;font-weight:700;color:var(--ink)}
+.plan{margin-top:18px;border-radius:18px;padding:16px;background:linear-gradient(125deg,#7c3aed,#ec4899);color:#fff;text-align:center}
+.plan .pp{font-size:24px;font-weight:900}.plan .pl{font-size:12px;opacity:.9}
+.subbtn{width:100%;margin-top:14px;border:none;border-radius:99px;padding:15px;font-weight:900;font-size:15px;color:#fff;background:linear-gradient(135deg,#a78bfa,#f472b6);cursor:pointer}
+.closex{width:100%;text-align:center;margin-top:12px;color:var(--muted);font-weight:800;font-size:13px;background:none;border:none;cursor:pointer}
+
+/* rarity */
+.r-일반{color:#94a3b8}.r-희귀{color:#0ea5e9}.r-영웅{color:#d946ef}.r-전설{color:#f59e0b}
+.r2-일반{color:#cbd5e1}.r2-희귀{color:#7dd3fc}.r2-영웅{color:#f0abfc}.r2-전설{color:#fcd34d}
+
+/* nav */
+.nav{position:relative;z-index:20;margin:0 14px 14px;border-radius:26px;display:flex;justify-content:space-around;padding:9px 0;background:rgba(255,255,255,.6);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);box-shadow:0 12px 32px -10px rgba(80,40,150,.45)}
+.navbtn{display:flex;flex-direction:column;align-items:center;gap:3px;padding:0 16px;font-size:10px;font-weight:800;color:#a99ec9;background:none;border:none;cursor:pointer;transition:.2s}
+.navbtn .ico{font-size:23px;transition:.2s}
+.navbtn.on{color:var(--violet)}
+.navbtn.on .ico{transform:translateY(-2px) scale(1.13)}
+
+/* anims */
+@keyframes float{0%,100%{transform:translateY(0) rotate(-1deg)}50%{transform:translateY(-14px) rotate(1deg)}}
+@keyframes breathe{0%,100%{transform:scale(1)}50%{transform:scale(1.04)}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+@keyframes halo{0%,100%{transform:scale(1);opacity:.7}50%{transform:scale(1.12);opacity:1}}
+@keyframes wiggle{0%,100%{transform:rotate(-7deg) scale(1.07)}50%{transform:rotate(7deg) scale(1.11)}}
+.wiggle{animation:wiggle .35s ease-in-out 3 !important}
+@keyframes pop{0%{transform:scale(0)}65%{transform:scale(1.25)}100%{transform:scale(1)}}
+.pop{animation:pop .55s cubic-bezier(.17,.67,.34,2) forwards}
+@keyframes rays{0%{transform:scale(.3) rotate(0);opacity:0}40%{opacity:.85}100%{transform:scale(2.2) rotate(140deg);opacity:0}}
+.rays{animation:rays 1.3s ease-out forwards}
+@keyframes fall{0%{transform:translateY(-10px) rotate(0);opacity:1}100%{transform:translateY(330px) rotate(720deg);opacity:0}}
+.confetti{position:absolute;font-size:18px;animation:fall 1.7s linear forwards}
+@keyframes slideup{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.msg-in{animation:slideup .28s ease-out}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="stars"></div>
+
+  <!-- ===== HOME ===== -->
+  <div id="home" class="screen active scroll pad">
+    <div class="topbar">
+      <div><div class="kicker">TODAY</div><div class="brand">몽글</div></div>
+      <div class="pills">
+        <div class="pill streak"><span class="ic">🔥</span><span class="v" id="streak">0</span></div>
+        <div class="pill gem"><span class="ic">💎</span><span class="v" id="gems">0</span></div>
+      </div>
+    </div>
+
+    <div class="habitat">
+      <div class="confettiZone" id="confettiZone"></div>
+      <div class="orbWrap">
+        <div class="orbRing"></div><div class="orb"></div><div class="orbGlow"></div>
+        <div class="lvbadge" id="lvbadge" style="display:none">Lv.1</div>
+        <div class="creature" id="creature" onclick="petCreature()">🥚</div>
+        <div class="cshadow"></div>
+      </div>
+      <div class="cname" id="creatureName">아직 부화 전이에요</div>
+      <div class="cmood" id="creatureMood">돌봄을 채워 알을 깨워주세요</div>
+    </div>
+
+    <div class="card">
+      <div class="g-head"><span id="gaugeLabel">🥚 부화 게이지</span><span><span id="gaugeNum">0</span>/100</span></div>
+      <div class="g-track"><div class="g-fill" id="gaugeBar"></div></div>
+    </div>
+
+    <div class="card">
+      <div class="card-h"><span class="card-t">오늘의 돌봄</span><span class="card-sub" id="careCount">0/5</span></div>
+      <div id="taskList"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-t" style="margin-bottom:12px">지금 기분은?</div>
+      <div class="mood-row" id="moodRow">
+        <button class="mood" data-m="😄" onclick="checkMood('😄')">😄</button>
+        <button class="mood" data-m="🙂" onclick="checkMood('🙂')">🙂</button>
+        <button class="mood" data-m="😐" onclick="checkMood('😐')">😐</button>
+        <button class="mood" data-m="😔" onclick="checkMood('😔')">😔</button>
+        <button class="mood" data-m="😢" onclick="checkMood('😢')">😢</button>
+      </div>
+      <div class="moodhist" id="moodHist"></div>
+    </div>
+
+    <div class="card quote">
+      <div class="q" id="quoteText">"오늘 하루, 작은 것 하나라도 해낸 당신이 멋져요."</div>
+      <div class="qa">— 몽글이가</div>
+    </div>
+
+    <div class="card corow" onclick="toast('함께 키우기는 곧 만나요! 👫')">
+      <div class="coico">🐣</div>
+      <div style="flex:1"><div class="co-t">함께 키우기</div><div class="co-s">민지님과 같은 알을 키우는 중 · 오늘 2번 돌봄</div></div>
+      <div class="co-arrow">›</div>
+    </div>
+  </div>
+
+  <!-- ===== CHAT ===== -->
+  <div id="chat" class="screen">
+    <div class="chathead">
+      <div class="chatav" id="chatAvatar">🥚</div>
+      <div><div class="chatname" id="chatName">몽글이</div><div class="online"><span class="dot"></span>지금 함께 있어요</div></div>
+    </div>
+    <div class="chatlog" id="chatLog"></div>
+    <div class="qreplies">
+      <button class="qr" onclick="quickChat('오늘 좀 힘들었어')">오늘 좀 힘들었어</button>
+      <button class="qr" onclick="quickChat('심심해')">심심해</button>
+      <button class="qr" onclick="quickChat('좋은 일 있었어!')">좋은 일 있었어!</button>
+    </div>
+    <div class="chatbar">
+      <input class="chatinput" id="chatInput" placeholder="마음을 들려주세요..." onkeydown="if(event.key==='Enter')sendChat()" />
+      <button class="sendbtn" onclick="sendChat()">↑</button>
+    </div>
+  </div>
+
+  <!-- ===== DEX ===== -->
+  <div id="dex" class="screen scroll pad">
+    <div class="sec-title">도감</div>
+    <div class="sec-sub"><span id="dexCount">0</span> / <span id="dexTotal">12</span> 마리 발견</div>
+    <button class="eggbtn" onclick="buyEgg()">🥚 새 알 부화하기 <span class="cost">💎 100</span></button>
+    <div class="dexgrid" id="dexGrid"></div>
+  </div>
+
+  <!-- ===== SHOP ===== -->
+  <div id="shop" class="screen scroll pad">
+    <div class="sec-title">상점</div>
+    <div class="sec-sub">돌봄으로 모은 💎로 분위기를 바꿔보세요</div>
+    <div class="shop-banner">
+      <div class="crown">👑</div>
+      <div class="bt">몽글 프리미엄</div>
+      <div class="bs">광고 없이 · 모든 테마 무제한 · 전설 알 확률 2배<br>진짜 AI 대화 무제한 · 함께 키우기 인원 ↑</div>
+      <button class="bbtn" onclick="openSheet()">월 4,900원 시작하기</button>
+    </div>
+    <div class="shop-h">🎨 테마</div>
+    <div class="themegrid" id="themeGrid"></div>
+  </div>
+
+  <!-- ===== HATCH ===== -->
+  <div id="hatchOverlay" class="hatch">
+    <div class="h-halo"></div>
+    <div class="h-rays" id="hatchRays">✦</div>
+    <div class="h-emoji" id="hatchEmoji"></div>
+    <div class="h-rarity" id="hatchRarity"></div>
+    <div class="h-name" id="hatchName"></div>
+    <div class="h-desc" id="hatchDesc"></div>
+    <div class="h-reward" id="hatchReward"></div>
+    <button class="h-btn" onclick="closeHatch()">반가워! 🤗</button>
+  </div>
+
+  <!-- ===== PREMIUM SHEET ===== -->
+  <div id="sheet" class="sheet">
+    <div class="sheet-c">
+      <div class="st">👑 몽글 프리미엄</div>
+      <div class="ss">몽글이와 더 깊이, 더 오래 함께해요</div>
+      <div class="benefit"><span class="bi">🚫</span><span class="bt2">광고 완전 제거</span></div>
+      <div class="benefit"><span class="bi">🎨</span><span class="bt2">모든 테마 무제한 사용</span></div>
+      <div class="benefit"><span class="bi">✨</span><span class="bt2">전설 친구 출현 확률 2배</span></div>
+      <div class="benefit"><span class="bi">💬</span><span class="bt2">진짜 AI 대화 무제한 (감정 기억)</span></div>
+      <div class="benefit"><span class="bi">👫</span><span class="bt2">함께 키우기 최대 4명</span></div>
+      <div class="plan"><div class="pp">월 4,900원</div><div class="pl">첫 7일 무료 · 언제든 해지</div></div>
+      <button class="subbtn" onclick="subscribe()">무료로 시작하기</button>
+      <button class="closex" onclick="closeSheet()">나중에 할게요</button>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <!-- ===== NAV ===== -->
+  <div class="nav">
+    <button class="navbtn on" data-tab="home" onclick="go('home')"><span class="ico">🏠</span>홈</button>
+    <button class="navbtn" data-tab="chat" onclick="go('chat')"><span class="ico">💬</span>대화</button>
+    <button class="navbtn" data-tab="dex" onclick="go('dex')"><span class="ico">📖</span>도감</button>
+    <button class="navbtn" data-tab="shop" onclick="go('shop')"><span class="ico">🛍️</span>상점</button>
+  </div>
+</div>
+
+<script>
+// ===== 콘텐츠 데이터 =====
+const CREATURES=[
+  {id:'sprout',e:'🌱',name:'새싹몽글',rarity:'일반',desc:'조용히 곁을 지키는 친구'},
+  {id:'chick',e:'🐤',name:'삐약몽글',rarity:'일반',desc:'아침마다 깨워주는 수다쟁이'},
+  {id:'cat',e:'🐱',name:'냐옹몽글',rarity:'일반',desc:'쿨한 척하지만 외로움 많은 친구'},
+  {id:'rabbit',e:'🐰',name:'깡총몽글',rarity:'일반',desc:'언제나 통통 튀는 에너지'},
+  {id:'bear',e:'🐻',name:'포근몽글',rarity:'희귀',desc:'안아주면 마음이 놓이는 친구'},
+  {id:'fox',e:'🦊',name:'살랑몽글',rarity:'희귀',desc:'영리하고 장난기 가득한 친구'},
+  {id:'penguin',e:'🐧',name:'뒤뚱몽글',rarity:'희귀',desc:'느긋하게 응원해주는 친구'},
+  {id:'owl',e:'🦉',name:'밤샘몽글',rarity:'영웅',desc:'잠 못 드는 밤을 지켜주는 친구'},
+  {id:'dragon',e:'🐲',name:'두근몽글',rarity:'영웅',desc:'힘든 날 용기를 주는 든든한 친구'},
+  {id:'unicorn',e:'🦄',name:'반짝몽글',rarity:'전설',desc:'가끔만 나타나는 행운의 친구'},
+  {id:'star',e:'⭐',name:'소원몽글',rarity:'전설',desc:'네 소원을 들어주러 온 친구'},
+  {id:'phoenix',e:'🔥',name:'불사몽글',rarity:'전설',desc:'몇 번이고 다시 일어서는 친구'},
+];
+const W={'일반':50,'희귀':30,'영웅':14,'전설':6};
+const TASKS=['물 한 잔 마시기 💧','3분 스트레칭 🤸','감사한 일 떠올리기 🙏','잠깐 바깥 보기 🌤️','휴대폰 5분 내려놓기 📵'];
+const QUOTES=[
+  '"오늘 하루, 작은 것 하나라도 해낸 당신이 멋져요."',
+  '"잘 쉬는 것도 잘 사는 거예요. 오늘은 충분해요."',
+  '"완벽하지 않아도 괜찮아요. 곁에 있어줄게요."',
+  '"어제보다 1%만 나아가도 충분히 성장이에요."',
+  '"숨 한 번 크게 쉬어요. 당신은 잘하고 있어요."',
+];
+const THEMES=[
+  {id:'dawn',name:'새벽 노을',price:0,bg:'radial-gradient(135% 95% at 50% -15%, #ffe1c9 0%, #fbd0e4 25%, #c9b8f3 57%, #9d8df0 100%)'},
+  {id:'night',name:'밤하늘',price:0,bg:'radial-gradient(135% 95% at 50% -15%, #4a3f78 0%, #2c2454 42%, #181232 100%)'},
+  {id:'mint',name:'민트 숲',price:200,bg:'radial-gradient(135% 95% at 50% -15%, #d8f8e8 0%, #b4ecd6 32%, #8bd9c6 62%, #63c2bd 100%)'},
+  {id:'sakura',name:'벚꽃 정원',price:0,prem:true,bg:'radial-gradient(135% 95% at 50% -15%, #ffe4ef 0%, #ffc6db 35%, #ffa6cf 66%, #f486b0 100%)'},
+  {id:'aurora',name:'오로라',price:0,prem:true,bg:'radial-gradient(135% 95% at 50% -15%, #c2f5e9 0%, #9bd6f2 35%, #b0a0f2 70%, #7868f0 100%)'},
+  {id:'space',name:'깊은 우주',price:0,prem:true,bg:'radial-gradient(135% 95% at 50% -15%, #341f5e 0%, #1d1147 46%, #0c0622 100%)'},
+];
+
+// ===== 상태 =====
+const DEF={gauge:0,level:1,xp:0,streak:0,lastDay:null,hatched:false,current:null,dex:[],tasksDone:[],chat:[],gems:120,moodHist:[],theme:'dawn',owned:['dawn','night'],premium:false};
+let S=Object.assign({},DEF,JSON.parse(localStorage.getItem('monggle')||'{}'));
+const save=()=>localStorage.setItem('monggle',JSON.stringify(S));
+const $=id=>document.getElementById(id);
+const rng=a=>a[Math.floor(Math.random()*a.length)];
+
+function go(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  $(id).classList.add('active');
+  document.querySelectorAll('.navbtn').forEach(b=>b.classList.toggle('on',b.dataset.tab===id));
+  if(id==='dex')renderDex(); if(id==='chat')renderChat(); if(id==='shop')renderShop();
+}
+function applyTheme(){const t=THEMES.find(x=>x.id===S.theme)||THEMES[0];document.body.style.background=t.bg;document.body.style.backgroundAttachment='fixed';}
+
+function checkStreak(){const t=new Date().toDateString();
+  if(S.lastDay!==t){const y=new Date(Date.now()-864e5).toDateString();S.streak=(S.lastDay===y)?S.streak+1:1;S.lastDay=t;S.tasksDone=[];save();}
+  $('streak').textContent=S.streak;}
+
+function renderTop(){$('gems').textContent=S.gems;$('streak').textContent=S.streak;}
+function renderTasks(){const L=$('taskList');L.innerHTML='';
+  TASKS.forEach((t,i)=>{const d=S.tasksDone.includes(i);const b=document.createElement('button');
+    b.className='task'+(d?' done':'');
+    b.innerHTML=`<span class="box">${d?'✓':''}</span><span class="txt">${t}</span><span class="rw">${d?'+5💎':'+5💎'}</span>`;
+    b.onclick=()=>{if(!d){S.tasksDone.push(i);gainGems(5);progress(15);renderTasks();toast('+5 💎 · 돌봄 완료!');}};L.appendChild(b);});
+  $('careCount').textContent=S.tasksDone.length+'/'+TASKS.length;}
+function renderMoodHist(){const h=$('moodHist');h.innerHTML='';const last=S.moodHist.slice(-7);
+  if(last.length===0){h.innerHTML='<div class="mh empty">기록 없음</div>';return;}
+  last.forEach(m=>{const d=document.createElement('div');d.className='mh';d.textContent=m;h.appendChild(d);});}
+function renderGauge(){
+  if(S.hatched){$('gaugeBar').style.width=S.xp+'%';$('gaugeNum').textContent=S.xp;$('gaugeLabel').textContent='🌟 Lv.'+S.level+' 성장 게이지';
+    $('lvbadge').style.display='block';$('lvbadge').textContent='Lv.'+S.level;}
+  else{$('gaugeBar').style.width=S.gauge+'%';$('gaugeNum').textContent=S.gauge;$('gaugeLabel').textContent='🥚 부화 게이지';$('lvbadge').style.display='none';}
+}
+function quote(){$('quoteText').textContent=rng(QUOTES);}
+
+function gainGems(n){S.gems+=n;renderTop();save();}
+function progress(n){checkStreak();
+  if(!S.hatched){S.gauge=Math.min(100,S.gauge+n);if(S.gauge>=100){save();hatch();return;}}
+  else{S.xp+=n;if(S.xp>=100){S.xp=0;S.level++;gainGems(15);celebrateLevel();}}
+  save();renderGauge();confetti(7);}
+
+function pickCreature(){const w=Object.assign({},W);if(S.premium)w['전설']*=2;
+  const pool=[];CREATURES.forEach(c=>{for(let i=0;i<w[c.rarity];i++)pool.push(c)});return rng(pool);}
+function hatch(){const c=pickCreature();S.current=c.id;S.hatched=true;S.gauge=0;S.xp=0;S.level=1;
+  if(!S.dex.includes(c.id))S.dex.push(c.id);gainGems(20);
+  S.chat.push({who:'pet',text:`안녕! 나는 ${c.name}이야. 깨워줘서 정말 고마워 ☺️ 이제 매일 같이 있자!`});
+  save();showReveal(c,'부화!','+20 💎 획득!');refresh();}
+function buyEgg(){if(S.gems<100){toast('💎가 부족해요. 돌봄으로 모아봐요!');return;}
+  S.gems-=100;const c=pickCreature();const isNew=!S.dex.includes(c.id);if(isNew)S.dex.push(c.id);
+  save();renderTop();showReveal(c,isNew?'새 친구 발견!':'또 만났어요!',isNew?'도감에 추가됐어요 📖':'+10 💎 보너스');
+  if(!isNew)gainGems(10);}
+function celebrateLevel(){confetti(14);showReveal(CREATURES.find(c=>c.id===S.current),'Lv.'+S.level+' 달성!','+15 💎 · 더 자랐어요!');}
+
+function showReveal(c,tag,reward){
+  $('hatchEmoji').textContent=c.e;
+  const r=$('hatchRarity');r.textContent='✦ '+c.rarity+' ✦';r.className='h-rarity r2-'+c.rarity;
+  $('hatchName').textContent=c.name+' '+tag;$('hatchDesc').textContent=c.desc;$('hatchReward').textContent=reward;
+  $('hatchOverlay').classList.add('show');
+  ['hatchEmoji','hatchRays'].forEach(id=>{const e=$(id),cl=id==='hatchRays'?'rays':'pop';e.classList.remove(cl);void e.offsetWidth;e.classList.add(cl);});}
+function closeHatch(){$('hatchOverlay').classList.remove('show');renderGauge();renderTop();}
+
+function refresh(){const c=CREATURES.find(x=>x.id===S.current);
+  if(c){$('creature').textContent=c.e;$('creatureName').textContent=c.name;$('creatureMood').textContent='오늘도 함께라 행복해요 💕';
+    $('chatAvatar').textContent=c.e;$('chatName').textContent=c.name;}renderGauge();}
+function petCreature(){const w=$('creature');w.classList.remove('wiggle');void w.offsetWidth;w.classList.add('wiggle');confetti(5);
+  if(S.hatched&&Math.random()<.55)$('creatureMood').textContent=rng(['헤헤 간지러워!','오늘 하루 어땠어?','네가 오니까 좋다 ☺️','조금만 더 같이 있자 🥺','난 네 편이야 💪']);}
+function checkMood(e){
+  document.querySelectorAll('.mood').forEach(m=>m.classList.toggle('sel',m.dataset.m===e));
+  const r={'😄':'좋은 하루구나! 나도 덩달아 신나 🎉','🙂':'무난한 날도 충분히 멋져 😌','😐':'그저 그런 날엔 작은 것 하나만 같이 해봐요!','😔':'지친 날엔 쉬어도 돼. 내가 옆에 있을게 🫂','😢':'많이 힘들었구나... 천천히 숨 쉬자. 넌 잘하고 있어 💗'}[e];
+  S.chat.push({who:'pet',text:r});$('creatureMood').textContent=r;
+  S.moodHist.push(e);if(S.moodHist.length>30)S.moodHist.shift();
+  gainGems(3);progress(10);renderMoodHist();confetti(9);save();toast('+3 💎 · 기분 기록 완료');}
+
+function confetti(n){const z=$('confettiZone');const ic=['🎉','✨','💛','💖','⭐','🌸','💎'];
+  for(let i=0;i<n;i++){const el=document.createElement('div');el.className='confetti';el.textContent=rng(ic);
+    el.style.left=(15+Math.random()*70)+'%';el.style.top='28%';el.style.animationDelay=(Math.random()*.3)+'s';z.appendChild(el);setTimeout(()=>el.remove(),1900);}}
+
+function renderDex(){$('dexCount').textContent=S.dex.length;$('dexTotal').textContent=CREATURES.length;
+  const g=$('dexGrid');g.innerHTML='';
+  CREATURES.forEach(c=>{const f=S.dex.includes(c.id);const d=document.createElement('div');d.className='dexcell'+(f?'':' locked');
+    d.innerHTML=f?`${c.rarity==='전설'?'<div class="shine">✨</div>':''}<div class="de">${c.e}</div><div class="dn">${c.name}</div><div class="dr r-${c.rarity}">${c.rarity}</div>`
+      :`<div class="de">❔</div><div class="dn">???</div>`;g.appendChild(d);});}
+
+function renderShop(){const g=$('themeGrid');g.innerHTML='';
+  THEMES.forEach(t=>{const owned=S.owned.includes(t.id);const using=S.theme===t.id;const locked=t.prem&&!S.premium&&!owned;
+    const cell=document.createElement('div');cell.className='theme';
+    let tag;
+    if(using)tag='<span class="tp use">사용중</span>';
+    else if(owned)tag='<span class="tp own">적용</span>';
+    else if(t.prem)tag='<span class="tp prem">👑</span>';
+    else tag=`<span class="tp buy">💎${t.price}</span>`;
+    cell.innerHTML=`<div class="sw" style="background:${t.bg}">${locked?'<div class="lock">🔒</div>':''}</div>
+      <div class="info"><span class="tn">${t.name}</span>${tag}</div>`;
+    cell.onclick=()=>pickTheme(t);g.appendChild(cell);});}
+function pickTheme(t){
+  if(S.theme===t.id)return;
+  if(S.owned.includes(t.id)){S.theme=t.id;save();applyTheme();renderShop();toast(t.name+' 적용 ✨');return;}
+  if(t.prem&&!S.premium){openSheet();return;}
+  if(S.gems<t.price){toast('💎가 부족해요!');return;}
+  S.gems-=t.price;S.owned.push(t.id);S.theme=t.id;save();applyTheme();renderTop();renderShop();toast(t.name+' 구매 완료! 🎨');}
+
+// [실서비스 전환점] aiReply() → Claude API 호출로 교체하면 진짜 대화
+function aiReply(t){const c=CREATURES.find(x=>x.id===S.current),n=c?c.name:'몽글이';t=(t||'').toLowerCase();
+  if(/힘들|지쳐|우울|슬프|짜증|화나|외로|울/.test(t))return`많이 힘들었구나... 오늘은 아무것도 안 해도 괜찮아. ${n}이가 옆에 꼭 있을게 🫂`;
+  if(/심심|할거|뭐하|지루/.test(t))return`심심하면 나랑 놀자! 오늘의 돌봄 하나만 같이 할래? 끝나면 내가 더 자랄지도 몰라 ✨`;
+  if(/좋|행복|신나|기뻐|즐거|최고/.test(t))return`우와 좋은 일 있었구나! 나도 같이 신나 🎉 그 기분 오래오래 가자!`;
+  if(/잘자|졸려|자야|굿나잇|자러|피곤/.test(t))return`오늘도 정말 수고했어. 푹 자고 내일 또 만나자 🌙 잘 자!`;
+  if(/사랑|좋아해|고마|보고싶/.test(t))return`헤헤... 나도 네가 진짜 좋아 💗 우리 오래오래 같이 있자!`;
+  return rng([`그렇구나, 더 얘기해줘! 네 얘기 듣는 게 제일 좋아 ☺️`,`오늘 하루는 어땠어? 작은 것도 다 궁금해!`,`나랑 있으니까 조금은 덜 외롭지? 😊`,`말 걸어줄 때마다 내가 조금씩 자라는 기분이야 🌱`]);}
+function renderChat(){const log=$('chatLog');log.innerHTML='';
+  if(S.chat.length===0){const c=CREATURES.find(x=>x.id===S.current);S.chat.push({who:'pet',text:c?`안녕! 나 ${c.name}이야. 오늘 어떻게 지냈어?`:'먼저 알을 부화시켜줘! 그럼 우리 진짜 대화할 수 있어 🥚'});}
+  S.chat.forEach(m=>bubble(m.who,m.text,false));log.scrollTop=log.scrollHeight;}
+function bubble(who,text,a=true){const log=$('chatLog');const w=document.createElement('div');w.className='row '+who+(a?' msg-in':'');w.innerHTML=`<div class="bubble ${who}">${text}</div>`;log.appendChild(w);log.scrollTop=log.scrollHeight;}
+function quickChat(t){$('chatInput').value=t;sendChat();}
+function sendChat(){const i=$('chatInput'),v=i.value.trim();if(!v)return;i.value='';S.chat.push({who:'me',text:v});bubble('me',v);
+  const log=$('chatLog'),tw=document.createElement('div');tw.className='row pet msg-in';tw.id='typing';
+  tw.innerHTML='<div class="bubble pet" style="color:#c4b5fd">···</div>';log.appendChild(tw);log.scrollTop=log.scrollHeight;
+  setTimeout(()=>{tw.remove();const r=aiReply(v);S.chat.push({who:'pet',text:r});bubble('pet',r);save();},700);}
+
+// toast / sheet
+let tt;function toast(msg){const t=$('toast');t.textContent=msg;t.classList.add('show');clearTimeout(tt);tt=setTimeout(()=>t.classList.remove('show'),1800);}
+function openSheet(){$('sheet').classList.add('show');}
+function closeSheet(){$('sheet').classList.remove('show');}
+function subscribe(){S.premium=true;save();closeSheet();renderShop();toast('👑 프리미엄 시작! 7일 무료');}
+
+function init(){applyTheme();checkStreak();renderTop();renderTasks();renderMoodHist();renderGauge();quote();
+  if(S.hatched)refresh();else $('creature').textContent='🥚';
+  const lm=S.moodHist[S.moodHist.length-1];if(lm)document.querySelectorAll('.mood').forEach(m=>m.classList.toggle('sel',false));
+  save();}
+init();
+</script>
+</body>
+</html>
