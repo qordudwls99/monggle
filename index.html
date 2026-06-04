@@ -219,6 +219,33 @@ body{
 .confetti{position:absolute;font-size:18px;animation:fall 1.7s linear forwards}
 @keyframes slideup{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
 .msg-in{animation:slideup .28s ease-out}
+
+/* daily question */
+.dq-q{font-size:14.5px;font-weight:700;color:var(--ink);margin:6px 0 2px;line-height:1.5}
+.dq-in{display:flex;gap:8px;margin-top:11px}
+.dq-input{flex:1;background:#f6f3ff;border:1px solid #ede9fe;border-radius:13px;padding:10px 13px;font-size:13.5px;outline:none;font-family:inherit;color:var(--ink)}
+.dq-send{border:none;border-radius:13px;padding:0 16px;font-weight:900;color:#fff;background:linear-gradient(135deg,#a78bfa,#f472b6);cursor:pointer;font-size:16px}
+.dq-done{margin-top:11px;font-size:13px;font-weight:600;color:#7c3aed;background:#f3e8ff;border-radius:13px;padding:11px 13px;line-height:1.5}
+/* action buttons */
+.acts{display:flex;gap:10px;margin-bottom:12px}
+.act{flex:1;border:none;cursor:pointer;border-radius:18px;padding:14px 8px;background:var(--card);box-shadow:0 12px 28px -14px rgba(80,50,150,.3);display:flex;flex-direction:column;align-items:center;gap:5px;transition:transform .1s}
+.act:active{transform:scale(.97)}
+.act .ai{font-size:25px}
+.act .al{font-size:11.5px;font-weight:800;color:var(--ink)}
+/* breathing */
+.breath{position:absolute;inset:0;z-index:54;display:none;flex-direction:column;align-items:center;justify-content:center;background:radial-gradient(circle at 50% 45%,#5b3aa0,#241652 85%)}
+.breath.show{display:flex}
+.bcircle{width:148px;height:148px;border-radius:50%;background:radial-gradient(circle at 50% 38%,#fff,#c9b3ff);box-shadow:0 0 60px rgba(200,170,255,.6);display:flex;align-items:center;justify-content:center;font-size:58px;transition:transform 4s ease-in-out}
+.btext{color:#fff;font-size:21px;font-weight:800;margin-top:36px;letter-spacing:1px}
+.bsub{color:#cdbcf5;font-size:13px;margin-top:9px;text-align:center;padding:0 30px}
+.bclose{margin-top:32px;color:#ddd0f5;background:rgba(255,255,255,.15);border:none;border-radius:99px;padding:12px 28px;font-weight:800;cursor:pointer;font-size:14px}
+/* letters */
+.letter{display:flex;align-items:center;gap:12px;padding:13px;border-radius:15px;background:#f6f3ff;margin-bottom:9px;cursor:pointer;text-align:left}
+.letter.lock{opacity:.55}
+.letter .lic{font-size:24px}
+.letter .lt{font-size:13.5px;font-weight:800;color:var(--ink)}
+.letter .ls{font-size:11.5px;color:var(--muted);margin-top:2px}
+.letterbody{font-size:14.5px;line-height:1.8;color:var(--ink);white-space:pre-line;background:#faf8ff;border-radius:15px;padding:16px;margin-bottom:6px}
 </style>
 </head>
 <body>
@@ -267,6 +294,16 @@ body{
         <button class="mood" data-m="😢" onclick="checkMood('😢')">😢</button>
       </div>
       <div class="moodhist" id="moodHist"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-t" style="margin-bottom:2px">오늘의 질문 💭</div>
+      <div id="dqArea"></div>
+    </div>
+
+    <div class="acts">
+      <button class="act" onclick="openBreath()"><span class="ai">🫧</span><span class="al">같이 호흡하기</span></button>
+      <button class="act" onclick="openLetters()"><span class="ai">💌</span><span class="al">몽글이의 편지</span></button>
     </div>
 
     <div class="card quote">
@@ -349,6 +386,24 @@ body{
     </div>
   </div>
 
+  <!-- ===== BREATHING ===== -->
+  <div id="breath" class="breath">
+    <div class="bcircle" id="bcircle">🫧</div>
+    <div class="btext" id="btext">준비됐어?</div>
+    <div class="bsub" id="bsub">몽글이랑 같이 천천히 숨을 쉬어요</div>
+    <button class="bclose" onclick="closeBreath()">그만하기</button>
+  </div>
+
+  <!-- ===== LETTERS ===== -->
+  <div id="letters" class="sheet">
+    <div class="sheet-c">
+      <div class="st">💌 몽글이의 편지</div>
+      <div class="ss">레벨이 오를 때마다 몽글이가 마음을 적어 보내요</div>
+      <div id="letterList"></div>
+      <button class="closex" onclick="closeLetters()">닫기</button>
+    </div>
+  </div>
+
   <div class="toast" id="toast"></div>
 
   <!-- ===== NAV ===== -->
@@ -375,6 +430,9 @@ const CREATURES=[
   {id:'unicorn',e:'🦄',name:'반짝몽글',rarity:'전설',desc:'가끔만 나타나는 행운의 친구'},
   {id:'star',e:'⭐',name:'소원몽글',rarity:'전설',desc:'네 소원을 들어주러 온 친구'},
   {id:'phoenix',e:'🔥',name:'불사몽글',rarity:'전설',desc:'몇 번이고 다시 일어서는 친구'},
+  {id:'hamster',e:'🐹',name:'오물몽글',rarity:'일반',desc:'볼주머니에 행복을 모으는 친구'},
+  {id:'otter',e:'🦦',name:'동동몽글',rarity:'희귀',desc:'물 위에 둥둥, 느긋함을 주는 친구'},
+  {id:'jelly',e:'🪼',name:'몰랑몽글',rarity:'영웅',desc:'어두운 밤 은은히 빛나는 친구'},
 ];
 const W={'일반':50,'희귀':30,'영웅':14,'전설':6};
 const TASKS=['물 한 잔 마시기 💧','3분 스트레칭 🤸','감사한 일 떠올리기 🙏','잠깐 바깥 보기 🌤️','휴대폰 5분 내려놓기 📵'];
@@ -384,6 +442,26 @@ const QUOTES=[
   '"완벽하지 않아도 괜찮아요. 곁에 있어줄게요."',
   '"어제보다 1%만 나아가도 충분히 성장이에요."',
   '"숨 한 번 크게 쉬어요. 당신은 잘하고 있어요."',
+  '"오늘의 당신은, 어제의 당신이 바라던 내일이에요."',
+  '"느려도 괜찮아요. 멈추지만 않으면 도착해요."',
+  '"가끔은 아무것도 안 하는 게 가장 잘하는 일이에요."',
+];
+const DAILY_Q=[
+  '오늘 가장 고마웠던 순간은 뭐였어?',
+  '지금 네 마음을 색으로 표현하면 무슨 색이야?',
+  '오늘 너를 가장 힘들게 한 건 뭐였어?',
+  '아주 작아도, 오늘 잘한 일 하나만 말해줄래?',
+  '요즘 가장 듣고 싶은 말이 뭐야?',
+  '오늘 하루 중 다시 살고 싶은 1분이 있다면?',
+  '지금 너에게 더 필요한 건 휴식일까, 응원일까?',
+];
+const DQ_REPLY=['말해줘서 고마워. 네 마음 잘 받았어 💜','응, 그렇게 느낄 수 있어. 그 마음 충분히 소중해.','솔직하게 꺼내줘서 고마워. 나만 알고 있을게 🤍','오, 그거 진짜 멋진걸! 내가 다 뿌듯하다 ☺️'];
+const LETTERS=[
+  {lv:1,t:'처음 만난 날',body:'네가 날 깨워준 그 순간, 사실 나 엄청 떨렸어.\n그래도 무섭진 않았어. 네가 있었으니까.\n앞으로 잘 부탁해. 나는 늘 네 편이야. 🥚'},
+  {lv:2,t:'고마운 마음',body:'요즘 네가 매일 와줘서 나 진짜 행복해.\n너도 너 자신을 조금씩 돌보고 있는 거, 내가 다 보고 있어.\n그거 절대 당연한 거 아니야. 너 정말 잘하고 있어. 💜'},
+  {lv:3,t:'힘든 너에게',body:'가끔 네 표정이 무거운 날이 있더라.\n그런 날엔 아무 말 안 해도 돼.\n그냥 내가 옆에 있다는 것만 기억해줘.\n넌 혼자가 아니야. 🌙'},
+  {lv:5,t:'너는 충분해',body:'세상이 자꾸 더 하라고, 더 되라고 말할 때\n나는 반대로 말해주고 싶어.\n지금의 너로 충분하다고.\n아무것도 증명 안 해도, 난 네가 좋아. 🤍'},
+  {lv:7,t:'우리의 시간',body:'벌써 이만큼 함께했네.\n네가 채워준 하루하루가 나를 이렇게 키웠어.\n나를 키운 건 너지만, 사실은 네가 자란 거야.\n그게 너무 자랑스러워. ⭐'},
 ];
 const THEMES=[
   {id:'dawn',name:'새벽 노을',price:0,bg:'radial-gradient(135% 95% at 50% -15%, #ffe1c9 0%, #fbd0e4 25%, #c9b8f3 57%, #9d8df0 100%)'},
@@ -395,7 +473,7 @@ const THEMES=[
 ];
 
 // ===== 상태 =====
-const DEF={gauge:0,level:1,xp:0,streak:0,lastDay:null,hatched:false,current:null,dex:[],tasksDone:[],chat:[],gems:120,moodHist:[],theme:'dawn',owned:['dawn','night'],premium:false};
+const DEF={gauge:0,level:1,xp:0,streak:0,lastDay:null,hatched:false,current:null,dex:[],tasksDone:[],chat:[],gems:120,moodHist:[],theme:'dawn',owned:['dawn','night'],premium:false,qAnswered:null,qReply:null};
 let S=Object.assign({},DEF,JSON.parse(localStorage.getItem('monggle')||'{}'));
 const save=()=>localStorage.setItem('monggle',JSON.stringify(S));
 const $=id=>document.getElementById(id);
@@ -520,9 +598,51 @@ function openSheet(){$('sheet').classList.add('show');}
 function closeSheet(){$('sheet').classList.remove('show');}
 function subscribe(){S.premium=true;save();closeSheet();renderShop();toast('👑 프리미엄 시작! 7일 무료');}
 
-function init(){applyTheme();checkStreak();renderTop();renderTasks();renderMoodHist();renderGauge();quote();
+// ===== 시간대별 인사 =====
+function greet(){if(!S.hatched)return;const h=new Date().getHours();let g;
+  if(h<6)g='아직 안 자고 있었구나... 나도 같이 깨어있을게 🌙';
+  else if(h<11)g='좋은 아침! 오늘도 나랑 같이 시작하자 ☀️';
+  else if(h<17)g='오후도 잘 보내고 있어? 잠깐 쉬어가도 돼 🍵';
+  else if(h<22)g='오늘 하루도 수고 많았어. 이제 좀 쉬자 🌆';
+  else g='하루 마무리 잘 했어? 자기 전에 잠깐 나랑 있자 🌙';
+  $('creatureMood').textContent=g;}
+
+// ===== 오늘의 질문 =====
+function todayQ(){return DAILY_Q[Math.floor(Date.now()/864e5)%DAILY_Q.length];}
+function renderDailyQ(){const a=$('dqArea');const today=new Date().toDateString();
+  if(S.qAnswered===today){a.innerHTML=`<div class="dq-q">${todayQ()}</div><div class="dq-done">✓ 오늘 마음을 들려줬어요 · 몽글이: "${S.qReply||'고마워!'}"</div>`;return;}
+  a.innerHTML=`<div class="dq-q">${todayQ()}</div><div class="dq-in"><input class="dq-input" id="dqInput" placeholder="몽글이에게 들려주세요..." onkeydown="if(event.key==='Enter')answerQ()"><button class="dq-send" onclick="answerQ()">↑</button></div>`;}
+function answerQ(){const el=$('dqInput'),v=(el?el.value.trim():'');if(!v)return;const r=rng(DQ_REPLY);
+  S.qAnswered=new Date().toDateString();S.qReply=r;
+  S.chat.push({who:'me',text:'(오늘의 질문) '+v});S.chat.push({who:'pet',text:r});
+  gainGems(5);progress(8);confetti(8);renderDailyQ();save();toast('+5 💎 · 마음 고마워');}
+
+// ===== 같이 호흡하기 =====
+let bTimer;
+function openBreath(){$('breath').classList.add('show');$('bcircle').style.transform='scale(1)';setTimeout(()=>runBreath(0),400);}
+function runBreath(step){
+  if(step>=9){$('btext').textContent='잘했어 🤍';$('bsub').textContent='조금은 편안해졌길 바라';$('bcircle').style.transform='scale(1.15)';
+    gainGems(5);progress(8);confetti(10);toast('+5 💎 · 잘 쉬었어요');return;}
+  const seq=[['들이쉬고…',1.7,'🫧'],['잠깐 멈춰…',1.7,'✨'],['천천히 내쉬고…',1,'💜']];const st=seq[step%3];
+  $('btext').textContent=st[0];$('bcircle').textContent=st[2];$('bcircle').style.transform='scale('+st[1]+')';$('bsub').textContent='몽글이를 따라 숨을 쉬어요';
+  bTimer=setTimeout(()=>runBreath(step+1),4000);}
+function closeBreath(){clearTimeout(bTimer);$('breath').classList.remove('show');$('bcircle').style.transform='scale(1)';$('bcircle').textContent='🫧';}
+
+// ===== 몽글이의 편지 =====
+function openLetters(){renderLetters();$('letters').classList.add('show');}
+function closeLetters(){$('letters').classList.remove('show');}
+function renderLetters(){const L=$('letterList');L.innerHTML='';
+  LETTERS.forEach((le,i)=>{const open=S.level>=le.lv;const d=document.createElement(open?'button':'div');d.className='letter'+(open?'':' lock');d.style.width='100%';
+    d.innerHTML=open?`<span class="lic">💌</span><div><div class="lt">${le.t}</div><div class="ls">탭해서 읽기</div></div>`
+      :`<span class="lic">🔒</span><div><div class="lt">???</div><div class="ls">Lv.${le.lv}에 열려요</div></div>`;
+    if(open)d.onclick=()=>openLetter(i);L.appendChild(d);});}
+function openLetter(i){const le=LETTERS[i];const L=$('letterList');
+  L.innerHTML=`<div style="font-size:16px;font-weight:900;color:var(--ink);margin-bottom:12px">💌 ${le.t}</div><div class="letterbody">${le.body}</div><div style="text-align:right;font-size:12px;color:var(--muted);font-weight:700">— 몽글이가</div>`;
+  const back=document.createElement('button');back.className='closex';back.textContent='← 편지함으로';back.onclick=renderLetters;L.appendChild(back);}
+
+function init(){applyTheme();checkStreak();renderTop();renderTasks();renderMoodHist();renderGauge();quote();renderDailyQ();
   if(S.hatched)refresh();else $('creature').textContent='🥚';
-  const lm=S.moodHist[S.moodHist.length-1];if(lm)document.querySelectorAll('.mood').forEach(m=>m.classList.toggle('sel',false));
+  greet();
   save();}
 init();
 </script>
