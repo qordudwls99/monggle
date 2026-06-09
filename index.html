@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-<title>몽글 시프트 · Monggle Shift</title>
+<title>출근 시프트</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;-webkit-font-smoothing:antialiased}
 :root{
@@ -158,13 +158,13 @@ select.fld{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns
 
   <!-- ===== SETUP (Supabase 미설정 시) ===== -->
   <div id="setupScreen" class="setup" style="display:none">
-    <h1>🌙 몽글 시프트</h1>
+    <h1>🌙 출근 시프트</h1>
     <p>거의 다 됐어요! 데이터를 함께 보려면 무료 <b>Supabase</b> 연결이 필요해요.</p>
     <ol>
       <li><b>supabase.com</b> 에서 무료 프로젝트를 만들어요.</li>
       <li>좌측 <code>SQL Editor</code> 에 저장소의 <code>supabase-setup.sql</code> 전체를 붙여넣고 <b>Run</b>.</li>
       <li><code>Project Settings → API</code> 에서 <b>Project URL</b> 과 <b>anon public</b> 키를 복사.</li>
-      <li>이 파일 <code>shift.html</code> 상단의 <code>CONFIG</code> 두 값에 붙여넣고 저장.</li>
+      <li>이 파일 <code>index.html</code> 상단의 <code>CONFIG</code> 두 값에 붙여넣고 저장.</li>
     </ol>
     <div class="box">📄 자세한 안내는 저장소의 <b>SHIFT_SETUP.md</b> 를 참고하세요.<br>설정을 마치면 이 화면은 자동으로 사라져요.</div>
   </div>
@@ -173,8 +173,8 @@ select.fld{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns
   <div id="mainApp" style="display:none;flex:1;flex-direction:column">
     <div class="head">
       <div>
-        <div class="kicker">MONGGLE</div>
-        <div class="brand">몽글 시프트</div>
+        <div class="kicker">SHIFT</div>
+        <div class="brand">출근 시프트</div>
       </div>
       <button class="who" id="whoBtn"></button>
     </div>
@@ -314,7 +314,7 @@ const $ = id => document.getElementById(id);
 const esc = s => (s==null?'':String(s)).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
 let supa = null;
-let session = JSON.parse(localStorage.getItem('monggle_shift_session') || 'null'); // {id,name,workplace,is_admin,pin}
+let session = JSON.parse(localStorage.getItem('shift_session') || 'null'); // {id,name,workplace,is_admin,pin}
 let staffList = [];
 let selectedDate = new Date();
 let wpFilter = '전체';
@@ -394,7 +394,7 @@ async function doLogin(){
   if(!data || data.length===0){ toast('이름 또는 PIN이 올바르지 않아요', true); return; }
   const me = data[0];
   session = { id:me.id, name:me.name, workplace:me.workplace, is_admin:me.is_admin, pin };
-  localStorage.setItem('monggle_shift_session', JSON.stringify(session));
+  localStorage.setItem('shift_session', JSON.stringify(session));
   closeLogin();
   renderWho();
   toast(`${me.name}님 환영해요! 💜`);
@@ -402,7 +402,7 @@ async function doLogin(){
 }
 function logout(){
   session = null;
-  localStorage.removeItem('monggle_shift_session');
+  localStorage.removeItem('shift_session');
   renderWho();
   switchTab('schedule');
   toast('로그아웃 했어요');
