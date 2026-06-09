@@ -33,8 +33,7 @@ $$;
 
 -- 스태프 추가 (근무지 인자 제거)
 drop function if exists admin_add_staff(bigint, text, text, text, text, boolean);
-drop function if exists admin_add_staff(bigint, text, text, text, boolean);
-create function admin_add_staff(p_admin_id bigint, p_pin text,
+create or replace function admin_add_staff(p_admin_id bigint, p_pin text,
   p_name text, p_new_pin text, p_is_admin boolean default false)
 returns void language plpgsql security definer set search_path = public as $$
 declare v staff;
@@ -69,8 +68,7 @@ grant select on shift_view to anon, authenticated;
 
 -- 5) 근무 추가 : 게스트 강제 입력 지원
 drop function if exists admin_add_shift(bigint, text, date, text, text, text, bigint, text);
-drop function if exists admin_add_shift(bigint, text, date, text, text, text, bigint, text, text);
-create function admin_add_shift(p_admin_id bigint, p_pin text,
+create or replace function admin_add_shift(p_admin_id bigint, p_pin text,
   p_work_date date, p_workplace text, p_start text, p_end text,
   p_assignee bigint default null, p_memo text default null, p_guest text default null)
 returns void language plpgsql security definer set search_path = public as $$
