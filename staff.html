@@ -50,20 +50,23 @@ body{
 .seg button{flex:1;border:none;cursor:pointer;font-family:inherit;font-weight:800;font-size:13px;padding:8px 0;border-radius:99px;background:none;color:rgba(255,255,255,.92);transition:.15s}
 .seg button.on{background:#fff;color:var(--violet);box-shadow:0 6px 14px -7px rgba(80,40,150,.5)}
 
-/* week view */
-.daycard{background:var(--card);border-radius:18px;padding:13px 15px;margin-bottom:10px;box-shadow:0 12px 28px -16px rgba(80,50,150,.35),0 2px 5px rgba(80,50,150,.05);cursor:pointer}
-.daycard.today{outline:2px solid var(--violet2)}
-.dh{display:flex;align-items:center;gap:8px;margin-bottom:9px}
-.dh-d{font-weight:900;font-size:15px;color:var(--ink)}
-.daycard.weekend .dh-d{color:var(--pink)}
-.dh-ev{font-size:11px;font-weight:800;color:#ea580c;background:#fff7ed;padding:3px 8px;border-radius:99px}
-.dh-today{font-size:10px;font-weight:900;color:#fff;background:var(--violet2);padding:3px 8px;border-radius:99px}
-.wline{display:flex;align-items:flex-start;gap:9px;padding:6px 0;font-size:13.5px;border-top:1px solid #f3effb}
-.wline:first-child{border-top:none}
-.wline .wn{font-weight:900;font-size:12px;min-width:50px;color:var(--ink2);display:flex;align-items:center;gap:5px;padding-top:1px}
-.wline .wpeople{flex:1;font-weight:700;color:var(--ink);display:flex;flex-direction:column;gap:3px}
-.wline .wpeople .op{color:#94a3b8;font-weight:600}
-.dh-off{font-size:12.5px;color:var(--muted);font-weight:700}
+/* week view — 가로 컬럼 (스프레드시트형) */
+.weekgrid{display:flex;gap:8px;overflow-x:auto;padding-bottom:10px;-webkit-overflow-scrolling:touch;scroll-snap-type:x proximity}
+.weekgrid::-webkit-scrollbar{height:6px}
+.weekgrid::-webkit-scrollbar-thumb{background:rgba(255,255,255,.5);border-radius:99px}
+.daycol{flex:0 0 auto;width:116px;background:var(--card);border-radius:16px;padding:10px 9px;box-shadow:0 12px 28px -16px rgba(80,50,150,.35),0 2px 5px rgba(80,50,150,.05);scroll-snap-align:start;cursor:pointer}
+.daycol.today{outline:2px solid var(--violet2)}
+.dcol-h{text-align:center;font-weight:900;font-size:12.5px;color:var(--ink);margin-bottom:8px;padding-bottom:7px;border-bottom:1px solid #f3effb}
+.dcol-h .dow{font-size:16px;line-height:1.2}
+.dcol-h.weekend .dow{color:var(--pink)}
+.dcol-h .tdy{color:var(--violet);font-size:10px;font-weight:900}
+.dcol-ev{margin-top:4px;font-size:9.5px;font-weight:800;color:#ea580c;background:#fff7ed;padding:2px 6px;border-radius:99px;display:inline-block}
+.wpgrp{margin-bottom:9px}
+.wpgrp:last-child{margin-bottom:0}
+.wpgrp-h{display:flex;align-items:center;gap:4px;font-size:10px;font-weight:900;color:var(--ink2);margin-bottom:4px}
+.wpgrp .nm{font-size:12.5px;font-weight:700;color:var(--ink);padding:2px 0;text-align:center;background:#f6f3ff;border-radius:7px;margin-bottom:3px}
+.wpgrp .nm.op{background:none;color:#94a3b8;font-weight:600;font-size:11px}
+.dcol-off{text-align:center;font-size:12px;color:var(--muted);font-weight:700;padding:10px 0}
 
 /* date bar */
 .datebar{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px;
@@ -488,32 +491,31 @@ function renderSchedule(){ viewMode==='week' ? renderWeek() : renderDay(); }
 async function renderWeek(){
   const list = $('scheduleList');
   const mon = mondayOf(selectedDate); const sun = new Date(mon); sun.setDate(sun.getDate()+6);
-  $('dateLabel').innerHTML = `${mon.getMonth()+1}/${mon.getDate()} ~ ${sun.getMonth()+1}/${sun.getDate()}<small>주간</small>`;
+  $('dateLabel').innerHTML = `${mon.getMonth()+1}/${mon.getDate()} ~ ${sun.getMonth()+1}/${sun.getDate()}<small>주간 · 좌우로 넘겨보세요</small>`;
   list.innerHTML = `<div style="text-align:center;padding:30px"><span class="spin"></span></div>`;
   const shifts = await fetchRange(ymd(mon), ymd(sun));
   const todayStr = ymd(new Date());
   const groups = (wpFilter==='전체'?WORKPLACES:[wpFilter]);
-  let html='';
+  let cols='';
   for(let i=0;i<7;i++){
     const day=new Date(mon); day.setDate(day.getDate()+i); const ds=ymd(day);
     const dayShifts = shifts.filter(s=>s.work_date===ds);
     const memo = dayShifts.find(r=>r.memo)?.memo;
     const isToday = ds===todayStr, weekend=(day.getDay()===0||day.getDay()===6);
-    let inner='';
-    if(dayShifts.length===0){ inner = `<div class="dh-off">휴무 · 근무 없음</div>`; }
+    let body='';
+    if(dayShifts.length===0){ body = `<div class="dcol-off">휴무</div>`; }
     else groups.forEach(wp=>{
       const rows=dayShifts.filter(s=>s.workplace===wp); if(rows.length===0) return;
       const names=rows.filter(s=>s.staff_name).map(s=>esc(s.staff_name));
       const open=rows.length-names.length;
-      const items=names.map(n=>`<div>${n}</div>`).join('')+(open>0?`<div class="op">모집중 ${open}</div>`:'');
-      inner += `<div class="wline"><span class="wn"><span class="wp-dot ${wp}"></span>${wp}</span><span class="wpeople">${items||'<div class="op">모집중</div>'}</span></div>`;
+      const nm=names.map(n=>`<div class="nm">${n}</div>`).join('')+(open>0?`<div class="nm op">모집중 ${open}</div>`:'');
+      body += `<div class="wpgrp"><div class="wpgrp-h"><span class="wp-dot ${wp}"></span>${wp}</div>${nm||'<div class="nm op">모집중</div>'}</div>`;
     });
-    html += `<div class="daycard${isToday?' today':''}${weekend?' weekend':''}" data-goday="${ds}">
-      <div class="dh"><span class="dh-d">${day.getMonth()+1}/${day.getDate()} (${DAYS[day.getDay()]})</span>
-      ${isToday?'<span class="dh-today">오늘</span>':''}${memo?`<span class="dh-ev">${esc(memo)}</span>`:''}</div>
-      ${inner}</div>`;
+    cols += `<div class="daycol${isToday?' today':''}" data-goday="${ds}">
+      <div class="dcol-h${weekend?' weekend':''}"><div class="dow">${DAYS[day.getDay()]}</div>${day.getMonth()+1}/${day.getDate()}${isToday?' <span class="tdy">오늘</span>':''}${memo?`<div class="dcol-ev">${esc(memo)}</div>`:''}</div>
+      ${body}</div>`;
   }
-  list.innerHTML = html;
+  list.innerHTML = `<div class="weekgrid">${cols}</div>`;
   list.querySelectorAll('[data-goday]').forEach(c=>c.onclick=()=>{
     selectedDate=new Date(c.dataset.goday+'T00:00:00'); viewMode='day';
     $('viewSeg').querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.v==='day'));
