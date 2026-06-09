@@ -73,7 +73,7 @@ body{
 .dcol-h .dow{font-size:18px;line-height:1.2}
 .dcol-h.weekend .dow{color:var(--pink)}
 .dcol-h .tdy{display:inline-block;color:#fff;background:var(--violet2);font-size:9.5px;font-weight:900;padding:1px 6px;border-radius:99px;margin-left:3px}
-.dcol-ev{margin-top:4px;font-size:9.5px;font-weight:800;color:#ea580c;background:#fff7ed;padding:2px 6px;border-radius:99px;display:inline-block;line-height:1.3}
+.dcol-ev{display:block;margin:4px auto 0;font-size:9.5px;font-weight:800;color:#ea580c;background:#fff7ed;padding:2px 6px;border-radius:99px;line-height:1.3;width:fit-content}
 .dcol-body{flex:1;overflow-y:auto}
 .wpgrp{margin-bottom:7px}
 .wpgrp:last-child{margin-bottom:0}
@@ -192,17 +192,16 @@ async function renderDay(){
   const groups = (wpFilter==='전체'?WORKPLACES:[wpFilter]);
   let html='', total=0;
   groups.forEach(wp=>{
-    const rows = shifts.filter(s=>s.workplace===wp); total+=rows.length;
+    const rows = shifts.filter(s=>s.workplace===wp);
+    const named = rows.filter(s=>s.staff_name); total+=named.length;
     const memo = rows.find(r=>r.memo)?.memo;
-    html += `<div class="wp-sec"><div class="wp-h"><span class="wp-dot ${wp}"></span><span class="wp-name">${wp}</span><span class="wp-count">${rows.length}명</span></div>`;
-    if(rows.length===0){ html += `<div class="none">오늘 근무 없음</div>`; }
+    html += `<div class="wp-sec"><div class="wp-h"><span class="wp-dot ${wp}"></span><span class="wp-name">${wp}</span><span class="wp-count">${named.length}명</span></div>`;
+    if(named.length===0){ html += `<div class="none">근무 없음</div>`; }
     else {
-      const tags = rows.map(s=> s.staff_name
-        ? `<span class="tag">${esc(s.staff_name)}</span>`
-        : `<span class="tag open">모집중</span>`).join('');
+      const tags = named.map(s=>`<span class="tag">${esc(s.staff_name)}</span>`).join('');
       html += `<div class="names">${tags}</div>`;
-      if(memo) html += `<div class="memo-row">📝 ${esc(memo)}</div>`;
     }
+    if(memo) html += `<div class="memo-row">📝 ${esc(memo)}</div>`;
     html += `</div>`;
   });
   $('list').innerHTML = total===0
@@ -224,14 +223,13 @@ async function renderWeek(){
     const memo = dayShifts.find(r=>r.memo)?.memo;
     const isToday = ds===todayStr, weekend = (day.getDay()===0||day.getDay()===6);
     let body=''; const multi=groups.length>1;
-    if(dayShifts.length===0){ body = `<div class="dcol-off">휴무</div>`; }
-    else groups.forEach(wp=>{
-      const rows=dayShifts.filter(s=>s.workplace===wp); if(rows.length===0) return;
-      const names=rows.filter(s=>s.staff_name).map(s=>esc(s.staff_name));
-      const open=rows.length-names.length;
-      const nm = names.map(n=>`<div class="nm">${n}</div>`).join('') + (open>0?`<div class="nm op">모집중 ${open}</div>`:'');
-      body += `<div class="wpgrp">${multi?`<div class="wpgrp-h"><span class="wp-dot ${wp}"></span>${wp}</div>`:''}${nm||'<div class="nm op">모집중</div>'}</div>`;
+    groups.forEach(wp=>{
+      const names=dayShifts.filter(s=>s.workplace===wp&&s.staff_name).map(s=>esc(s.staff_name));
+      if(names.length===0) return;
+      const nm = names.map(n=>`<div class="nm">${n}</div>`).join('');
+      body += `<div class="wpgrp">${multi?`<div class="wpgrp-h"><span class="wp-dot ${wp}"></span>${wp}</div>`:''}${nm}</div>`;
     });
+    if(!body) body = `<div class="dcol-off">휴무</div>`;
     cols += `<div class="daycol${isToday?' today':''}" data-goday="${ds}">
       <div class="dcol-h${weekend?' weekend':''}"><div class="dow">${DAYS[day.getDay()]}</div>${day.getMonth()+1}/${day.getDate()}${isToday?' <span class="tdy">오늘</span>':''}${memo?`<div class="dcol-ev">${esc(memo)}</div>`:''}</div>
       <div class="dcol-body">${body}</div></div>`;
