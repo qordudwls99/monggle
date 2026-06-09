@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
 <title>출근 시프트 · 직원용</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;-webkit-font-smoothing:antialiased}
@@ -152,7 +152,7 @@ body{
 .form-card{background:var(--card);border-radius:18px;padding:16px;margin-bottom:14px;box-shadow:0 12px 28px -16px rgba(80,50,150,.35)}
 .form-card .fc-t{font-weight:900;font-size:15px;color:var(--ink);margin-bottom:13px}
 label.fl{display:block;font-size:12px;font-weight:800;color:var(--ink2);margin:0 0 5px 2px}
-.fld{width:100%;background:#f6f3ff;border:1px solid #ede9fe;border-radius:12px;padding:11px 13px;font-size:14px;outline:none;font-family:inherit;color:var(--ink);margin-bottom:11px}
+.fld{width:100%;background:#f6f3ff;border:1px solid #ede9fe;border-radius:12px;padding:11px 13px;font-size:16px;outline:none;font-family:inherit;color:var(--ink);margin-bottom:11px}
 .fld:focus{border-color:var(--violet2);background:#fff}
 .frow{display:flex;gap:9px}.frow>*{flex:1}
 select.fld{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%23a99ec9' d='M6 8 0 0h12z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center}
@@ -307,7 +307,7 @@ select.fld{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns
           <div class="fc-t">👤 스태프 추가</div>
           <div class="frow">
             <div><label class="fl">이름</label><input type="text" class="fld" id="as-name" placeholder="이름"></div>
-            <div><label class="fl">PIN (4자리)</label><input type="text" class="fld" id="as-pin" inputmode="numeric" maxlength="6" placeholder="0000"></div>
+            <div><label class="fl">PIN (6자리)</label><input type="text" class="fld" id="as-pin" inputmode="numeric" maxlength="6" placeholder="000000"></div>
           </div>
           <label class="fl">관리자 권한</label>
           <select class="fld" id="as-admin"><option value="false">일반</option><option value="true">관리자</option></select>
@@ -483,7 +483,7 @@ async function doLogin(){
   const name = $('loginName').value.trim(), pin = $('loginPin').value.trim();
   if(!pin){ toast('PIN을 입력하세요', true); return; }
   const { data, error } = await supa.rpc('staff_login', { p_name:name, p_pin:pin });
-  if(error){ toast('로그인 실패: '+error.message, true); return; }
+  if(error){ toast(error.message.replace(/^.*?:\s*/,'') || '로그인 실패', true); return; }
   if(!data || data.length===0){ toast('이름 또는 PIN이 올바르지 않아요', true); return; }
   const me = data[0];
   session = { id:me.id, name:me.name, is_admin:me.is_admin, pin };
@@ -768,7 +768,7 @@ async function renderSwaps(){
     if(mineReq){
       act = `<button class="btn warn full" data-act="cancel" data-id="${s.id}">내 요청 취소하기</button>`;
     } else {
-      act = `<button class="btn primary full" data-act="accept" data-id="${s.id}">🙌 대타 설게요</button>`;
+      act = `<button class="btn primary full" data-act="accept" data-id="${s.id}" data-when="${when}" data-wp="${esc(s.workplace)}">🙌 대타 설게요</button>`;
     }
     return `<div class="swap">
       <div class="swap-top"><span class="swap-wp ${s.workplace}">${esc(s.workplace)}</span><span class="swap-when">${when}</span></div>
@@ -778,6 +778,7 @@ async function renderSwaps(){
   }).join('');
   list.querySelectorAll('[data-act="accept"]').forEach(b=>b.onclick=()=>{
     if(!session){ openLogin(); return; }
+    if(!confirm(`【${b.dataset.wp}】 ${b.dataset.when} 근무\n\n이 날 정말 대타를 서시겠어요?`)) return;
     rpc('accept_sub', { p_staff_id:session.id, p_request_id:Number(b.dataset.id) }, '대타를 맡았어요! 고마워요 🙌');
   });
   list.querySelectorAll('[data-act="cancel"]').forEach(b=>b.onclick=()=>
@@ -852,6 +853,7 @@ function renderStaffList(){
       <button class="mname mname-btn" data-rename="${s.id}" data-cur="${esc(s.name)}">${esc(s.name)}</button>
       ${s.is_admin?'<span class="madmin">★관리자</span>':''}
       ${s.has_pin===false?'<span class="mwp" style="background:#fff7ed;color:#ea580c">PIN없음</span>':''}
+      ${s.locked?`<span class="mwp" style="background:#fee2e2;color:#b91c1c">🔒잠김</span><button class="btn warn" data-unlock="${s.id}">잠금해제</button>`:''}
       <button class="btn ghost" data-ig="${s.id}">IG</button>
       ${s.id!==session.id?`<button class="btn ghost" data-role="${s.id}" data-admin="${s.is_admin?1:0}">${s.is_admin?'일반으로':'관리자로'}</button>`:''}
       <button class="btn ghost" data-pin="${s.id}">PIN</button>
@@ -860,6 +862,10 @@ function renderStaffList(){
   mng.querySelectorAll('[data-rename]').forEach(b=>b.onclick=async()=>{
     const nm=prompt('새 이름:', b.dataset.cur||''); if(nm===null||!nm.trim()) return;
     const ok = await rpc('admin_rename_staff', { p_admin_id:session.id, p_target_id:Number(b.dataset.rename), p_name:nm.trim() }, '이름을 변경했어요');
+    if(ok) await loadDirectory();
+  });
+  mng.querySelectorAll('[data-unlock]').forEach(b=>b.onclick=async()=>{
+    const ok = await rpc('admin_unlock_staff', { p_admin_id:session.id, p_target_id:Number(b.dataset.unlock) }, '잠금을 해제했어요');
     if(ok) await loadDirectory();
   });
   mng.querySelectorAll('[data-ig]').forEach(b=>b.onclick=async()=>{
@@ -872,7 +878,8 @@ function renderStaffList(){
     if(ok) await loadDirectory();
   });
   mng.querySelectorAll('[data-pin]').forEach(b=>b.onclick=async()=>{
-    const np=prompt('새 PIN을 입력하세요 (지우려면 비워두기):'); if(np===null) return;
+    const np=prompt('새 PIN 6자리 숫자 (지우려면 비워두기):'); if(np===null) return;
+    if(np.trim() && !/^\d{6}$/.test(np.trim())){ toast('PIN은 6자리 숫자로 입력하세요', true); return; }
     const ok = await rpc('admin_set_pin', { p_admin_id:session.id, p_target_id:Number(b.dataset.pin), p_new_pin:np.trim() }, 'PIN을 설정했어요');
     if(ok) await loadDirectory();
   });
@@ -905,6 +912,7 @@ async function addStaff(){
   const name=$('as-name').value.trim(), pin=$('as-pin').value.trim();
   const isAdmin=$('as-admin').value==='true';
   if(!name){ toast('이름을 입력하세요', true); return; }
+  if(pin && !/^\d{6}$/.test(pin)){ toast('PIN은 6자리 숫자로 입력하세요', true); return; }
   const ok = await rpc('admin_add_staff', {
     p_admin_id:session.id, p_name:name, p_new_pin:pin, p_is_admin:isAdmin
   }, '스태프를 추가했어요 👤');

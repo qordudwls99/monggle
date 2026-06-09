@@ -330,3 +330,81 @@ grant execute on function
   admin_approve_application, admin_reject_application,
   admin_rename_staff, set_my_instagram, my_instagram
 to anon, authenticated;
+
+-- ============================================================
+--  v5) 6자리 PIN + 로그인 실패 잠금
+-- ============================================================
+alter table staff add column if not exists failed_attempts int not null default 0;
+alter table staff add column if not exists locked boolean not null default false;
+
+-- 로그인: 잠금/실패횟수 처리 (5회 실패 시 잠금)
+create or replace function staff_login(p_name text, p_pin text)
+returns table(id bigint, name text, is_admin boolean)
+language plpgsql security definer set search_path = public as $$
+declare s staff;
+begin
+  select * into s from staff where staff.name = p_name;
+  if s.id is null then return; end if;                 -- 이름 없음 → 빈 결과
+  if s.locked then
+    raise exception '계정이 잠겼어요. 관리자에게 문의하세요.'; end if;
+  if s.pin is not null and s.pin = p_pin then
+    update staff set failed_attempts = 0 where staff.id = s.id;
+    return query select s.id, s.name, s.is_admin;
+  else
+    update staff set failed_attempts = s.failed_attempts + 1,
+                     locked = (s.failed_attempts + 1 >= 5)
+      where staff.id = s.id;
+    if s.failed_attempts + 1 >= 5 then
+      raise exception '5회 틀려 계정이 잠겼어요. 관리자에게 문의하세요.';
+    else
+      raise exception 'PIN이 틀렸어요. (남은 시도 %회)', 5 - (s.failed_attempts + 1);
+    end if;
+  end if;
+end; $$;
+
+-- 이름 목록에 잠금 상태 포함
+drop function if exists staff_directory();
+create function staff_directory()
+returns table(id bigint, name text, is_admin boolean, has_pin boolean, locked boolean)
+language sql security definer set search_path = public as $$
+  select id, name, is_admin, (pin is not null) as has_pin, coalesce(locked,false) as locked
+  from staff order by name;
+$$;
+
+-- 관리자: 잠금 해제
+create or replace function admin_unlock_staff(p_admin_id bigint, p_pin text, p_target_id bigint)
+returns void language plpgsql security definer set search_path = public as $$
+declare v staff;
+begin
+  v := _verify(p_admin_id, p_pin);
+  if v.id is null or not v.is_admin then raise exception '관리자만 가능합니다'; end if;
+  update staff set locked = false, failed_attempts = 0 where id = p_target_id;
+end; $$;
+
+-- PIN 6자리 강제 (스태프 추가 / PIN 설정)
+create or replace function admin_add_staff(p_admin_id bigint, p_pin text,
+  p_name text, p_new_pin text, p_is_admin boolean default false)
+returns void language plpgsql security definer set search_path = public as $$
+declare v staff; np text;
+begin
+  v := _verify(p_admin_id, p_pin);
+  if v.id is null or not v.is_admin then raise exception '관리자만 가능합니다'; end if;
+  np := nullif(trim(p_new_pin), '');
+  if np is not null and np !~ '^\d{6}$' then raise exception 'PIN은 6자리 숫자로 입력하세요'; end if;
+  insert into staff(name, pin, is_admin) values (p_name, np, p_is_admin);
+end; $$;
+
+create or replace function admin_set_pin(p_admin_id bigint, p_pin text,
+  p_target_id bigint, p_new_pin text)
+returns void language plpgsql security definer set search_path = public as $$
+declare v staff; np text;
+begin
+  v := _verify(p_admin_id, p_pin);
+  if v.id is null or not v.is_admin then raise exception '관리자만 가능합니다'; end if;
+  np := nullif(trim(p_new_pin), '');
+  if np is not null and np !~ '^\d{6}$' then raise exception 'PIN은 6자리 숫자로 입력하세요'; end if;
+  update staff set pin = np where id = p_target_id;
+end; $$;
+
+grant execute on function staff_login, staff_directory, admin_unlock_staff,
+  admin_add_staff, admin_set_pin to anon, authenticated;
