@@ -49,6 +49,9 @@ body{
 .seg{display:flex;background:rgba(255,255,255,.45);border-radius:99px;padding:4px;margin-bottom:11px}
 .seg button{flex:1;border:none;cursor:pointer;font-family:inherit;font-weight:800;font-size:13px;padding:8px 0;border-radius:99px;background:none;color:rgba(255,255,255,.92);transition:.15s}
 .seg button.on{background:#fff;color:var(--violet);box-shadow:0 6px 14px -7px rgba(80,40,150,.5)}
+#af-kind{background:#f3effb}
+#af-kind button{color:var(--ink2)}
+#af-kind button.on{background:#fff;color:var(--violet)}
 
 /* week view — 4(위)+3(아래) 그리드, 화면 꽉 차게 */
 .weekgrid{display:grid;grid-template-columns:repeat(4,1fr);grid-auto-rows:1fr;gap:8px;min-height:calc(100dvh - 290px)}
@@ -65,6 +68,7 @@ body{
 .wpgrp-h{display:flex;align-items:center;justify-content:center;gap:3px;font-size:10px;font-weight:900;color:var(--ink2);margin-bottom:4px}
 .wpgrp .nm{font-size:13.5px;font-weight:700;color:var(--ink);padding:5px 2px;text-align:center;background:#f6f3ff;border-radius:9px;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .wpgrp .nm.op{background:none;color:#94a3b8;font-weight:600;font-size:11.5px}
+.wpgrp .nm.guest{background:#fef3c7;color:#b45309}
 .dcol-off{text-align:center;font-size:12px;color:var(--muted);font-weight:700;padding:14px 0}
 
 /* date bar */
@@ -103,6 +107,7 @@ body{
 .badge.seek{background:#fff7ed;color:#ea580c}
 .badge.empty{background:#f1f5f9;color:#64748b}
 .badge.me{background:#ede9fe;color:var(--violet)}
+.badge.guest{background:#fef3c7;color:#b45309}
 .s-memo{font-size:12px;color:var(--ink2);margin-top:7px;padding-top:7px;border-top:1px dashed #eee6fb}
 .s-acts{display:flex;gap:7px;margin-top:11px}
 .btn{border:none;cursor:pointer;font-family:inherit;font-weight:800;font-size:12.5px;padding:9px 14px;border-radius:12px;transition:transform .1s}
@@ -270,22 +275,22 @@ select.fld{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns
           <div class="fc-t">➕ 근무 추가</div>
           <label class="fl">날짜</label>
           <input type="date" class="fld" id="af-date">
-          <div class="frow">
-            <div>
-              <label class="fl">근무지</label>
-              <select class="fld" id="af-wp"><option>메이드</option><option>데빌</option><option>마츠리</option></select>
-            </div>
-            <div>
-              <label class="fl">담당 (선택)</label>
-              <select class="fld" id="af-staff"></select>
-            </div>
+          <label class="fl">근무지</label>
+          <select class="fld" id="af-wp"><option>메이드</option><option>데빌</option><option>마츠리</option></select>
+          <label class="fl">담당</label>
+          <div class="seg" id="af-kind" style="margin-bottom:11px">
+            <button type="button" class="on" data-k="staff">직원</button>
+            <button type="button" data-k="guest">게스트</button>
+            <button type="button" data-k="open">빈 자리</button>
           </div>
+          <select class="fld" id="af-staff"></select>
+          <input type="text" class="fld" id="af-guest" placeholder="게스트 이름" style="display:none">
           <div class="frow">
             <div><label class="fl">시작</label><input type="time" class="fld" id="af-start" value="18:00"></div>
             <div><label class="fl">종료</label><input type="time" class="fld" id="af-end" value="23:00"></div>
           </div>
-          <label class="fl">메모 (선택)</label>
-          <input type="text" class="fld" id="af-memo" placeholder="예: 신메뉴 행사일">
+          <label class="fl">메모/이벤트 (선택)</label>
+          <input type="text" class="fld" id="af-memo" placeholder="예: 스포츠데이">
           <button class="btn primary full" id="addShiftBtn">근무 추가하기</button>
         </div>
 
@@ -295,21 +300,14 @@ select.fld{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns
             <div><label class="fl">이름</label><input type="text" class="fld" id="as-name" placeholder="이름"></div>
             <div><label class="fl">PIN (4자리)</label><input type="text" class="fld" id="as-pin" inputmode="numeric" maxlength="6" placeholder="0000"></div>
           </div>
-          <div class="frow">
-            <div>
-              <label class="fl">근무지</label>
-              <select class="fld" id="as-wp"><option>메이드</option><option>데빌</option><option>마츠리</option></select>
-            </div>
-            <div>
-              <label class="fl">관리자 권한</label>
-              <select class="fld" id="as-admin"><option value="false">일반</option><option value="true">관리자</option></select>
-            </div>
-          </div>
+          <label class="fl">관리자 권한</label>
+          <select class="fld" id="as-admin"><option value="false">일반</option><option value="true">관리자</option></select>
           <button class="btn primary full" id="addStaffBtn">스태프 추가하기</button>
         </div>
 
         <div class="form-card">
           <div class="fc-t">👥 스태프 목록</div>
+          <input type="text" class="fld" id="staffSearch" placeholder="🔍 이름 검색">
           <div id="staffMng"></div>
         </div>
       </div>
@@ -440,7 +438,7 @@ async function rpc(fn, args, okMsg){
 
 /* ---------- 로그인 ---------- */
 function fillLoginNames(){
-  $('loginName').innerHTML = staffList.map(s=>`<option value="${esc(s.name)}">${esc(s.name)} · ${esc(s.workplace)}</option>`).join('');
+  $('loginName').innerHTML = staffList.map(s=>`<option value="${esc(s.name)}">${esc(s.name)}</option>`).join('');
 }
 function openLogin(){ $('loginModal').classList.add('show'); }
 function closeLogin(){ $('loginModal').classList.remove('show'); $('loginPin').value=''; }
@@ -451,7 +449,7 @@ async function doLogin(){
   if(error){ toast('로그인 실패: '+error.message, true); return; }
   if(!data || data.length===0){ toast('이름 또는 PIN이 올바르지 않아요', true); return; }
   const me = data[0];
-  session = { id:me.id, name:me.name, workplace:me.workplace, is_admin:me.is_admin, pin };
+  session = { id:me.id, name:me.name, is_admin:me.is_admin, pin };
   localStorage.setItem('shift_session', JSON.stringify(session));
   closeLogin();
   renderWho();
@@ -528,9 +526,9 @@ async function renderWeek(){
     if(dayShifts.length===0){ body = `<div class="dcol-off">휴무</div>`; }
     else groups.forEach(wp=>{
       const rows=dayShifts.filter(s=>s.workplace===wp); if(rows.length===0) return;
-      const names=rows.filter(s=>s.staff_name).map(s=>esc(s.staff_name));
-      const open=rows.length-names.length;
-      const nm=names.map(n=>`<div class="nm">${n}</div>`).join('')+(open>0?`<div class="nm op">모집중 ${open}</div>`:'');
+      const filled=rows.filter(s=>s.display_name||s.staff_name);
+      const open=rows.length-filled.length;
+      const nm=filled.map(s=>`<div class="nm${s.is_guest?' guest':''}">${esc(s.display_name||s.staff_name)}</div>`).join('')+(open>0?`<div class="nm op">모집중 ${open}</div>`:'');
       body += `<div class="wpgrp">${multi?`<div class="wpgrp-h"><span class="wp-dot ${wp}"></span>${wp}</div>`:''}${nm||'<div class="nm op">모집중</div>'}</div>`;
     });
     cols += `<div class="daycol${isToday?' today':''}" data-goday="${ds}">
@@ -556,7 +554,9 @@ async function renderDay(){
   groups.forEach(wp=>{
     const rows = shifts.filter(s=>s.workplace===wp);
     total += rows.length;
-    html += `<div class="wp-sec"><div class="wp-h"><span class="wp-dot ${wp}"></span><span class="wp-name">${wp}</span><span class="wp-count">${rows.length}명</span></div>`;
+    const ev = rows.find(r=>r.memo)?.memo;
+    const evBtn = (session&&session.is_admin) ? `<button class="btn ghost" data-ev="${wp}" data-cur="${esc(ev||'')}" style="padding:4px 9px;font-size:11px">📝 이벤트${ev?'':'+'}</button>` : '';
+    html += `<div class="wp-sec"><div class="wp-h"><span class="wp-dot ${wp}"></span><span class="wp-name">${wp}</span>${ev?`<span class="badge" style="background:#fff7ed;color:#ea580c">${esc(ev)}</span>`:''}<span class="wp-count" style="margin-left:auto">${rows.length}명</span>${evBtn}</div>`;
     if(rows.length===0){
       html += `<div class="card" style="text-align:center;color:var(--muted);font-weight:700;font-size:13px">근무 없음</div>`;
     } else {
@@ -570,12 +570,20 @@ async function renderDay(){
   }
   list.innerHTML = html;
   bindShiftCards(list);
+  list.querySelectorAll('[data-ev]').forEach(b=>b.onclick=async()=>{
+    const cur=b.dataset.cur||'';
+    const ev=prompt('이 날의 이벤트 이름 (지우려면 비워두기):', cur); if(ev===null) return;
+    await rpc('admin_set_day_event', { p_admin_id:session.id, p_date:ymd(selectedDate), p_workplace:b.dataset.ev, p_event:ev.trim() }, ev.trim()?'이벤트를 저장했어요':'이벤트를 지웠어요');
+  });
 }
 function shiftCard(s){
   const mine = session && s.staff_id===session.id;
   let nameHtml, badge='', acts='';
   if(s.staff_id){
     nameHtml = `<span class="s-name">${esc(s.staff_name)}</span>`;
+  } else if(s.guest_name){
+    nameHtml = `<span class="s-name">${esc(s.guest_name)}</span>`;
+    badge = `<span class="badge guest">게스트</span>`;
   } else {
     nameHtml = `<span class="s-name empty">모집중 · 빈 자리</span>`;
     badge = `<span class="badge empty">🈳 빈 자리</span>`;
@@ -586,7 +594,7 @@ function shiftCard(s){
   // 액션 버튼
   const btns=[];
   if(session){
-    if(!s.staff_id){
+    if(!s.staff_id && !s.guest_name){
       btns.push(`<button class="btn ghost" data-act="claim" data-id="${s.id}">이 자리 설게요</button>`);
     } else if(mine && s.status==='confirmed'){
       btns.push(`<button class="btn ghost" data-act="seek" data-id="${s.id}" data-info="${esc(s.workplace+' '+s.start_time+'~'+s.end_time)}">대타 구하기</button>`);
@@ -705,17 +713,22 @@ async function renderMine(){
 function fillAdminStaffSelect(){
   const sel = $('af-staff');
   if(sel) sel.innerHTML = `<option value="">— 비워두기(모집중) —</option>` +
-    staffList.map(s=>`<option value="${s.id}">${esc(s.name)} · ${esc(s.workplace)}</option>`).join('');
+    staffList.map(s=>`<option value="${s.id}">${esc(s.name)}</option>`).join('');
 }
 function renderAdmin(){
   if(!(session && session.is_admin)) return;
   if(!$('af-date').value) $('af-date').value = ymd(selectedDate);
+  renderStaffList();
+}
+function renderStaffList(){
   const mng = $('staffMng');
-  mng.innerHTML = staffList.map(s=>`
+  const q = ($('staffSearch')?.value||'').trim().toLowerCase();
+  const list = q ? staffList.filter(s=>s.name.toLowerCase().includes(q)) : staffList;
+  if(list.length===0){ mng.innerHTML = `<div style="font-size:13px;color:var(--muted);font-weight:700;padding:8px 0">검색 결과 없음</div>`; return; }
+  mng.innerHTML = list.map(s=>`
     <div class="mng">
       <span class="mname">${esc(s.name)}</span>
       ${s.is_admin?'<span class="madmin">★관리자</span>':''}
-      <span class="mwp">${esc(s.workplace)}</span>
       ${s.has_pin===false?'<span class="mwp" style="background:#fff7ed;color:#ea580c">PIN없음</span>':''}
       <button class="btn ghost" data-pin="${s.id}">PIN</button>
       ${s.id!==session.id?`<button class="btn warn" data-del-staff="${s.id}">삭제</button>`:''}
@@ -731,22 +744,31 @@ function renderAdmin(){
     if(ok) await loadDirectory();
   });
 }
+function setAfKind(k){
+  document.querySelectorAll('#af-kind button').forEach(b=>b.classList.toggle('on', b.dataset.k===k));
+  $('af-staff').style.display = k==='staff' ? 'block':'none';
+  $('af-guest').style.display = k==='guest' ? 'block':'none';
+}
 async function addShift(){
   const date=$('af-date').value, wp=$('af-wp').value, start=$('af-start').value, end=$('af-end').value;
-  const assignee=$('af-staff').value, memo=$('af-memo').value.trim();
+  const kind=document.querySelector('#af-kind button.on')?.dataset.k||'staff';
+  const memo=$('af-memo').value.trim();
   if(!date||!start||!end){ toast('날짜와 시간을 입력하세요', true); return; }
+  let assignee=null, guest=null;
+  if(kind==='staff'){ assignee=$('af-staff').value?Number($('af-staff').value):null; }
+  else if(kind==='guest'){ guest=$('af-guest').value.trim(); if(!guest){ toast('게스트 이름을 입력하세요',true); return; } }
   const ok = await rpc('admin_add_shift', {
     p_admin_id:session.id, p_work_date:date, p_workplace:wp,
-    p_start:start, p_end:end, p_assignee:assignee?Number(assignee):null, p_memo:memo||null
+    p_start:start, p_end:end, p_assignee:assignee, p_memo:memo||null, p_guest:guest
   }, '근무를 추가했어요 ✨');
-  if(ok){ $('af-memo').value=''; }
+  if(ok){ $('af-memo').value=''; $('af-guest').value=''; }
 }
 async function addStaff(){
   const name=$('as-name').value.trim(), pin=$('as-pin').value.trim();
-  const wp=$('as-wp').value, isAdmin=$('as-admin').value==='true';
-  if(!name||!pin){ toast('이름과 PIN을 입력하세요', true); return; }
+  const isAdmin=$('as-admin').value==='true';
+  if(!name){ toast('이름을 입력하세요', true); return; }
   const ok = await rpc('admin_add_staff', {
-    p_admin_id:session.id, p_name:name, p_new_pin:pin, p_workplace:wp, p_is_admin:isAdmin
+    p_admin_id:session.id, p_name:name, p_new_pin:pin, p_is_admin:isAdmin
   }, '스태프를 추가했어요 👤');
   if(ok){ $('as-name').value=''; $('as-pin').value=''; await loadDirectory(); }
 }
@@ -857,6 +879,8 @@ function wireUI(){
   $('subClose').onclick = closeSubModal;
   $('addShiftBtn').onclick = addShift;
   $('addStaffBtn').onclick = addStaff;
+  $('staffSearch').oninput = renderStaffList;
+  document.querySelectorAll('#af-kind button').forEach(b=>b.onclick=()=>setAfKind(b.dataset.k));
   $('imp-file').onchange = onImpFile;
   $('impPreviewBtn').onclick = previewImport;
   $('impRunBtn').onclick = runImport;

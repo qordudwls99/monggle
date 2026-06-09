@@ -62,6 +62,7 @@ body{
 .names{background:var(--card);border-radius:18px;padding:14px 15px;box-shadow:0 12px 28px -16px rgba(80,50,150,.35),0 2px 5px rgba(80,50,150,.05);display:flex;flex-wrap:wrap;gap:8px}
 .tag{background:#f3effb;color:var(--ink);font-weight:800;font-size:14px;padding:7px 13px;border-radius:12px}
 .tag.open{background:#f1f5f9;color:#64748b;font-weight:700}
+.tag.guest{background:#fef3c7;color:#b45309}.tag.guest::after{content:' · 게스트';font-size:10px;opacity:.8}
 .memo-row{font-size:12px;color:var(--ink2);margin:8px 2px 0}
 .none{text-align:center;color:var(--muted);font-weight:700;font-size:13px;background:var(--card);border-radius:18px;padding:14px}
 
@@ -80,6 +81,7 @@ body{
 .wpgrp-h{display:flex;align-items:center;justify-content:center;gap:3px;font-size:10px;font-weight:900;color:var(--ink2);margin-bottom:4px}
 .wpgrp .nm{font-size:13.5px;font-weight:700;color:var(--ink);padding:5px 2px;text-align:center;background:#f6f3ff;border-radius:9px;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .wpgrp .nm.op{background:none;color:#94a3b8;font-weight:600;font-size:11.5px}
+.wpgrp .nm.guest{background:#fef3c7;color:#b45309}
 .dcol-off{text-align:center;font-size:12px;color:var(--muted);font-weight:700;padding:14px 0}
 
 .empty-box{text-align:center;padding:44px 20px;color:#fff}
@@ -193,12 +195,12 @@ async function renderDay(){
   let html='', total=0;
   groups.forEach(wp=>{
     const rows = shifts.filter(s=>s.workplace===wp);
-    const named = rows.filter(s=>s.staff_name); total+=named.length;
+    const named = rows.filter(s=>s.display_name||s.staff_name); total+=named.length;
     const memo = rows.find(r=>r.memo)?.memo;
     html += `<div class="wp-sec"><div class="wp-h"><span class="wp-dot ${wp}"></span><span class="wp-name">${wp}</span><span class="wp-count">${named.length}명</span></div>`;
     if(named.length===0){ html += `<div class="none">근무 없음</div>`; }
     else {
-      const tags = named.map(s=>`<span class="tag">${esc(s.staff_name)}</span>`).join('');
+      const tags = named.map(s=>`<span class="tag${s.is_guest?' guest':''}">${esc(s.display_name||s.staff_name)}</span>`).join('');
       html += `<div class="names">${tags}</div>`;
     }
     if(memo) html += `<div class="memo-row">📝 ${esc(memo)}</div>`;
@@ -224,9 +226,9 @@ async function renderWeek(){
     const isToday = ds===todayStr, weekend = (day.getDay()===0||day.getDay()===6);
     let body=''; const multi=groups.length>1;
     groups.forEach(wp=>{
-      const names=dayShifts.filter(s=>s.workplace===wp&&s.staff_name).map(s=>esc(s.staff_name));
-      if(names.length===0) return;
-      const nm = names.map(n=>`<div class="nm">${n}</div>`).join('');
+      const filled=dayShifts.filter(s=>s.workplace===wp&&(s.display_name||s.staff_name));
+      if(filled.length===0) return;
+      const nm = filled.map(s=>`<div class="nm${s.is_guest?' guest':''}">${esc(s.display_name||s.staff_name)}</div>`).join('');
       body += `<div class="wpgrp">${multi?`<div class="wpgrp-h"><span class="wp-dot ${wp}"></span>${wp}</div>`:''}${nm}</div>`;
     });
     if(!body) body = `<div class="dcol-off">휴무</div>`;
