@@ -65,21 +65,22 @@ body{
 .memo-row{font-size:12px;color:var(--ink2);margin:8px 2px 0}
 .none{text-align:center;color:var(--muted);font-weight:700;font-size:13px;background:var(--card);border-radius:18px;padding:14px}
 
-/* week view — 4(위)+3(아래) 그리드, 한 화면에 */
-.weekgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
-.daycol{background:var(--card);border-radius:13px;padding:7px 5px;box-shadow:0 10px 22px -16px rgba(80,50,150,.4),0 2px 4px rgba(80,50,150,.05);cursor:pointer;min-width:0}
-.daycol.today{outline:2px solid var(--violet2)}
-.dcol-h{text-align:center;font-weight:900;font-size:10.5px;color:var(--ink);margin-bottom:6px;padding-bottom:5px;border-bottom:1px solid #f3effb;line-height:1.25}
-.dcol-h .dow{font-size:14px;line-height:1.2}
+/* week view — 4(위)+3(아래) 그리드, 화면 꽉 차게 */
+.weekgrid{display:grid;grid-template-columns:repeat(4,1fr);grid-auto-rows:1fr;gap:8px;min-height:calc(100dvh - 235px)}
+.daycol{background:var(--card);border-radius:16px;padding:11px 8px;box-shadow:0 12px 26px -16px rgba(80,50,150,.4),0 2px 5px rgba(80,50,150,.05);cursor:pointer;min-width:0;display:flex;flex-direction:column}
+.daycol.today{outline:2.5px solid var(--violet2)}
+.dcol-h{text-align:center;font-weight:900;font-size:12px;color:var(--ink);margin-bottom:9px;padding-bottom:7px;border-bottom:1px solid #f3effb;line-height:1.3}
+.dcol-h .dow{font-size:18px;line-height:1.2}
 .dcol-h.weekend .dow{color:var(--pink)}
-.dcol-h .tdy{display:block;color:var(--violet);font-size:8.5px;font-weight:900}
-.dcol-ev{margin-top:3px;font-size:8.5px;font-weight:800;color:#ea580c;background:#fff7ed;padding:1px 4px;border-radius:99px;display:inline-block;line-height:1.3}
-.wpgrp{margin-bottom:6px}
+.dcol-h .tdy{display:inline-block;color:#fff;background:var(--violet2);font-size:9.5px;font-weight:900;padding:1px 6px;border-radius:99px;margin-left:3px}
+.dcol-ev{margin-top:4px;font-size:9.5px;font-weight:800;color:#ea580c;background:#fff7ed;padding:2px 6px;border-radius:99px;display:inline-block;line-height:1.3}
+.dcol-body{flex:1;overflow-y:auto}
+.wpgrp{margin-bottom:7px}
 .wpgrp:last-child{margin-bottom:0}
-.wpgrp-h{display:flex;align-items:center;justify-content:center;gap:3px;font-size:9px;font-weight:900;color:var(--ink2);margin-bottom:3px}
-.wpgrp .nm{font-size:11.5px;font-weight:700;color:var(--ink);padding:2px 1px;text-align:center;background:#f6f3ff;border-radius:6px;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.wpgrp .nm.op{background:none;color:#94a3b8;font-weight:600;font-size:10px}
-.dcol-off{text-align:center;font-size:10.5px;color:var(--muted);font-weight:700;padding:6px 0}
+.wpgrp-h{display:flex;align-items:center;justify-content:center;gap:3px;font-size:10px;font-weight:900;color:var(--ink2);margin-bottom:4px}
+.wpgrp .nm{font-size:13.5px;font-weight:700;color:var(--ink);padding:5px 2px;text-align:center;background:#f6f3ff;border-radius:9px;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.wpgrp .nm.op{background:none;color:#94a3b8;font-weight:600;font-size:11.5px}
+.dcol-off{text-align:center;font-size:12px;color:var(--muted);font-weight:700;padding:14px 0}
 
 .empty-box{text-align:center;padding:44px 20px;color:#fff}
 .empty-box .e-ic{font-size:46px}
@@ -128,7 +129,6 @@ body{
       <div id="list"></div>
     </div>
 
-    <div class="foot">출근자이신가요? <a href="staff.html">직원용 페이지로 →</a></div>
   </div>
 </div>
 
@@ -234,7 +234,7 @@ async function renderWeek(){
     });
     cols += `<div class="daycol${isToday?' today':''}" data-goday="${ds}">
       <div class="dcol-h${weekend?' weekend':''}"><div class="dow">${DAYS[day.getDay()]}</div>${day.getMonth()+1}/${day.getDate()}${isToday?' <span class="tdy">오늘</span>':''}${memo?`<div class="dcol-ev">${esc(memo)}</div>`:''}</div>
-      ${body}</div>`;
+      <div class="dcol-body">${body}</div></div>`;
   }
   $('list').innerHTML = `<div class="weekgrid">${cols}</div>`;
   $('list').querySelectorAll('[data-goday]').forEach(c=>c.onclick=()=>{

@@ -50,21 +50,22 @@ body{
 .seg button{flex:1;border:none;cursor:pointer;font-family:inherit;font-weight:800;font-size:13px;padding:8px 0;border-radius:99px;background:none;color:rgba(255,255,255,.92);transition:.15s}
 .seg button.on{background:#fff;color:var(--violet);box-shadow:0 6px 14px -7px rgba(80,40,150,.5)}
 
-/* week view — 4(위)+3(아래) 그리드, 한 화면에 */
-.weekgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
-.daycol{background:var(--card);border-radius:13px;padding:7px 5px;box-shadow:0 10px 22px -16px rgba(80,50,150,.4),0 2px 4px rgba(80,50,150,.05);cursor:pointer;min-width:0}
-.daycol.today{outline:2px solid var(--violet2)}
-.dcol-h{text-align:center;font-weight:900;font-size:10.5px;color:var(--ink);margin-bottom:6px;padding-bottom:5px;border-bottom:1px solid #f3effb;line-height:1.25}
-.dcol-h .dow{font-size:14px;line-height:1.2}
+/* week view — 4(위)+3(아래) 그리드, 화면 꽉 차게 */
+.weekgrid{display:grid;grid-template-columns:repeat(4,1fr);grid-auto-rows:1fr;gap:8px;min-height:calc(100dvh - 290px)}
+.daycol{background:var(--card);border-radius:16px;padding:11px 8px;box-shadow:0 12px 26px -16px rgba(80,50,150,.4),0 2px 5px rgba(80,50,150,.05);cursor:pointer;min-width:0;display:flex;flex-direction:column}
+.daycol.today{outline:2.5px solid var(--violet2)}
+.dcol-h{text-align:center;font-weight:900;font-size:12px;color:var(--ink);margin-bottom:9px;padding-bottom:7px;border-bottom:1px solid #f3effb;line-height:1.3}
+.dcol-h .dow{font-size:18px;line-height:1.2}
 .dcol-h.weekend .dow{color:var(--pink)}
-.dcol-h .tdy{display:block;color:var(--violet);font-size:8.5px;font-weight:900}
-.dcol-ev{margin-top:3px;font-size:8.5px;font-weight:800;color:#ea580c;background:#fff7ed;padding:1px 4px;border-radius:99px;display:inline-block;line-height:1.3}
-.wpgrp{margin-bottom:6px}
+.dcol-h .tdy{display:inline-block;color:#fff;background:var(--violet2);font-size:9.5px;font-weight:900;padding:1px 6px;border-radius:99px;margin-left:3px}
+.dcol-ev{margin-top:4px;font-size:9.5px;font-weight:800;color:#ea580c;background:#fff7ed;padding:2px 6px;border-radius:99px;display:inline-block;line-height:1.3}
+.dcol-body{flex:1;overflow-y:auto}
+.wpgrp{margin-bottom:7px}
 .wpgrp:last-child{margin-bottom:0}
-.wpgrp-h{display:flex;align-items:center;justify-content:center;gap:3px;font-size:9px;font-weight:900;color:var(--ink2);margin-bottom:3px}
-.wpgrp .nm{font-size:11.5px;font-weight:700;color:var(--ink);padding:2px 1px;text-align:center;background:#f6f3ff;border-radius:6px;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.wpgrp .nm.op{background:none;color:#94a3b8;font-weight:600;font-size:10px}
-.dcol-off{text-align:center;font-size:10.5px;color:var(--muted);font-weight:700;padding:6px 0}
+.wpgrp-h{display:flex;align-items:center;justify-content:center;gap:3px;font-size:10px;font-weight:900;color:var(--ink2);margin-bottom:4px}
+.wpgrp .nm{font-size:13.5px;font-weight:700;color:var(--ink);padding:5px 2px;text-align:center;background:#f6f3ff;border-radius:9px;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.wpgrp .nm.op{background:none;color:#94a3b8;font-weight:600;font-size:11.5px}
+.dcol-off{text-align:center;font-size:12px;color:var(--muted);font-weight:700;padding:14px 0}
 
 /* date bar */
 .datebar{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px;
@@ -244,6 +245,28 @@ select.fld{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns
         <div class="sec-sub">근무와 스태프를 관리해요.</div>
 
         <div class="form-card">
+          <div class="fc-t">📥 출근 파일 가져오기 (엑셀)</div>
+          <div style="font-size:12px;color:var(--ink2);font-weight:600;margin-bottom:11px;line-height:1.5">엑셀에서 <b>한 탭만</b> 저장한 파일을 올리세요. 날짜·이름을 자동으로 읽어 등록해요.</div>
+          <input type="file" class="fld" id="imp-file" accept=".xlsx,.xls">
+          <div class="frow">
+            <div>
+              <label class="fl">시트(탭)</label>
+              <select class="fld" id="imp-sheet"></select>
+            </div>
+            <div>
+              <label class="fl">근무지</label>
+              <select class="fld" id="imp-wp"><option>메이드</option><option>데빌</option><option>마츠리</option></select>
+            </div>
+          </div>
+          <label style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:700;color:var(--ink2);margin-bottom:11px;cursor:pointer">
+            <input type="checkbox" id="imp-replace" checked style="width:18px;height:18px"> 같은 기간 기존 근무는 지우고 새로 넣기
+          </label>
+          <button class="btn ghost full" id="impPreviewBtn" style="margin-bottom:9px">🔍 미리보기</button>
+          <div id="imp-preview"></div>
+          <button class="btn primary full" id="impRunBtn" style="display:none">✅ 이대로 가져오기</button>
+        </div>
+
+        <div class="form-card">
           <div class="fc-t">➕ 근무 추가</div>
           <label class="fl">날짜</label>
           <input type="date" class="fld" id="af-date">
@@ -324,6 +347,7 @@ select.fld{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns
 
 <script type="module">
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import * as XLSX from 'https://esm.sh/xlsx@0.18.5';
 
 /* ============================================================
    CONFIG · 여기에 Supabase 값을 넣으세요
@@ -511,7 +535,7 @@ async function renderWeek(){
     });
     cols += `<div class="daycol${isToday?' today':''}" data-goday="${ds}">
       <div class="dcol-h${weekend?' weekend':''}"><div class="dow">${DAYS[day.getDay()]}</div>${day.getMonth()+1}/${day.getDate()}${isToday?' <span class="tdy">오늘</span>':''}${memo?`<div class="dcol-ev">${esc(memo)}</div>`:''}</div>
-      ${body}</div>`;
+      <div class="dcol-body">${body}</div></div>`;
   }
   list.innerHTML = `<div class="weekgrid">${cols}</div>`;
   list.querySelectorAll('[data-goday]').forEach(c=>c.onclick=()=>{
@@ -692,8 +716,15 @@ function renderAdmin(){
       <span class="mname">${esc(s.name)}</span>
       ${s.is_admin?'<span class="madmin">★관리자</span>':''}
       <span class="mwp">${esc(s.workplace)}</span>
+      ${s.has_pin===false?'<span class="mwp" style="background:#fff7ed;color:#ea580c">PIN없음</span>':''}
+      <button class="btn ghost" data-pin="${s.id}">PIN</button>
       ${s.id!==session.id?`<button class="btn warn" data-del-staff="${s.id}">삭제</button>`:''}
     </div>`).join('');
+  mng.querySelectorAll('[data-pin]').forEach(b=>b.onclick=async()=>{
+    const np=prompt('새 PIN을 입력하세요 (지우려면 비워두기):'); if(np===null) return;
+    const ok = await rpc('admin_set_pin', { p_admin_id:session.id, p_target_id:Number(b.dataset.pin), p_new_pin:np.trim() }, 'PIN을 설정했어요');
+    if(ok) await loadDirectory();
+  });
   mng.querySelectorAll('[data-del-staff]').forEach(b=>b.onclick=async()=>{
     if(!confirm('이 스태프를 삭제할까요? 배정된 근무는 빈 자리가 됩니다.')) return;
     const ok = await rpc('admin_delete_staff', { p_admin_id:session.id, p_target_id:Number(b.dataset.delStaff) }, '삭제했어요');
@@ -720,6 +751,90 @@ async function addStaff(){
   if(ok){ $('as-name').value=''; $('as-pin').value=''; await loadDirectory(); }
 }
 
+/* ---------- 출근 파일 가져오기 (엑셀) ---------- */
+let impWorkbook=null, impRows=[];
+function onImpFile(ev){
+  const f=ev.target.files[0]; if(!f) return;
+  const rd=new FileReader();
+  rd.onload=e=>{
+    try{
+      impWorkbook=XLSX.read(e.target.result,{type:'array',cellDates:true});
+      const sel=$('imp-sheet');
+      sel.innerHTML=impWorkbook.SheetNames.map(n=>`<option>${esc(n)}</option>`).join('');
+      $('imp-preview').innerHTML='<div style="font-size:12.5px;color:var(--ink2);font-weight:700;margin-top:4px">시트를 고르고 「미리보기」를 누르세요.</div>';
+      $('impRunBtn').style.display='none';
+    }catch(err){ toast('파일 읽기 실패: '+err.message,true); }
+  };
+  rd.readAsArrayBuffer(f);
+}
+function parseTime(s){ const m=String(s).match(/(\d{1,2})\s*[-~]\s*(\d{1,2})/); if(!m) return null;
+  return [String(+m[1]).padStart(2,'0')+':00', String(+m[2]).padStart(2,'0')+':00']; }
+
+function parseSheet(){
+  if(!impWorkbook) return [];
+  const ws=impWorkbook.Sheets[$('imp-sheet').value];
+  const aoa=XLSX.utils.sheet_to_json(ws,{header:1,raw:true,defval:null});
+  // 근무지 자동 감지 (상단 4줄에서 메이드/데빌/마츠리 + 괄호)
+  for(let r=0;r<Math.min(4,aoa.length);r++) for(const v of (aoa[r]||[])){
+    if(typeof v==='string') for(const w of WORKPLACES) if(v.includes(w)&&v.includes('(')){ $('imp-wp').value=w; }
+  }
+  // 날짜 헤더 셀 (Date) 찾기
+  const headers=[];
+  aoa.forEach((row,r)=>(row||[]).forEach((v,c)=>{ if(v instanceof Date) headers.push([r,c,v]); }));
+  const headerRows=[...new Set(headers.map(h=>h[0]))].sort((a,b)=>a-b);
+  const out=[];
+  headers.forEach(([r,c,dt])=>{
+    const nxt=headerRows.filter(x=>x>r); const end=nxt.length?Math.min(...nxt)-1:r+15;
+    const evCell=r>0?(aoa[r-1]||[])[c]:null; const memo=(typeof evCell==='string')?evCell.trim():'';
+    let lastTime=null;
+    for(let dr=r+1;dr<=end;dr++){
+      const t=(aoa[dr]||[])[c]; const nm=(aoa[dr]||[])[c+1];
+      const pt=(typeof t==='string')?parseTime(t):null;
+      if(pt) lastTime=pt;
+      const name=(typeof nm==='string')?nm.trim():'';
+      if(pt){ out.push({d:ymd(dt),s:pt[0],e:pt[1],name,memo}); }
+      else if(name && lastTime){ out.push({d:ymd(dt),s:lastTime[0],e:lastTime[1],name,memo}); } // 시간 없는 이름은 위 시간 사용
+    }
+  });
+  return out;
+}
+function previewImport(){
+  if(!impWorkbook){ toast('먼저 파일을 선택하세요',true); return; }
+  impRows=parseSheet();
+  if(impRows.length===0){ $('imp-preview').innerHTML='<div style="font-size:13px;color:#e11d48;font-weight:700;margin-top:6px">이 시트에서 근무를 못 찾았어요. 다른 시트를 골라보세요.</div>'; $('impRunBtn').style.display='none'; return; }
+  const byd={}; impRows.forEach(r=>(byd[r.d]=byd[r.d]||[]).push(r));
+  const dates=Object.keys(byd).sort();
+  const assigned=impRows.filter(r=>r.name&&r.name!=='부족').length;
+  const names=[...new Set(impRows.filter(r=>r.name&&r.name!=='부족').map(r=>r.name))];
+  let html=`<div style="background:#f6f3ff;border-radius:12px;padding:11px 13px;margin-top:6px;font-size:13px;line-height:1.6">
+    <b>${$('imp-wp').value}</b> · ${dates[0]} ~ ${dates[dates.length-1]}<br>
+    총 <b>${impRows.length}</b>칸 (배정 ${assigned} · 빈자리/부족 ${impRows.length-assigned})<br>
+    등록될 이름 <b>${names.length}</b>명</div>`;
+  html+=`<div style="max-height:200px;overflow-y:auto;margin-top:8px">`;
+  dates.forEach(d=>{
+    const items=byd[d].map(r=>r.name&&r.name!=='부족'?esc(r.name):'·빈자리').join(', ');
+    const ev=byd[d].find(r=>r.memo)?.memo;
+    html+=`<div style="font-size:12.5px;padding:5px 0;border-top:1px solid #f0ecfb"><b>${d.slice(5)}</b>${ev?` <span style="color:#ea580c">(${esc(ev)})</span>`:''} — ${items}</div>`;
+  });
+  html+=`</div>`;
+  $('imp-preview').innerHTML=html;
+  $('impRunBtn').style.display='block';
+}
+async function runImport(){
+  if(!impRows.length){ toast('미리보기를 먼저 하세요',true); return; }
+  $('impRunBtn').disabled=true;
+  const { data, error } = await supa.rpc('admin_import_shifts', {
+    p_admin_id:session.id, p_pin:session.pin, p_workplace:$('imp-wp').value,
+    p_rows:impRows, p_replace:$('imp-replace').checked
+  });
+  $('impRunBtn').disabled=false;
+  if(error){ toast(error.message.replace(/^.*?:\s*/,''),true); return; }
+  const r=data||{};
+  toast(`가져오기 완료! 근무 ${r.inserted||0}개 · 새 스태프 ${r.new_staff||0}명`);
+  $('imp-preview').innerHTML=''; $('impRunBtn').style.display='none'; impRows=[];
+  await loadDirectory(); renderSchedule();
+}
+
 /* ---------- toast ---------- */
 let tt; function toast(msg, err){ const t=$('toast'); t.textContent=msg; t.className='toast show'+(err?' err':''); clearTimeout(tt); tt=setTimeout(()=>t.classList.remove('show'),2400); }
 
@@ -742,6 +857,9 @@ function wireUI(){
   $('subClose').onclick = closeSubModal;
   $('addShiftBtn').onclick = addShift;
   $('addStaffBtn').onclick = addStaff;
+  $('imp-file').onchange = onImpFile;
+  $('impPreviewBtn').onclick = previewImport;
+  $('impRunBtn').onclick = runImport;
   [ 'loginModal','subModal' ].forEach(id=>$(id).onclick=e=>{ if(e.target.id===id) $(id).classList.remove('show'); });
 }
 
