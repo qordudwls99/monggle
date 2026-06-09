@@ -114,6 +114,10 @@ body{
 .badge.empty{background:#f1f5f9;color:#64748b}
 .badge.me{background:#ede9fe;color:var(--violet)}
 .badge.guest{background:#fef3c7;color:#b45309}
+.applist{margin-top:10px;padding-top:10px;border-top:1px dashed #eee6fb;display:flex;flex-direction:column;gap:7px}
+.approw{display:flex;align-items:center;justify-content:space-between;font-size:13.5px;font-weight:800;color:var(--ink)}
+.approw .apbtns{display:flex;gap:6px}
+.approw .btn{padding:6px 12px;font-size:12px}
 .s-memo{font-size:12px;color:var(--ink2);margin-top:7px;padding-top:7px;border-top:1px dashed #eee6fb}
 .s-acts{display:flex;gap:7px;margin-top:11px}
 .btn{border:none;cursor:pointer;font-family:inherit;font-weight:800;font-size:12.5px;padding:9px 14px;border-radius:12px;transition:transform .1s}
@@ -154,7 +158,10 @@ label.fl{display:block;font-size:12px;font-weight:800;color:var(--ink2);margin:0
 select.fld{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%23a99ec9' d='M6 8 0 0h12z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center}
 
 /* manage list */
-.mng{display:flex;align-items:center;gap:10px;padding:11px 0;border-bottom:1px solid #f3effb}
+.mng{display:flex;align-items:center;gap:7px;padding:11px 0;border-bottom:1px solid #f3effb;flex-wrap:wrap}
+.mng .mname-btn{border:none;background:none;cursor:pointer;font-family:inherit;text-align:left}
+.mng .mname-btn::after{content:' ✎';font-size:11px;color:var(--violet2)}
+.mng .btn{padding:6px 10px;font-size:11.5px}
 .mng:last-child{border-bottom:none}
 .mng .mname{font-weight:800;font-size:14px;color:var(--ink);flex:1}
 .mng .mwp{font-size:11px;font-weight:800;padding:3px 8px;border-radius:99px;background:#f3effb;color:var(--violet)}
@@ -340,8 +347,9 @@ select.fld{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns
   <div class="modal-c">
     <div class="modal-t">🔑 출근자 로그인</div>
     <div class="modal-s">이름을 고르고 PIN을 입력하세요</div>
-    <label class="fl">이름</label>
-    <select class="fld" id="loginName"></select>
+    <label class="fl">이름 (검색)</label>
+    <input class="fld" id="loginName" list="loginNames" placeholder="이름을 입력해 검색" autocomplete="off">
+    <datalist id="loginNames"></datalist>
     <label class="fl">PIN</label>
     <input type="password" class="fld" id="loginPin" inputmode="numeric" maxlength="6" placeholder="PIN 입력">
     <button class="btn primary full" id="loginBtn">로그인</button>
@@ -429,6 +437,11 @@ async function fetchClosures(from,to){
   const { data } = await supa.from('closure_view').select('*').gte('work_date',from).lte('work_date',to);
   return new Set((data||[]).map(c=>c.work_date+'|'+c.workplace));
 }
+async function fetchApplications(dateStr){
+  const { data } = await supa.from('application_view').select('*').eq('work_date',dateStr);
+  const map={}; (data||[]).forEach(a=>(map[a.shift_id]=map[a.shift_id]||[]).push(a));
+  return map;
+}
 async function fetchRange(from,to){
   const { data, error } = await supa.from('shift_view').select('*')
     .gte('work_date', from).lte('work_date', to).order('work_date').order('workplace').order('start_time');
@@ -462,12 +475,12 @@ async function rpc(fn, args, okMsg){
 
 /* ---------- 로그인 ---------- */
 function fillLoginNames(){
-  $('loginName').innerHTML = staffList.map(s=>`<option value="${esc(s.name)}">${esc(s.name)}</option>`).join('');
+  $('loginNames').innerHTML = staffList.map(s=>`<option value="${esc(s.name)}"></option>`).join('');
 }
 function openLogin(){ $('loginModal').classList.add('show'); }
 function closeLogin(){ $('loginModal').classList.remove('show'); $('loginPin').value=''; }
 async function doLogin(){
-  const name = $('loginName').value, pin = $('loginPin').value.trim();
+  const name = $('loginName').value.trim(), pin = $('loginPin').value.trim();
   if(!pin){ toast('PIN을 입력하세요', true); return; }
   const { data, error } = await supa.rpc('staff_login', { p_name:name, p_pin:pin });
   if(error){ toast('로그인 실패: '+error.message, true); return; }
@@ -578,6 +591,7 @@ async function renderDay(){
   list.innerHTML = `<div style="text-align:center;padding:30px"><span class="spin"></span></div>`;
   const shifts = await fetchShifts(ymd(selectedDate));
   const closed = await fetchClosures(ymd(selectedDate), ymd(selectedDate));
+  const apps = await fetchApplications(ymd(selectedDate));
   const groups = (wpFilter==='전체'?WORKPLACES:[wpFilter]);
   let html='';
   let total=0;
@@ -596,7 +610,7 @@ async function renderDay(){
     if(rows.length===0){
       html += `<div class="card" style="text-align:center;color:var(--muted);font-weight:700;font-size:13px">${admin?'근무 없음 · ➕추가 또는 🌙휴무':'휴무 · 근무 없음'}</div>`;
     } else {
-      rows.forEach(s=> html += shiftCard(s, admin));
+      rows.forEach(s=> html += shiftCard(s, admin, apps[s.id]));
     }
     html += `</div>`;
   });
@@ -619,14 +633,17 @@ async function renderDay(){
   list.querySelectorAll('[data-add]').forEach(b=>b.onclick=()=>openShiftAdd(b.dataset.add));
   list.querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>openShiftEdit(JSON.parse(b.dataset.edit)));
 }
-function shiftCard(s, admin){
+function shiftCard(s, admin, apps){
+  apps = apps||[];
   const mine = session && s.staff_id===session.id;
+  const isEmpty = !s.staff_id && !s.guest_name;
   let label, cls='s-name', badge='';
   if(s.staff_id){ label=esc(s.staff_name); }
   else if(s.guest_name){ label=esc(s.guest_name); badge=`<span class="badge guest">게스트</span>`; }
   else { label='모집중 · 빈 자리'; cls='s-name empty'; badge=`<span class="badge empty">🈳 빈 자리</span>`; }
   if(s.status==='seeking_sub') badge = `<span class="badge seek">🔄 대타 구하는 중</span>`;
   if(mine) badge = `<span class="badge me">내 근무</span>` + (s.status==='seeking_sub'?` <span class="badge seek">대타 구하는 중</span>`:'');
+  if(isEmpty && apps.length) badge += ` <span class="badge" style="background:#ede9fe;color:#7c3aed">신청 ${apps.length}</span>`;
 
   const nameHtml = admin
     ? `<button class="${cls} editbtn" data-edit='${esc(JSON.stringify({id:s.id,staff_id:s.staff_id,guest_name:s.guest_name,start_time:s.start_time,end_time:s.end_time,workplace:s.workplace}))}'>${label}</button>`
@@ -634,20 +651,37 @@ function shiftCard(s, admin){
 
   const btns=[];
   if(session && !admin){
-    if(!s.staff_id && !s.guest_name){
-      btns.push(`<button class="btn ghost" data-act="claim" data-id="${s.id}">이 자리 설게요</button>`);
+    if(isEmpty){
+      const applied = apps.some(a=>a.applicant_id===session.id);
+      btns.push(applied
+        ? `<button class="btn ghost" data-act="unapply" data-id="${s.id}">신청 취소</button>`
+        : `<button class="btn primary" data-act="apply" data-id="${s.id}">✋ 신청하기</button>`);
     } else if(mine && s.status==='confirmed'){
-      btns.push(`<button class="btn ghost" data-act="seek" data-id="${s.id}" data-info="${esc(s.workplace+' '+s.start_time+'~'+s.end_time)}">대타 구하기</button>`);
+      btns.push(`<button class="btn ghost" data-act="seek" data-id="${s.id}" data-info="${esc(s.workplace+' '+ymd(selectedDate))}">대타 구하기</button>`);
     }
+  }
+  // 관리자: 빈자리 신청자 목록 (수락/거절)
+  let appHtml='';
+  if(admin && isEmpty && apps.length){
+    appHtml = `<div class="applist">`+apps.map(a=>
+      `<div class="approw"><span>✋ ${esc(a.applicant_name)}</span><span class="apbtns"><button class="btn primary" data-approve="${a.id}">수락</button><button class="btn warn" data-reject="${a.id}">거절</button></span></div>`).join('')+`</div>`;
   }
   const acts = btns.length ? `<div class="s-acts">${btns.join('')}</div>` : '';
   const who = s.staff_id?s.staff_name:(s.guest_name||'');
   const av = `<span class="av${(!s.staff_id&&s.guest_name)?' guest':''}${who?'':' none'}">${esc(who.charAt(0)||'·')}</span>`;
-  return `<div class="card"><div class="s-row">${av}${nameHtml}${badge}</div>${acts}</div>`;
+  return `<div class="card"><div class="s-row">${av}${nameHtml}${badge}</div>${appHtml}${acts}</div>`;
 }
 function bindShiftCards(root){
-  root.querySelectorAll('[data-act="claim"]').forEach(b=>b.onclick=()=>
-    rpc('claim_shift', { p_staff_id:session.id, p_shift_id:Number(b.dataset.id) }, '빈 자리를 맡았어요! 💪'));
+  root.querySelectorAll('[data-act="apply"]').forEach(b=>b.onclick=()=>{
+    if(!session){ openLogin(); return; }
+    rpc('apply_slot', { p_staff_id:session.id, p_shift_id:Number(b.dataset.id) }, '신청했어요! 관리자 승인을 기다려주세요 ✋');
+  });
+  root.querySelectorAll('[data-act="unapply"]').forEach(b=>b.onclick=()=>
+    rpc('cancel_application', { p_staff_id:session.id, p_shift_id:Number(b.dataset.id) }, '신청을 취소했어요'));
+  root.querySelectorAll('[data-approve]').forEach(b=>b.onclick=()=>
+    rpc('admin_approve_application', { p_admin_id:session.id, p_app_id:Number(b.dataset.approve) }, '신청을 수락해 배정했어요 ✅'));
+  root.querySelectorAll('[data-reject]').forEach(b=>b.onclick=()=>
+    rpc('admin_reject_application', { p_admin_id:session.id, p_app_id:Number(b.dataset.reject) }, '신청을 거절했어요'));
   root.querySelectorAll('[data-act="seek"]').forEach(b=>b.onclick=()=>openSubModal(Number(b.dataset.id), b.dataset.info));
 }
 
@@ -759,15 +793,18 @@ async function renderMine(){
     $('mineLogin').onclick = openLogin;
     return;
   }
-  $('mineSub').textContent = `${session.name}님의 다가오는 근무예요.`;
+  $('mineSub').textContent = `${session.name}님의 정보와 다가오는 근무예요.`;
   list.innerHTML = `<div style="text-align:center;padding:30px"><span class="spin"></span></div>`;
+  let myIg=''; try{ const r=await supa.rpc('my_instagram',{p_staff_id:session.id,p_pin:session.pin}); myIg=r.data||''; }catch(e){}
+  const igCard = `<div class="form-card"><div class="fc-t">📷 내 인스타그램</div>
+    <div style="font-size:12px;color:var(--ink2);font-weight:600;margin-bottom:9px">손님 페이지에서 내 이름 옆 인스타 아이콘으로 연결돼요.</div>
+    <input class="fld" id="myIgInput" placeholder="아이디(예: monggle) 또는 링크" value="${esc(myIg)}">
+    <button class="btn primary full" id="myIgSave">인스타그램 저장</button></div>`;
   const shifts = await fetchMyShifts();
-  if(shifts.length===0){
-    list.innerHTML = `<div class="empty-box"><div class="e-ic">🌿</div><div class="e-t">예정된 근무가 없어요</div><div class="e-s">스케줄 탭에서 빈 자리를 맡을 수 있어요</div></div>`;
-    return;
-  }
   const days=['일','월','화','수','목','금','토'];
-  list.innerHTML = shifts.map(s=>{
+  const shiftsHtml = shifts.length===0
+    ? `<div class="empty-box"><div class="e-ic">🌿</div><div class="e-t">예정된 근무가 없어요</div><div class="e-s">스케줄 탭에서 빈 자리에 신청할 수 있어요</div></div>`
+    : shifts.map(s=>{
     const d = new Date(s.work_date+'T00:00:00');
     const when = `${d.getMonth()+1}월 ${d.getDate()}일 (${days[d.getDay()]})`;
     const seeking = s.status==='seeking_sub';
@@ -782,6 +819,10 @@ async function renderMine(){
       </div>
       <div class="s-acts">${act}</div></div>`;
   }).join('');
+  list.innerHTML = igCard + shiftsHtml;
+  $('myIgSave').onclick = async()=>{
+    const ok = await rpc('set_my_instagram', { p_staff_id:session.id, p_insta:$('myIgInput').value.trim() }, '인스타그램을 저장했어요 📷');
+  };
   bindShiftCards(list);
   list.querySelectorAll('[data-act="mine-cancel"]').forEach(b=>b.onclick=async()=>{
     // 내 근무의 열린 대타 요청을 찾아 취소
@@ -808,13 +849,23 @@ function renderStaffList(){
   if(list.length===0){ mng.innerHTML = `<div style="font-size:13px;color:var(--muted);font-weight:700;padding:8px 0">검색 결과 없음</div>`; return; }
   mng.innerHTML = list.map(s=>`
     <div class="mng">
-      <span class="mname">${esc(s.name)}</span>
+      <button class="mname mname-btn" data-rename="${s.id}" data-cur="${esc(s.name)}">${esc(s.name)}</button>
       ${s.is_admin?'<span class="madmin">★관리자</span>':''}
       ${s.has_pin===false?'<span class="mwp" style="background:#fff7ed;color:#ea580c">PIN없음</span>':''}
+      <button class="btn ghost" data-ig="${s.id}">IG</button>
       ${s.id!==session.id?`<button class="btn ghost" data-role="${s.id}" data-admin="${s.is_admin?1:0}">${s.is_admin?'일반으로':'관리자로'}</button>`:''}
       <button class="btn ghost" data-pin="${s.id}">PIN</button>
       ${s.id!==session.id?`<button class="btn warn" data-del-staff="${s.id}">삭제</button>`:''}
     </div>`).join('');
+  mng.querySelectorAll('[data-rename]').forEach(b=>b.onclick=async()=>{
+    const nm=prompt('새 이름:', b.dataset.cur||''); if(nm===null||!nm.trim()) return;
+    const ok = await rpc('admin_rename_staff', { p_admin_id:session.id, p_target_id:Number(b.dataset.rename), p_name:nm.trim() }, '이름을 변경했어요');
+    if(ok) await loadDirectory();
+  });
+  mng.querySelectorAll('[data-ig]').forEach(b=>b.onclick=async()=>{
+    const ig=prompt('인스타그램 아이디 또는 링크 (지우려면 비워두기):'); if(ig===null) return;
+    await rpc('admin_set_instagram', { p_admin_id:session.id, p_target_id:Number(b.dataset.ig), p_insta:ig.trim() }, '인스타그램을 저장했어요 📷');
+  });
   mng.querySelectorAll('[data-role]').forEach(b=>b.onclick=async()=>{
     const makeAdmin = b.dataset.admin!=='1';
     const ok = await rpc('admin_set_role', { p_admin_id:session.id, p_target_id:Number(b.dataset.role), p_is_admin:makeAdmin }, makeAdmin?'관리자로 변경했어요':'일반으로 변경했어요');

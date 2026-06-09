@@ -64,6 +64,7 @@ body{
 .tag .av{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#a78bfa,#f472b6);color:#fff;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:900;flex-shrink:0}
 .tag .tnm{flex:1}
 .tag .gtag{font-size:10.5px;font-weight:900;color:#b45309;background:#fef3c7;padding:3px 9px;border-radius:99px}
+.tag .ig{display:flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:11px;color:#fff;flex-shrink:0;background:linear-gradient(45deg,#f09433,#e6683c 25%,#dc2743 50%,#cc2366 75%,#bc1888)}
 .tag.guest{background:linear-gradient(120deg,#fffaf0,#fff3df)}
 .tag.guest .av{background:linear-gradient(135deg,#fbbf24,#fb923c)}
 .ev-banner{display:flex;align-items:center;justify-content:center;gap:7px;background:linear-gradient(120deg,#fff7ed,#ffe8cc);color:#c2410c;font-weight:900;font-size:14.5px;padding:11px 14px;border-radius:14px;margin-bottom:9px;box-shadow:0 10px 22px -14px rgba(234,88,12,.5)}
@@ -151,6 +152,8 @@ const DAYS = ['일','월','화','수','목','금','토'];
 const $ = id => document.getElementById(id);
 const esc = s => (s==null?'':String(s)).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const ymd = d => d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+const igUrl = h => { h=String(h||'').trim(); if(!h) return null; return /^https?:\/\//i.test(h)?h:'https://instagram.com/'+h.replace(/^@/,''); };
+const IG_SVG = '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1.2" fill="currentColor" stroke="none"/></svg>';
 const mondayOf = d => { const x=new Date(d); x.setDate(x.getDate()-((x.getDay()+6)%7)); x.setHours(0,0,0,0); return x; };
 
 let supa=null, selectedDate=new Date(), wpFilter='메이드', viewMode='day';
@@ -241,7 +244,8 @@ async function renderDay(){
     if(named.length===0){ html += `<div class="none">근무 없음</div>`; }
     else {
       const tags = named.map(s=>{ const dn=s.display_name||s.staff_name;
-        return `<div class="tag${s.is_guest?' guest':''}"><span class="av">${esc(dn.charAt(0))}</span><span class="tnm">${esc(dn)}</span>${s.is_guest?'<span class="gtag">게스트</span>':''}</div>`;
+        const ig=(!s.is_guest)?igUrl(s.staff_instagram):null;
+        return `<div class="tag${s.is_guest?' guest':''}"><span class="av">${esc(dn.charAt(0))}</span><span class="tnm">${esc(dn)}</span>${s.is_guest?'<span class="gtag">게스트</span>':''}${ig?`<a class="ig" href="${esc(ig)}" target="_blank" rel="noopener">${IG_SVG}</a>`:''}</div>`;
       }).join('');
       html += `<div class="names">${tags}</div>`;
     }

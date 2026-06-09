@@ -194,3 +194,139 @@ grant execute on function
   admin_add_shift, admin_update_shift, admin_set_day_event, admin_import_shifts,
   admin_set_day_off, admin_set_role
 to anon, authenticated;
+
+-- ============================================================
+--  v4) 인스타그램 + 빈자리 신청(관리자 승인)
+-- ============================================================
+
+-- 직원 인스타그램 (아이디 또는 URL)
+alter table staff add column if not exists instagram text;
+
+create or replace function admin_set_instagram(p_admin_id bigint, p_pin text,
+  p_target_id bigint, p_insta text)
+returns void language plpgsql security definer set search_path = public as $$
+declare v staff;
+begin
+  v := _verify(p_admin_id, p_pin);
+  if v.id is null or not v.is_admin then raise exception '관리자만 가능합니다'; end if;
+  update staff set instagram = nullif(trim(p_insta), '') where id = p_target_id;
+end; $$;
+
+-- shift_view 에 직원 인스타그램 추가
+create or replace view shift_view as
+  select sh.id, sh.work_date, sh.workplace, sh.start_time, sh.end_time,
+         sh.status, sh.memo, sh.staff_id, st.name as staff_name,
+         sh.guest_name,
+         coalesce(st.name, sh.guest_name) as display_name,
+         (sh.staff_id is null and sh.guest_name is not null) as is_guest,
+         st.instagram as staff_instagram
+  from shifts sh
+  left join staff st on st.id = sh.staff_id;
+grant select on shift_view to anon, authenticated;
+
+-- 빈자리 신청
+create table if not exists slot_applications (
+  id           bigint generated always as identity primary key,
+  shift_id     bigint not null references shifts(id) on delete cascade,
+  applicant_id bigint not null references staff(id) on delete cascade,
+  status       text not null default 'open' check (status in ('open','approved','rejected')),
+  created_at   timestamptz not null default now(),
+  unique (shift_id, applicant_id)
+);
+alter table slot_applications enable row level security;
+
+create or replace view application_view as
+  select a.id, a.shift_id, a.applicant_id, st.name as applicant_name,
+         sh.work_date, sh.workplace
+  from slot_applications a
+  join staff  st on st.id = a.applicant_id
+  join shifts sh on sh.id = a.shift_id
+  where a.status = 'open';
+grant select on application_view to anon, authenticated;
+
+-- 직원: 빈자리에 신청 (직접 배정 불가, 신청만)
+create or replace function apply_slot(p_staff_id bigint, p_pin text, p_shift_id bigint)
+returns void language plpgsql security definer set search_path = public as $$
+declare v staff; sh shifts;
+begin
+  v := _verify(p_staff_id, p_pin);
+  if v.id is null then raise exception 'PIN이 올바르지 않습니다'; end if;
+  select * into sh from shifts where id = p_shift_id;
+  if sh.id is null then raise exception '근무를 찾을 수 없습니다'; end if;
+  if sh.staff_id is not null or sh.guest_name is not null then
+    raise exception '이미 담당자가 있는 근무예요'; end if;
+  insert into slot_applications(shift_id, applicant_id) values (p_shift_id, p_staff_id)
+    on conflict (shift_id, applicant_id) do update set status='open';
+end; $$;
+
+-- 직원: 본인 신청 취소
+create or replace function cancel_application(p_staff_id bigint, p_pin text, p_shift_id bigint)
+returns void language plpgsql security definer set search_path = public as $$
+declare v staff;
+begin
+  v := _verify(p_staff_id, p_pin);
+  if v.id is null then raise exception 'PIN이 올바르지 않습니다'; end if;
+  delete from slot_applications where shift_id = p_shift_id and applicant_id = p_staff_id and status='open';
+end; $$;
+
+-- 관리자: 신청 수락 → 배정 (다른 신청은 거절)
+create or replace function admin_approve_application(p_admin_id bigint, p_pin text, p_app_id bigint)
+returns void language plpgsql security definer set search_path = public as $$
+declare v staff; a slot_applications;
+begin
+  v := _verify(p_admin_id, p_pin);
+  if v.id is null or not v.is_admin then raise exception '관리자만 가능합니다'; end if;
+  select * into a from slot_applications where id = p_app_id;
+  if a.id is null then raise exception '신청을 찾을 수 없습니다'; end if;
+  update shifts set staff_id = a.applicant_id, status = 'confirmed' where id = a.shift_id;
+  update slot_applications set status='rejected' where shift_id = a.shift_id and status='open' and id <> p_app_id;
+  update slot_applications set status='approved' where id = p_app_id;
+end; $$;
+
+-- 관리자: 신청 거절
+create or replace function admin_reject_application(p_admin_id bigint, p_pin text, p_app_id bigint)
+returns void language plpgsql security definer set search_path = public as $$
+declare v staff;
+begin
+  v := _verify(p_admin_id, p_pin);
+  if v.id is null or not v.is_admin then raise exception '관리자만 가능합니다'; end if;
+  update slot_applications set status='rejected' where id = p_app_id;
+end; $$;
+
+-- 관리자: 모든 스태프(관리자 포함) 이름 수정
+create or replace function admin_rename_staff(p_admin_id bigint, p_pin text,
+  p_target_id bigint, p_name text)
+returns void language plpgsql security definer set search_path = public as $$
+declare v staff;
+begin
+  v := _verify(p_admin_id, p_pin);
+  if v.id is null or not v.is_admin then raise exception '관리자만 가능합니다'; end if;
+  if nullif(trim(p_name),'') is null then raise exception '이름을 입력하세요'; end if;
+  update staff set name = trim(p_name) where id = p_target_id;
+end; $$;
+
+-- 직원 본인: 자기 인스타그램 직접 수정 (관리자 아니어도 가능)
+create or replace function set_my_instagram(p_staff_id bigint, p_pin text, p_insta text)
+returns void language plpgsql security definer set search_path = public as $$
+declare v staff;
+begin
+  v := _verify(p_staff_id, p_pin);
+  if v.id is null then raise exception 'PIN이 올바르지 않습니다'; end if;
+  update staff set instagram = nullif(trim(p_insta), '') where id = p_staff_id;
+end; $$;
+
+-- 직원 본인: 자기 인스타그램 조회
+create or replace function my_instagram(p_staff_id bigint, p_pin text)
+returns text language plpgsql security definer set search_path = public as $$
+declare v staff;
+begin
+  v := _verify(p_staff_id, p_pin);
+  if v.id is null then raise exception 'PIN이 올바르지 않습니다'; end if;
+  return v.instagram;
+end; $$;
+
+grant execute on function
+  admin_set_instagram, apply_slot, cancel_application,
+  admin_approve_application, admin_reject_application,
+  admin_rename_staff, set_my_instagram, my_instagram
+to anon, authenticated;
