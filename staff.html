@@ -40,6 +40,8 @@ body{
 .tab{flex:0 0 auto;border:none;cursor:pointer;font-family:inherit;font-weight:800;font-size:13px;padding:9px 15px;border-radius:99px;
   background:rgba(255,255,255,.5);color:var(--ink2);transition:.15s;white-space:nowrap}
 .tab.on{background:#fff;color:var(--violet);box-shadow:0 6px 16px -7px rgba(80,40,150,.5)}
+.notibadge{display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;padding:0 5px;margin-left:5px;border-radius:99px;background:#ef4444;color:#fff;font-size:10px;font-weight:900;vertical-align:middle}
+.noti-sec-t{font-size:14px;font-weight:900;color:#fff;text-shadow:0 1px 4px rgba(80,40,150,.3);margin:6px 2px 9px}
 
 /* body */
 .body{position:relative;z-index:10;flex:1;padding:0 16px 28px;overflow-y:auto}
@@ -114,6 +116,7 @@ body{
 .badge.empty{background:#f1f5f9;color:#64748b}
 .badge.me{background:#ede9fe;color:var(--violet)}
 .badge.guest{background:#fef3c7;color:#b45309}
+.ev-banner{display:flex;align-items:center;justify-content:center;gap:7px;background:linear-gradient(120deg,#fff7ed,#ffe8cc);color:#c2410c;font-weight:900;font-size:14.5px;padding:11px 14px;border-radius:14px;margin-bottom:10px;box-shadow:0 10px 22px -14px rgba(234,88,12,.5)}
 .applist{margin-top:10px;padding-top:10px;border-top:1px dashed #eee6fb;display:flex;flex-direction:column;gap:7px}
 .approw{display:flex;align-items:center;justify-content:space-between;font-size:13.5px;font-weight:800;color:var(--ink)}
 .approw .apbtns{display:flex;gap:6px}
@@ -223,6 +226,7 @@ select.fld{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns
       <button class="tab on" data-tab="schedule">📅 스케줄</button>
       <button class="tab" data-tab="swaps">🔄 대타 게시판</button>
       <button class="tab" data-tab="mine">🙋 내 근무</button>
+      <button class="tab" data-tab="noti" id="notiTab" style="display:none">🔔 알림<span id="notiBadge" class="notibadge" style="display:none">0</span></button>
       <button class="tab" data-tab="admin" id="adminTab" style="display:none">⚙️ 관리</button>
     </div>
 
@@ -241,6 +245,13 @@ select.fld{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns
         </div>
         <div class="chips" id="wpChips"></div>
         <div id="scheduleList"></div>
+      </div>
+
+      <!-- 알림 (관리자) -->
+      <div id="screen-noti" class="screen">
+        <div class="sec-title">🔔 알림</div>
+        <div class="sec-sub">빈자리 신청과 대타 현황을 한눈에 봐요.</div>
+        <div id="notiList"></div>
       </div>
 
       <!-- 대타 게시판 -->
@@ -507,12 +518,15 @@ function renderWho(){
   } else {
     btn.innerHTML = `<span class="nm">로그인</span> 🔑`;
   }
-  $('adminTab').style.display = (session && session.is_admin) ? 'block' : 'none';
+  const adm = (session && session.is_admin);
+  $('adminTab').style.display = adm ? 'block' : 'none';
+  $('notiTab').style.display = adm ? 'block' : 'none';
+  if(adm) updateNotiBadge();
 }
 
 /* ---------- 탭 ---------- */
 function switchTab(tab){
-  if((tab==='admin') && !(session && session.is_admin)){ tab='schedule'; }
+  if((tab==='admin'||tab==='noti') && !(session && session.is_admin)){ tab='schedule'; }
   currentTab = tab;
   document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('on', t.dataset.tab===tab));
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('on'));
@@ -524,6 +538,54 @@ function refreshCurrent(){
   else if(currentTab==='swaps') renderSwaps();
   else if(currentTab==='mine') renderMine();
   else if(currentTab==='admin') renderAdmin();
+  else if(currentTab==='noti') renderNoti();
+  if(session && session.is_admin) updateNotiBadge();
+}
+async function updateNotiBadge(){
+  if(!(session && session.is_admin)) return;
+  const [ap, sw] = await Promise.all([
+    supa.from('application_view').select('id'),
+    supa.from('swap_view').select('id').eq('status','open')
+  ]);
+  const n = ((ap.data||[]).length) + ((sw.data||[]).length);
+  const b = $('notiBadge');
+  if(n>0){ b.textContent=n; b.style.display='inline-flex'; } else { b.style.display='none'; }
+}
+async function renderNoti(){
+  const list = $('notiList');
+  list.innerHTML = `<div style="text-align:center;padding:30px"><span class="spin"></span></div>`;
+  const [apR, swR] = await Promise.all([
+    supa.from('application_view').select('*').order('work_date'),
+    supa.from('swap_view').select('*').order('created_at',{ascending:false})
+  ]);
+  const apps = apR.data||[]; const swaps = swR.data||[];
+  const open = swaps.filter(s=>s.status==='open');
+  const done = swaps.filter(s=>s.status==='completed').slice(0,10);
+  const days=['일','월','화','수','목','금','토'];
+  const wlabel = ds=>{ const d=new Date(ds+'T00:00:00'); return `${d.getMonth()+1}/${d.getDate()}(${days[d.getDay()]})`; };
+  let html='';
+  // 빈자리 신청
+  html += `<div class="noti-sec-t">✋ 빈자리 신청 ${apps.length?`(${apps.length})`:''}</div>`;
+  if(apps.length===0) html += `<div class="none" style="margin-bottom:14px">새 신청 없음</div>`;
+  else html += apps.map(a=>`<div class="swap"><div class="swap-top"><span class="swap-wp ${a.workplace}">${esc(a.workplace)}</span><span class="swap-when">${wlabel(a.work_date)}</span></div>
+    <div class="swap-who"><b>${esc(a.applicant_name)}</b>님이 빈자리에 신청했어요</div>
+    <div class="s-acts"><button class="btn primary" data-approve="${a.id}">수락</button><button class="btn warn" data-reject="${a.id}">거절</button></div></div>`).join('');
+  // 대타 요청 중
+  html += `<div class="noti-sec-t">🔄 대타 구하는 중 ${open.length?`(${open.length})`:''}</div>`;
+  if(open.length===0) html += `<div class="none" style="margin-bottom:14px">진행 중 대타 없음</div>`;
+  else html += open.map(s=>`<div class="swap"><div class="swap-top"><span class="swap-wp ${s.workplace}">${esc(s.workplace)}</span><span class="swap-when">${wlabel(s.work_date)}</span></div>
+    <div class="swap-who"><b>${esc(s.requester_name)}</b>님이 대타를 구해요</div>${s.reason?`<div class="swap-reason">💬 ${esc(s.reason)}</div>`:''}</div>`).join('');
+  // 최근 대타 완료
+  if(done.length){
+    html += `<div class="noti-sec-t">✅ 최근 대타 완료</div>`;
+    html += done.map(s=>`<div class="swap"><div class="swap-top"><span class="swap-wp ${s.workplace}">${esc(s.workplace)}</span><span class="swap-when">${wlabel(s.work_date)}</span></div>
+      <div class="swap-who"><b>${esc(s.taker_name||'?')}</b>님이 <b>${esc(s.requester_name)}</b>님 대타를 섰어요</div></div>`).join('');
+  }
+  list.innerHTML = html;
+  list.querySelectorAll('[data-approve]').forEach(b=>b.onclick=()=>
+    rpc('admin_approve_application', { p_admin_id:session.id, p_app_id:Number(b.dataset.approve) }, '신청을 수락해 배정했어요 ✅'));
+  list.querySelectorAll('[data-reject]').forEach(b=>b.onclick=()=>
+    rpc('admin_reject_application', { p_admin_id:session.id, p_app_id:Number(b.dataset.reject) }, '신청을 거절했어요'));
 }
 
 /* ---------- 날짜 ---------- */
@@ -799,7 +861,7 @@ async function renderMine(){
   let myIg=''; try{ const r=await supa.rpc('my_instagram',{p_staff_id:session.id,p_pin:session.pin}); myIg=r.data||''; }catch(e){}
   const igCard = `<div class="form-card"><div class="fc-t">📷 내 인스타그램</div>
     <div style="font-size:12px;color:var(--ink2);font-weight:600;margin-bottom:9px">손님 페이지에서 내 이름 옆 인스타 아이콘으로 연결돼요.</div>
-    <input class="fld" id="myIgInput" placeholder="아이디(예: monggle) 또는 링크" value="${esc(myIg)}">
+    <input class="fld" id="myIgInput" placeholder="인스타 아이디 또는 링크" value="${esc(myIg)}">
     <button class="btn primary full" id="myIgSave">인스타그램 저장</button></div>`;
   const shifts = await fetchMyShifts();
   const days=['일','월','화','수','목','금','토'];

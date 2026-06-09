@@ -56,7 +56,8 @@ begin
 end; $$;
 
 -- 4) 조회 뷰 : 게스트/표시이름 포함
-create or replace view shift_view as
+drop view if exists shift_view;
+create view shift_view as
   select sh.id, sh.work_date, sh.workplace, sh.start_time, sh.end_time,
          sh.status, sh.memo, sh.staff_id, st.name as staff_name,
          sh.guest_name,
@@ -213,7 +214,8 @@ begin
 end; $$;
 
 -- shift_view 에 직원 인스타그램 추가
-create or replace view shift_view as
+drop view if exists shift_view;
+create view shift_view as
   select sh.id, sh.work_date, sh.workplace, sh.start_time, sh.end_time,
          sh.status, sh.memo, sh.staff_id, st.name as staff_name,
          sh.guest_name,
