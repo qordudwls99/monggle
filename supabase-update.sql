@@ -132,11 +132,25 @@ begin
   return json_build_object('inserted', cnt, 'new_staff', created, 'from', mind, 'to', maxd);
 end; $$;
 
--- 8) 이제 직원 테이블의 근무지 컬럼 제거
+-- 8) 근무 수정 (담당자 변경/시간 변경) — 출근표에서 직접 편집
+create or replace function admin_update_shift(p_admin_id bigint, p_pin text,
+  p_shift_id bigint, p_start text, p_end text,
+  p_assignee bigint default null, p_guest text default null)
+returns void language plpgsql security definer set search_path = public as $$
+declare v staff;
+begin
+  v := _verify(p_admin_id, p_pin);
+  if v.id is null or not v.is_admin then raise exception '관리자만 가능합니다'; end if;
+  update shifts set start_time = p_start, end_time = p_end,
+    staff_id = p_assignee, guest_name = nullif(trim(p_guest), ''), status = 'confirmed'
+    where id = p_shift_id;
+end; $$;
+
+-- 9) 이제 직원 테이블의 근무지 컬럼 제거
 alter table staff drop column if exists workplace;
 
 -- 실행 권한
 grant execute on function
   staff_login, staff_directory, admin_add_staff, admin_set_pin,
-  admin_add_shift, admin_set_day_event, admin_import_shifts
+  admin_add_shift, admin_update_shift, admin_set_day_event, admin_import_shifts
 to anon, authenticated;

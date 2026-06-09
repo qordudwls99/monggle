@@ -49,9 +49,12 @@ body{
 .seg{display:flex;background:rgba(255,255,255,.45);border-radius:99px;padding:4px;margin-bottom:11px}
 .seg button{flex:1;border:none;cursor:pointer;font-family:inherit;font-weight:800;font-size:13px;padding:8px 0;border-radius:99px;background:none;color:rgba(255,255,255,.92);transition:.15s}
 .seg button.on{background:#fff;color:var(--violet);box-shadow:0 6px 14px -7px rgba(80,40,150,.5)}
-#af-kind{background:#f3effb}
-#af-kind button{color:var(--ink2)}
-#af-kind button.on{background:#fff;color:var(--violet)}
+#af-kind,#sm-kind{background:#f3effb}
+#af-kind button,#sm-kind button{color:var(--ink2)}
+#af-kind button.on,#sm-kind button.on{background:#fff;color:var(--violet)}
+.s-name.editbtn{flex:1;text-align:left;border:none;background:none;font-family:inherit;font-size:15px;font-weight:800;color:var(--ink);cursor:pointer;padding:0}
+.s-name.editbtn.empty{color:var(--muted)}
+.s-name.editbtn::after{content:' ✎';font-size:12px;color:var(--violet2)}
 
 /* week view — 4(위)+3(아래) 그리드, 화면 꽉 차게 */
 .weekgrid{display:grid;grid-template-columns:repeat(4,1fr);grid-auto-rows:1fr;gap:8px;min-height:calc(100dvh - 290px)}
@@ -315,6 +318,28 @@ select.fld{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns
   </div>
 </div>
 
+<!-- 근무 추가/수정 모달 (관리자) -->
+<div class="modal" id="shiftModal">
+  <div class="modal-c">
+    <div class="modal-t" id="sm-title">근무 추가</div>
+    <div class="modal-s" id="sm-sub"></div>
+    <div class="seg" id="sm-kind">
+      <button type="button" class="on" data-k="staff">직원</button>
+      <button type="button" data-k="guest">게스트</button>
+      <button type="button" data-k="open">빈 자리</button>
+    </div>
+    <select class="fld" id="sm-staff"></select>
+    <input type="text" class="fld" id="sm-guest" placeholder="게스트 이름" style="display:none">
+    <div class="frow">
+      <div><label class="fl">시작</label><input type="time" class="fld" id="sm-start" value="15:00"></div>
+      <div><label class="fl">종료</label><input type="time" class="fld" id="sm-end" value="21:00"></div>
+    </div>
+    <button class="btn primary full" id="sm-save">저장</button>
+    <button class="btn warn full" id="sm-del" style="margin-top:9px;display:none">이 근무 삭제</button>
+    <button class="closex" id="sm-close">취소</button>
+  </div>
+</div>
+
 <!-- 로그인 모달 -->
 <div class="modal" id="loginModal">
   <div class="modal-c">
@@ -520,13 +545,14 @@ async function renderWeek(){
   for(let i=0;i<7;i++){
     const day=new Date(mon); day.setDate(day.getDate()+i); const ds=ymd(day);
     const dayShifts = shifts.filter(s=>s.work_date===ds);
-    const memo = dayShifts.find(r=>r.memo)?.memo;
+    const memo = dayShifts.find(r=>r.workplace===wpFilter && r.memo)?.memo;
     const isToday = ds===todayStr, weekend=(day.getDay()===0||day.getDay()===6);
     let body=''; const multi=groups.length>1;
     if(dayShifts.length===0){ body = `<div class="dcol-off">휴무</div>`; }
     else groups.forEach(wp=>{
       const rows=dayShifts.filter(s=>s.workplace===wp); if(rows.length===0) return;
       const filled=rows.filter(s=>s.display_name||s.staff_name);
+      filled.sort((a,b)=> ((b.is_guest?1:0)-(a.is_guest?1:0)) || String(a.start_time).localeCompare(String(b.start_time)));
       const open=rows.length-filled.length;
       const nm=filled.map(s=>`<div class="nm${s.is_guest?' guest':''}">${esc(s.display_name||s.staff_name)}</div>`).join('')+(open>0?`<div class="nm op">모집중 ${open}</div>`:'');
       body += `<div class="wpgrp">${multi?`<div class="wpgrp-h"><span class="wp-dot ${wp}"></span>${wp}</div>`:''}${nm||'<div class="nm op">모집중</div>'}</div>`;
@@ -543,29 +569,34 @@ async function renderWeek(){
   });
 }
 
+const shiftOrder = s => (s.staff_id ? 1 : (s.guest_name ? 0 : 2));
 async function renderDay(){
   renderDateLabel();
   const list = $('scheduleList');
+  const admin = !!(session && session.is_admin);
   list.innerHTML = `<div style="text-align:center;padding:30px"><span class="spin"></span></div>`;
   const shifts = await fetchShifts(ymd(selectedDate));
   const groups = (wpFilter==='전체'?WORKPLACES:[wpFilter]);
   let html='';
   let total=0;
   groups.forEach(wp=>{
-    const rows = shifts.filter(s=>s.workplace===wp);
+    const rows = shifts.filter(s=>s.workplace===wp)
+      .sort((a,b)=> (shiftOrder(a)-shiftOrder(b)) || String(a.start_time).localeCompare(String(b.start_time)));
     total += rows.length;
     const ev = rows.find(r=>r.memo)?.memo;
-    const evBtn = (session&&session.is_admin) ? `<button class="btn ghost" data-ev="${wp}" data-cur="${esc(ev||'')}" style="padding:4px 9px;font-size:11px">📝 이벤트${ev?'':'+'}</button>` : '';
-    html += `<div class="wp-sec"><div class="wp-h"><span class="wp-dot ${wp}"></span><span class="wp-name">${wp}</span>${ev?`<span class="badge" style="background:#fff7ed;color:#ea580c">${esc(ev)}</span>`:''}<span class="wp-count" style="margin-left:auto">${rows.length}명</span>${evBtn}</div>`;
+    const evBtn = admin ? `<button class="btn ghost" data-ev="${wp}" data-cur="${esc(ev||'')}" style="padding:4px 9px;font-size:11px">📝 이벤트${ev?'':'+'}</button>` : '';
+    const addBtn = admin ? `<button class="btn primary" data-add="${wp}" style="padding:4px 10px;font-size:11px">➕ 추가</button>` : '';
+    html += `<div class="wp-sec"><div class="wp-h"><span class="wp-dot ${wp}"></span><span class="wp-name">${wp}</span><span class="wp-count" style="margin-left:auto">${rows.length}명</span>${evBtn}${addBtn}</div>`;
+    if(ev) html += `<div class="ev-banner">🎉 ${esc(ev)}</div>`;
     if(rows.length===0){
-      html += `<div class="card" style="text-align:center;color:var(--muted);font-weight:700;font-size:13px">근무 없음</div>`;
+      html += `<div class="card" style="text-align:center;color:var(--muted);font-weight:700;font-size:13px">${admin?'근무 없음 · ➕추가로 등록':'휴무 · 근무 없음'}</div>`;
     } else {
-      rows.forEach(s=> html += shiftCard(s));
+      rows.forEach(s=> html += shiftCard(s, admin));
     }
     html += `</div>`;
   });
-  if(total===0){
-    list.innerHTML = `<div class="empty-box"><div class="e-ic">🗓️</div><div class="e-t">이 날은 등록된 근무가 없어요</div><div class="e-s">관리자가 근무를 추가하면 여기에 보여요</div></div>`;
+  if(total===0 && !admin){
+    list.innerHTML = `<div class="empty-box"><div class="e-ic">🗓️</div><div class="e-t">이 날은 등록된 근무가 없어요</div><div class="e-s">다른 날짜를 확인해 보세요</div></div>`;
     return;
   }
   list.innerHTML = html;
@@ -575,49 +606,91 @@ async function renderDay(){
     const ev=prompt('이 날의 이벤트 이름 (지우려면 비워두기):', cur); if(ev===null) return;
     await rpc('admin_set_day_event', { p_admin_id:session.id, p_date:ymd(selectedDate), p_workplace:b.dataset.ev, p_event:ev.trim() }, ev.trim()?'이벤트를 저장했어요':'이벤트를 지웠어요');
   });
+  list.querySelectorAll('[data-add]').forEach(b=>b.onclick=()=>openShiftAdd(b.dataset.add));
+  list.querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>openShiftEdit(JSON.parse(b.dataset.edit)));
 }
-function shiftCard(s){
+function shiftCard(s, admin){
   const mine = session && s.staff_id===session.id;
-  let nameHtml, badge='', acts='';
-  if(s.staff_id){
-    nameHtml = `<span class="s-name">${esc(s.staff_name)}</span>`;
-  } else if(s.guest_name){
-    nameHtml = `<span class="s-name">${esc(s.guest_name)}</span>`;
-    badge = `<span class="badge guest">게스트</span>`;
-  } else {
-    nameHtml = `<span class="s-name empty">모집중 · 빈 자리</span>`;
-    badge = `<span class="badge empty">🈳 빈 자리</span>`;
-  }
+  let label, cls='s-name', badge='';
+  if(s.staff_id){ label=esc(s.staff_name); }
+  else if(s.guest_name){ label=esc(s.guest_name); badge=`<span class="badge guest">게스트</span>`; }
+  else { label='모집중 · 빈 자리'; cls='s-name empty'; badge=`<span class="badge empty">🈳 빈 자리</span>`; }
   if(s.status==='seeking_sub') badge = `<span class="badge seek">🔄 대타 구하는 중</span>`;
   if(mine) badge = `<span class="badge me">내 근무</span>` + (s.status==='seeking_sub'?` <span class="badge seek">대타 구하는 중</span>`:'');
 
-  // 액션 버튼
+  const nameHtml = admin
+    ? `<button class="${cls} editbtn" data-edit='${esc(JSON.stringify({id:s.id,staff_id:s.staff_id,guest_name:s.guest_name,start_time:s.start_time,end_time:s.end_time,workplace:s.workplace}))}'>${label}</button>`
+    : `<span class="${cls}">${label}</span>`;
+
   const btns=[];
-  if(session){
+  if(session && !admin){
     if(!s.staff_id && !s.guest_name){
       btns.push(`<button class="btn ghost" data-act="claim" data-id="${s.id}">이 자리 설게요</button>`);
     } else if(mine && s.status==='confirmed'){
       btns.push(`<button class="btn ghost" data-act="seek" data-id="${s.id}" data-info="${esc(s.workplace+' '+s.start_time+'~'+s.end_time)}">대타 구하기</button>`);
     }
-    if(session.is_admin){
-      btns.push(`<button class="btn warn" data-act="del-shift" data-id="${s.id}">삭제</button>`);
-    }
   }
-  if(btns.length) acts = `<div class="s-acts">${btns.join('')}</div>`;
-  const memo = s.memo? `<div class="s-memo">📝 ${esc(s.memo)}</div>`:'';
-  return `<div class="card">
-    <div class="s-row">
-      ${nameHtml}${badge}
-    </div>${memo}${acts}</div>`;
+  const acts = btns.length ? `<div class="s-acts">${btns.join('')}</div>` : '';
+  return `<div class="card"><div class="s-row"><div class="s-time">${esc(s.start_time)}~${esc(s.end_time)}</div>${nameHtml}${badge}</div>${acts}</div>`;
 }
 function bindShiftCards(root){
   root.querySelectorAll('[data-act="claim"]').forEach(b=>b.onclick=()=>
     rpc('claim_shift', { p_staff_id:session.id, p_shift_id:Number(b.dataset.id) }, '빈 자리를 맡았어요! 💪'));
   root.querySelectorAll('[data-act="seek"]').forEach(b=>b.onclick=()=>openSubModal(Number(b.dataset.id), b.dataset.info));
-  root.querySelectorAll('[data-act="del-shift"]').forEach(b=>b.onclick=()=>{
-    if(!confirm('이 근무를 삭제할까요?')) return;
-    rpc('admin_delete_shift', { p_admin_id:session.id, p_shift_id:Number(b.dataset.id) }, '근무를 삭제했어요');
-  });
+}
+
+/* ---------- 근무 추가/수정 모달 (관리자) ---------- */
+let smShiftId=null, smWp=null;
+function smFillStaff(){
+  $('sm-staff').innerHTML = staffList.map(s=>`<option value="${s.id}">${esc(s.name)}</option>`).join('');
+}
+function setSmKind(k){
+  document.querySelectorAll('#sm-kind button').forEach(b=>b.classList.toggle('on', b.dataset.k===k));
+  $('sm-staff').style.display = k==='staff'?'block':'none';
+  $('sm-guest').style.display = k==='guest'?'block':'none';
+}
+function openShiftAdd(wp){
+  smShiftId=null; smWp=wp;
+  $('sm-title').textContent='근무 추가';
+  $('sm-sub').textContent=`${ymd(selectedDate)} · ${wp}`;
+  smFillStaff(); setSmKind('staff');
+  $('sm-start').value='15:00'; $('sm-end').value='21:00';
+  $('sm-del').style.display='none';
+  $('shiftModal').classList.add('show');
+}
+function openShiftEdit(s){
+  smShiftId=s.id; smWp=s.workplace;
+  $('sm-title').textContent='근무 수정';
+  $('sm-sub').textContent=`${ymd(selectedDate)} · ${s.workplace}`;
+  smFillStaff();
+  if(s.staff_id){ setSmKind('staff'); $('sm-staff').value=String(s.staff_id); }
+  else if(s.guest_name){ setSmKind('guest'); $('sm-guest').value=s.guest_name; }
+  else setSmKind('open');
+  $('sm-start').value=s.start_time; $('sm-end').value=s.end_time;
+  $('sm-del').style.display='block';
+  $('shiftModal').classList.add('show');
+}
+function closeShiftModal(){ $('shiftModal').classList.remove('show'); smShiftId=null; }
+async function saveShift(){
+  const kind=document.querySelector('#sm-kind button.on')?.dataset.k||'staff';
+  const start=$('sm-start').value, end=$('sm-end').value;
+  if(!start||!end){ toast('시간을 입력하세요',true); return; }
+  let assignee=null, guest=null;
+  if(kind==='staff'){ assignee=$('sm-staff').value?Number($('sm-staff').value):null; if(!assignee){ toast('직원을 선택하세요',true); return; } }
+  else if(kind==='guest'){ guest=$('sm-guest').value.trim(); if(!guest){ toast('게스트 이름을 입력하세요',true); return; } }
+  let ok;
+  if(smShiftId){
+    ok = await rpc('admin_update_shift', { p_admin_id:session.id, p_shift_id:smShiftId, p_start:start, p_end:end, p_assignee:assignee, p_guest:guest }, '근무를 수정했어요');
+  } else {
+    ok = await rpc('admin_add_shift', { p_admin_id:session.id, p_work_date:ymd(selectedDate), p_workplace:smWp, p_start:start, p_end:end, p_assignee:assignee, p_memo:null, p_guest:guest }, '근무를 추가했어요 ✨');
+  }
+  if(ok) closeShiftModal();
+}
+async function deleteShiftFromModal(){
+  if(!smShiftId) return;
+  if(!confirm('이 근무를 삭제할까요?')) return;
+  const ok = await rpc('admin_delete_shift', { p_admin_id:session.id, p_shift_id:smShiftId }, '근무를 삭제했어요');
+  if(ok) closeShiftModal();
 }
 
 /* ---------- 대타 모달 ---------- */
@@ -881,6 +954,11 @@ function wireUI(){
   $('addStaffBtn').onclick = addStaff;
   $('staffSearch').oninput = renderStaffList;
   document.querySelectorAll('#af-kind button').forEach(b=>b.onclick=()=>setAfKind(b.dataset.k));
+  document.querySelectorAll('#sm-kind button').forEach(b=>b.onclick=()=>setSmKind(b.dataset.k));
+  $('sm-save').onclick = saveShift;
+  $('sm-del').onclick = deleteShiftFromModal;
+  $('sm-close').onclick = closeShiftModal;
+  $('shiftModal').onclick = e=>{ if(e.target.id==='shiftModal') closeShiftModal(); };
   $('imp-file').onchange = onImpFile;
   $('impPreviewBtn').onclick = previewImport;
   $('impRunBtn').onclick = runImport;
