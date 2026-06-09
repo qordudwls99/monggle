@@ -858,6 +858,10 @@ function onImpFile(ev){
 function parseTime(s){ const m=String(s).match(/(\d{1,2})\s*[-~]\s*(\d{1,2})/); if(!m) return null;
   return [String(+m[1]).padStart(2,'0')+':00', String(+m[2]).padStart(2,'0')+':00']; }
 
+// SheetJS 가 엑셀 날짜를 시간대 때문에 하루 밀려 읽는 문제 보정:
+// 12시간 더한 뒤 UTC 기준 날짜를 사용하면 어느 시간대에서도 정확함
+function sheetYMD(d){ const t=new Date(d.getTime()+12*3600*1000);
+  return t.getUTCFullYear()+'-'+String(t.getUTCMonth()+1).padStart(2,'0')+'-'+String(t.getUTCDate()).padStart(2,'0'); }
 function parseSheet(){
   if(!impWorkbook) return [];
   const ws=impWorkbook.Sheets[$('imp-sheet').value];
@@ -872,6 +876,7 @@ function parseSheet(){
   const headerRows=[...new Set(headers.map(h=>h[0]))].sort((a,b)=>a-b);
   const out=[];
   headers.forEach(([r,c,dt])=>{
+    const ds=sheetYMD(dt);  // SheetJS 날짜 시간대 보정 (하루 밀림 방지)
     const nxt=headerRows.filter(x=>x>r); const end=nxt.length?Math.min(...nxt)-1:r+15;
     const evCell=r>0?(aoa[r-1]||[])[c]:null; const memo=(typeof evCell==='string')?evCell.trim():'';
     let lastTime=null;
@@ -880,8 +885,8 @@ function parseSheet(){
       const pt=(typeof t==='string')?parseTime(t):null;
       if(pt) lastTime=pt;
       const name=(typeof nm==='string')?nm.trim():'';
-      if(pt){ out.push({d:ymd(dt),s:pt[0],e:pt[1],name,memo}); }
-      else if(name && lastTime){ out.push({d:ymd(dt),s:lastTime[0],e:lastTime[1],name,memo}); } // 시간 없는 이름은 위 시간 사용
+      if(pt){ out.push({d:ds,s:pt[0],e:pt[1],name,memo}); }
+      else if(name && lastTime && !/[\d/]/.test(name)){ out.push({d:ds,s:lastTime[0],e:lastTime[1],name,memo}); } // 시간 없는 이름은 위 시간 사용(메모성 텍스트 제외)
     }
   });
   return out;
