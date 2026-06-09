@@ -14,9 +14,8 @@
 
 | 파일 | 설명 |
 |------|------|
-| `shift.html` | 실제 앱 (이 파일 하나면 동작) |
+| `index.html` | 실제 앱 (이 파일 하나면 동작) |
 | `supabase-setup.sql` | 데이터베이스 초기 설정 SQL |
-| `index.html` | (기존) 몽글 펫 앱 — 건드리지 않았어요 |
 
 ---
 
@@ -41,8 +40,8 @@
    - **Project URL** (예: `https://abcd1234.supabase.co`)
    - **anon public** 키 (`eyJ...` 로 시작하는 긴 문자열)
 
-### 4. shift.html 에 붙여넣기
-`shift.html` 상단의 `CONFIG` 부분을 찾아 두 값을 채워요:
+### 4. index.html 에 붙여넣기
+`index.html` 상단의 `CONFIG` 부분을 찾아 두 값을 채워요:
 
 ```js
 const CONFIG = {
@@ -60,12 +59,14 @@ const CONFIG = {
 
 ## 🌐 배포 (인터넷에 올리기)
 
-**GitHub Pages** 가 가장 간단해요:
-1. GitHub 저장소 → **Settings → Pages**
-2. Source: `main` (또는 배포 브랜치) 선택 → Save
-3. 잠시 후 주소가 생깁니다:
-   - 손님/출근자 접속 주소: `https://<사용자>.github.io/monggle/shift.html`
+**Vercel** 로 배포 중이에요:
+1. [vercel.com](https://vercel.com) → GitHub 로 로그인
+2. **Add New… → Project** → `monggle` 저장소 **Import**
+3. Application Preset `Other`, 나머지 기본값 그대로 → **Deploy**
+4. 배포 완료 후 주소가 생깁니다:
+   - 손님/출근자 접속 주소: `https://<프로젝트>.vercel.app/`
 
+`main` 브랜치에 푸시하면 Vercel 이 **자동으로 다시 배포**해요.
 이 주소를 출근자와 손님에게 공유하면 돼요.
 
 ---
