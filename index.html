@@ -73,9 +73,10 @@ body{
 .dh-d{font-weight:900;font-size:15px;color:var(--ink)}
 .dh-ev{font-size:11px;font-weight:800;color:#ea580c;background:#fff7ed;padding:3px 8px;border-radius:99px}
 .dh-today{font-size:10px;font-weight:900;color:#fff;background:var(--violet2);padding:3px 8px;border-radius:99px}
-.wline{display:flex;align-items:flex-start;gap:7px;padding:5px 0;font-size:13.5px}
-.wline .wn{font-weight:900;font-size:12px;padding:2px 0;min-width:42px;color:var(--ink2)}
-.wline .wpeople{flex:1;font-weight:700;color:var(--ink);line-height:1.5}
+.wline{display:flex;align-items:flex-start;gap:9px;padding:6px 0;font-size:13.5px;border-top:1px solid #f3effb}
+.wline:first-child{border-top:none}
+.wline .wn{font-weight:900;font-size:12px;padding-top:1px;min-width:48px;color:var(--ink2);display:flex;align-items:center;gap:5px}
+.wline .wpeople{flex:1;font-weight:700;color:var(--ink);display:flex;flex-direction:column;gap:3px}
 .wline .wpeople .op{color:#94a3b8;font-weight:600}
 .dh-off{font-size:12.5px;color:var(--muted);font-weight:700}
 
@@ -227,8 +228,8 @@ async function renderWeek(){
       const rows=dayShifts.filter(s=>s.workplace===wp); if(rows.length===0) return;
       const names=rows.filter(s=>s.staff_name).map(s=>esc(s.staff_name));
       const open=rows.length-names.length;
-      const ppl = names.join(', ') + (open>0?`<span class="op">${names.length?' · ':''}모집중 ${open}</span>`:'');
-      inner += `<div class="wline"><span class="wn"><span class="wp-dot ${wp}"></span> ${wp}</span><span class="wpeople">${ppl||'<span class="op">모집중</span>'}</span></div>`;
+      const items = names.map(n=>`<div>${n}</div>`).join('') + (open>0?`<div class="op">모집중 ${open}</div>`:'');
+      inner += `<div class="wline"><span class="wn"><span class="wp-dot ${wp}"></span> ${wp}</span><span class="wpeople">${items||'<div class="op">모집중</div>'}</span></div>`;
     });
     html += `<div class="daycard${isToday?' today':''}${weekend?' weekend':''}">
       <div class="dh"><span class="dh-d">${day.getMonth()+1}/${day.getDate()} (${DAYS[day.getDay()]})</span>
