@@ -54,18 +54,21 @@ body{
 
 /* day view */
 .wp-sec{margin-bottom:16px}
-.wp-h{display:flex;align-items:center;gap:8px;margin:0 2px 9px}
+.wp-h{display:flex;align-items:center;gap:8px;margin:2px 2px 10px}
 .wp-dot{width:11px;height:11px;border-radius:50%;flex-shrink:0}
 .wp-dot.메이드{background:var(--maid)}.wp-dot.데빌{background:var(--devil)}.wp-dot.마츠리{background:var(--matsuri)}
-.wp-name{font-weight:900;font-size:16px;color:#fff;text-shadow:0 1px 5px rgba(80,40,150,.3)}
-.wp-count{font-size:12px;font-weight:800;color:rgba(255,255,255,.85)}
-.names{background:var(--card);border-radius:18px;padding:12px;box-shadow:0 12px 28px -16px rgba(80,50,150,.35),0 2px 5px rgba(80,50,150,.05);display:flex;flex-direction:column;gap:7px}
-.tag{background:#f6f3ff;color:var(--ink);font-weight:800;font-size:14.5px;padding:10px 13px;border-radius:11px;text-align:center}
+.wp-name{font-weight:900;font-size:17px;color:#fff;text-shadow:0 1px 5px rgba(80,40,150,.3)}
+.wp-count{margin-left:auto;font-size:11.5px;font-weight:800;color:#fff;background:rgba(255,255,255,.22);padding:3px 11px;border-radius:99px}
+.names{display:flex;flex-direction:column;gap:8px}
+.tag{display:flex;align-items:center;gap:11px;background:var(--card);border-radius:16px;padding:10px 13px;box-shadow:0 10px 22px -15px rgba(80,50,150,.45),0 1px 3px rgba(80,50,150,.05);font-weight:800;font-size:15px;color:var(--ink)}
+.tag .av{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#a78bfa,#f472b6);color:#fff;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:900;flex-shrink:0}
+.tag .tnm{flex:1}
+.tag .gtag{font-size:10.5px;font-weight:900;color:#b45309;background:#fef3c7;padding:3px 9px;border-radius:99px}
+.tag.guest{background:linear-gradient(120deg,#fffaf0,#fff3df)}
+.tag.guest .av{background:linear-gradient(135deg,#fbbf24,#fb923c)}
 .ev-banner{display:flex;align-items:center;justify-content:center;gap:7px;background:linear-gradient(120deg,#fff7ed,#ffe8cc);color:#c2410c;font-weight:900;font-size:14.5px;padding:11px 14px;border-radius:14px;margin-bottom:9px;box-shadow:0 10px 22px -14px rgba(234,88,12,.5)}
-.tag.open{background:#f1f5f9;color:#64748b;font-weight:700}
-.tag.guest{background:#fef3c7;color:#b45309}.tag.guest::after{content:' · 게스트';font-size:10px;opacity:.8}
 .memo-row{font-size:12px;color:var(--ink2);margin:8px 2px 0}
-.none{text-align:center;color:var(--muted);font-weight:700;font-size:13px;background:var(--card);border-radius:18px;padding:14px}
+.none{text-align:center;color:var(--muted);font-weight:700;font-size:13px;background:var(--card);border-radius:16px;padding:16px}
 
 /* week view — 4(위)+3(아래) 그리드, 화면 꽉 차게 */
 .weekgrid{display:grid;grid-template-columns:repeat(4,1fr);grid-auto-rows:1fr;gap:8px;min-height:calc(100dvh - 235px)}
@@ -201,9 +204,11 @@ async function renderDay(){
     const memo = rows.find(r=>r.memo)?.memo;
     html += `<div class="wp-sec"><div class="wp-h"><span class="wp-dot ${wp}"></span><span class="wp-name">${wp}</span><span class="wp-count">${named.length}명</span></div>`;
     if(memo) html += `<div class="ev-banner">🎉 ${esc(memo)}</div>`;
-    if(named.length===0){ html += `<div class="none">근무 없음</div>`; }
+    if(named.length===0){ html += `<div class="none">휴무 · 근무 없음</div>`; }
     else {
-      const tags = named.map(s=>`<span class="tag${s.is_guest?' guest':''}">${esc(s.display_name||s.staff_name)}</span>`).join('');
+      const tags = named.map(s=>{ const dn=s.display_name||s.staff_name;
+        return `<div class="tag${s.is_guest?' guest':''}"><span class="av">${esc(dn.charAt(0))}</span><span class="tnm">${esc(dn)}</span>${s.is_guest?'<span class="gtag">게스트</span>':''}</div>`;
+      }).join('');
       html += `<div class="names">${tags}</div>`;
     }
     html += `</div>`;

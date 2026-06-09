@@ -101,7 +101,10 @@ body{
 
 /* shift card */
 .card{background:var(--card);border-radius:18px;padding:14px 15px;margin-bottom:10px;box-shadow:0 12px 28px -16px rgba(80,50,150,.35),0 2px 5px rgba(80,50,150,.05)}
-.s-row{display:flex;align-items:center;gap:12px}
+.s-row{display:flex;align-items:center;gap:11px}
+.s-row .av{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#a78bfa,#f472b6);color:#fff;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:900;flex-shrink:0}
+.s-row .av.guest{background:linear-gradient(135deg,#fbbf24,#fb923c)}
+.s-row .av.none{background:#ece7f7;color:#b9aee0}
 .s-time{font-weight:900;font-size:15px;color:var(--ink);min-width:96px}
 .s-time small{display:block;font-size:11px;font-weight:700;color:var(--muted);margin-top:1px}
 .s-name{flex:1;font-weight:800;font-size:15px;color:var(--ink)}
@@ -288,10 +291,6 @@ select.fld{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns
           </div>
           <select class="fld" id="af-staff"></select>
           <input type="text" class="fld" id="af-guest" placeholder="게스트 이름" style="display:none">
-          <div class="frow">
-            <div><label class="fl">시작</label><input type="time" class="fld" id="af-start" value="18:00"></div>
-            <div><label class="fl">종료</label><input type="time" class="fld" id="af-end" value="23:00"></div>
-          </div>
           <label class="fl">메모/이벤트 (선택)</label>
           <input type="text" class="fld" id="af-memo" placeholder="예: 스포츠데이">
           <button class="btn primary full" id="addShiftBtn">근무 추가하기</button>
@@ -330,10 +329,6 @@ select.fld{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns
     </div>
     <select class="fld" id="sm-staff"></select>
     <input type="text" class="fld" id="sm-guest" placeholder="게스트 이름" style="display:none">
-    <div class="frow">
-      <div><label class="fl">시작</label><input type="time" class="fld" id="sm-start" value="15:00"></div>
-      <div><label class="fl">종료</label><input type="time" class="fld" id="sm-end" value="21:00"></div>
-    </div>
     <button class="btn primary full" id="sm-save">저장</button>
     <button class="btn warn full" id="sm-del" style="margin-top:9px;display:none">이 근무 삭제</button>
     <button class="closex" id="sm-close">취소</button>
@@ -631,7 +626,9 @@ function shiftCard(s, admin){
     }
   }
   const acts = btns.length ? `<div class="s-acts">${btns.join('')}</div>` : '';
-  return `<div class="card"><div class="s-row"><div class="s-time">${esc(s.start_time)}~${esc(s.end_time)}</div>${nameHtml}${badge}</div>${acts}</div>`;
+  const who = s.staff_id?s.staff_name:(s.guest_name||'');
+  const av = `<span class="av${(!s.staff_id&&s.guest_name)?' guest':''}${who?'':' none'}">${esc(who.charAt(0)||'·')}</span>`;
+  return `<div class="card"><div class="s-row">${av}${nameHtml}${badge}</div>${acts}</div>`;
 }
 function bindShiftCards(root){
   root.querySelectorAll('[data-act="claim"]').forEach(b=>b.onclick=()=>
@@ -640,7 +637,7 @@ function bindShiftCards(root){
 }
 
 /* ---------- 근무 추가/수정 모달 (관리자) ---------- */
-let smShiftId=null, smWp=null;
+let smShiftId=null, smWp=null, smStart='', smEnd='';
 function smFillStaff(){
   $('sm-staff').innerHTML = staffList.map(s=>`<option value="${s.id}">${esc(s.name)}</option>`).join('');
 }
@@ -650,39 +647,35 @@ function setSmKind(k){
   $('sm-guest').style.display = k==='guest'?'block':'none';
 }
 function openShiftAdd(wp){
-  smShiftId=null; smWp=wp;
+  smShiftId=null; smWp=wp; smStart=''; smEnd='';
   $('sm-title').textContent='근무 추가';
   $('sm-sub').textContent=`${ymd(selectedDate)} · ${wp}`;
   smFillStaff(); setSmKind('staff');
-  $('sm-start').value='15:00'; $('sm-end').value='21:00';
   $('sm-del').style.display='none';
   $('shiftModal').classList.add('show');
 }
 function openShiftEdit(s){
-  smShiftId=s.id; smWp=s.workplace;
+  smShiftId=s.id; smWp=s.workplace; smStart=s.start_time||''; smEnd=s.end_time||'';
   $('sm-title').textContent='근무 수정';
   $('sm-sub').textContent=`${ymd(selectedDate)} · ${s.workplace}`;
   smFillStaff();
   if(s.staff_id){ setSmKind('staff'); $('sm-staff').value=String(s.staff_id); }
   else if(s.guest_name){ setSmKind('guest'); $('sm-guest').value=s.guest_name; }
   else setSmKind('open');
-  $('sm-start').value=s.start_time; $('sm-end').value=s.end_time;
   $('sm-del').style.display='block';
   $('shiftModal').classList.add('show');
 }
 function closeShiftModal(){ $('shiftModal').classList.remove('show'); smShiftId=null; }
 async function saveShift(){
   const kind=document.querySelector('#sm-kind button.on')?.dataset.k||'staff';
-  const start=$('sm-start').value, end=$('sm-end').value;
-  if(!start||!end){ toast('시간을 입력하세요',true); return; }
   let assignee=null, guest=null;
   if(kind==='staff'){ assignee=$('sm-staff').value?Number($('sm-staff').value):null; if(!assignee){ toast('직원을 선택하세요',true); return; } }
   else if(kind==='guest'){ guest=$('sm-guest').value.trim(); if(!guest){ toast('게스트 이름을 입력하세요',true); return; } }
   let ok;
   if(smShiftId){
-    ok = await rpc('admin_update_shift', { p_admin_id:session.id, p_shift_id:smShiftId, p_start:start, p_end:end, p_assignee:assignee, p_guest:guest }, '근무를 수정했어요');
+    ok = await rpc('admin_update_shift', { p_admin_id:session.id, p_shift_id:smShiftId, p_start:smStart, p_end:smEnd, p_assignee:assignee, p_guest:guest }, '근무를 수정했어요');
   } else {
-    ok = await rpc('admin_add_shift', { p_admin_id:session.id, p_work_date:ymd(selectedDate), p_workplace:smWp, p_start:start, p_end:end, p_assignee:assignee, p_memo:null, p_guest:guest }, '근무를 추가했어요 ✨');
+    ok = await rpc('admin_add_shift', { p_admin_id:session.id, p_work_date:ymd(selectedDate), p_workplace:smWp, p_start:smStart, p_end:smEnd, p_assignee:assignee, p_memo:null, p_guest:guest }, '근무를 추가했어요 ✨');
   }
   if(ok) closeShiftModal();
 }
@@ -720,7 +713,7 @@ async function renderSwaps(){
   const days=['일','월','화','수','목','금','토'];
   list.innerHTML = swaps.map(s=>{
     const d = new Date(s.work_date+'T00:00:00');
-    const when = `${d.getMonth()+1}/${d.getDate()}(${days[d.getDay()]}) ${esc(s.start_time)}~${esc(s.end_time)}`;
+    const when = `${d.getMonth()+1}/${d.getDate()}(${days[d.getDay()]})`;
     const mineReq = session && s.requester_id===session.id;
     let act;
     if(mineReq){
@@ -765,10 +758,10 @@ async function renderMine(){
     const seeking = s.status==='seeking_sub';
     const act = seeking
       ? `<button class="btn ghost full" data-act="mine-cancel" data-id="${s.id}">대타 요청 취소</button>`
-      : `<button class="btn ghost full" data-act="seek" data-id="${s.id}" data-info="${esc(s.workplace+' '+s.start_time+'~'+s.end_time)}">대타 구하기</button>`;
+      : `<button class="btn ghost full" data-act="seek" data-id="${s.id}" data-info="${esc(s.workplace+' '+when)}">대타 구하기</button>`;
     return `<div class="card">
       <div class="s-row">
-        <div class="s-time">${esc(s.start_time)}~${esc(s.end_time)}<small>${when}</small></div>
+        <div class="s-time" style="min-width:auto">${when}</div>
         <span class="swap-wp ${s.workplace}" style="color:#fff">${esc(s.workplace)}</span>
         ${seeking?'<span class="badge seek">🔄 대타 구하는 중</span>':''}
       </div>
@@ -823,16 +816,16 @@ function setAfKind(k){
   $('af-guest').style.display = k==='guest' ? 'block':'none';
 }
 async function addShift(){
-  const date=$('af-date').value, wp=$('af-wp').value, start=$('af-start').value, end=$('af-end').value;
+  const date=$('af-date').value, wp=$('af-wp').value;
   const kind=document.querySelector('#af-kind button.on')?.dataset.k||'staff';
   const memo=$('af-memo').value.trim();
-  if(!date||!start||!end){ toast('날짜와 시간을 입력하세요', true); return; }
+  if(!date){ toast('날짜를 입력하세요', true); return; }
   let assignee=null, guest=null;
   if(kind==='staff'){ assignee=$('af-staff').value?Number($('af-staff').value):null; }
   else if(kind==='guest'){ guest=$('af-guest').value.trim(); if(!guest){ toast('게스트 이름을 입력하세요',true); return; } }
   const ok = await rpc('admin_add_shift', {
     p_admin_id:session.id, p_work_date:date, p_workplace:wp,
-    p_start:start, p_end:end, p_assignee:assignee, p_memo:memo||null, p_guest:guest
+    p_start:'', p_end:'', p_assignee:assignee, p_memo:memo||null, p_guest:guest
   }, '근무를 추가했어요 ✨');
   if(ok){ $('af-memo').value=''; $('af-guest').value=''; }
 }
