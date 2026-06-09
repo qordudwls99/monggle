@@ -154,26 +154,53 @@ const ymd = d => d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+
 const mondayOf = d => { const x=new Date(d); x.setDate(x.getDate()-((x.getDay()+6)%7)); x.setHours(0,0,0,0); return x; };
 
 let supa=null, selectedDate=new Date(), wpFilter='메이드', viewMode='day';
+let minDate=null, maxDate=null;   // 손님이 볼 수 있는 범위 (1개월 전 ~ 마지막 등록일)
 
 function isConfigured(){
   return CONFIG.SUPABASE_URL && !CONFIG.SUPABASE_URL.startsWith('YOUR_') &&
          CONFIG.SUPABASE_ANON_KEY && !CONFIG.SUPABASE_ANON_KEY.startsWith('YOUR_');
 }
-function boot(){
+async function loadBounds(){
+  const today=new Date(); const mn=new Date(today); mn.setMonth(mn.getMonth()-1);
+  minDate=ymd(mn);
+  const [a,b]=await Promise.all([
+    supa.from('shift_view').select('work_date').order('work_date',{ascending:false}).limit(1),
+    supa.from('closure_view').select('work_date').order('work_date',{ascending:false}).limit(1)
+  ]);
+  let m=null;
+  if(a.data&&a.data[0]) m=a.data[0].work_date;
+  if(b.data&&b.data[0] && (!m||b.data[0].work_date>m)) m=b.data[0].work_date;
+  maxDate = m || ymd(today);
+}
+function clampSel(){
+  let t=ymd(selectedDate);
+  if(maxDate && t>maxDate) selectedDate=new Date(maxDate+'T00:00:00');
+  if(minDate && ymd(selectedDate)<minDate) selectedDate=new Date(minDate+'T00:00:00');
+}
+function updateNav(){
+  const t=ymd(selectedDate); let cp=true, cn=true;
+  if(viewMode==='day'){ cp=!minDate||t>minDate; cn=!maxDate||t<maxDate; }
+  else { const mon=mondayOf(selectedDate); const nm=new Date(mon); nm.setDate(nm.getDate()+7);
+    cp=!minDate||ymd(mon)>minDate; cn=!maxDate||ymd(nm)<=maxDate; }
+  $('prev').disabled=!cp; $('next').disabled=!cn;
+  $('prev').style.opacity=cp?'':'.3'; $('next').style.opacity=cn?'':'.3';
+}
+async function boot(){
   if(!isConfigured()){ $('setupScreen').style.display='block'; return; }
   supa = createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
   $('mainApp').style.display='flex';
   renderChips();
+  await loadBounds(); clampSel();
   $('viewSeg').querySelectorAll('button').forEach(b=>b.onclick=()=>{
     viewMode=b.dataset.v;
     $('viewSeg').querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b));
     render();
   });
-  $('prev').onclick = ()=>{ selectedDate.setDate(selectedDate.getDate()-(viewMode==='week'?7:1)); render(); };
-  $('next').onclick = ()=>{ selectedDate.setDate(selectedDate.getDate()+(viewMode==='week'?7:1)); render(); };
-  $('todayBtn').onclick = ()=>{ selectedDate=new Date(); render(); };
+  $('prev').onclick = ()=>{ selectedDate.setDate(selectedDate.getDate()-(viewMode==='week'?7:1)); clampSel(); render(); };
+  $('next').onclick = ()=>{ selectedDate.setDate(selectedDate.getDate()+(viewMode==='week'?7:1)); clampSel(); render(); };
+  $('todayBtn').onclick = ()=>{ selectedDate=new Date(); clampSel(); render(); };
   render();
-  setInterval(()=>{ if(document.visibilityState==='visible') render(); }, 30000);
+  setInterval(async()=>{ if(document.visibilityState==='visible'){ await loadBounds(); render(); } }, 30000);
 }
 
 function renderChips(){
@@ -187,24 +214,31 @@ async function fetchRange(from,to){
   if(error){ $('list').innerHTML=`<div class="empty-box"><div class="e-ic">⚠️</div><div class="e-t">불러오기 실패</div><div class="e-s">${esc(error.message)}</div></div>`; return null; }
   return data||[];
 }
+async function fetchClosures(from,to){
+  const { data } = await supa.from('closure_view').select('*').gte('work_date',from).lte('work_date',to);
+  return new Set((data||[]).map(c=>c.work_date+'|'+c.workplace));
+}
 
-function render(){ viewMode==='week' ? renderWeek() : renderDay(); }
+function render(){ updateNav(); viewMode==='week' ? renderWeek() : renderDay(); }
 
 async function renderDay(){
   const d=selectedDate, isToday=ymd(d)===ymd(new Date());
   $('dateLabel').innerHTML = `${d.getMonth()+1}월 ${d.getDate()}일 (${DAYS[d.getDay()]})<small>${isToday?'오늘':''}</small>`;
   $('list').innerHTML = `<div style="text-align:center;padding:30px"><span class="spin"></span></div>`;
   const shifts = await fetchRange(ymd(d), ymd(d)); if(shifts===null) return;
+  const closed = await fetchClosures(ymd(d), ymd(d));
   const groups = (wpFilter==='전체'?WORKPLACES:[wpFilter]);
   let html='', total=0;
   groups.forEach(wp=>{
+    const isClosed = closed.has(ymd(d)+'|'+wp);
     const rows = shifts.filter(s=>s.workplace===wp);
-    const named = rows.filter(s=>s.display_name||s.staff_name); total+=named.length;
+    const named = rows.filter(s=>s.display_name||s.staff_name); total+=named.length+(isClosed?1:0);
     named.sort((a,b)=> ((b.is_guest?1:0)-(a.is_guest?1:0)) || String(a.start_time).localeCompare(String(b.start_time)));
     const memo = rows.find(r=>r.memo)?.memo;
-    html += `<div class="wp-sec"><div class="wp-h"><span class="wp-dot ${wp}"></span><span class="wp-name">${wp}</span><span class="wp-count">${named.length}명</span></div>`;
+    html += `<div class="wp-sec"><div class="wp-h"><span class="wp-dot ${wp}"></span><span class="wp-name">${wp}</span><span class="wp-count">${isClosed?'휴무':named.length+'명'}</span></div>`;
+    if(isClosed){ html += `<div class="none">🌙 휴무일</div></div>`; return; }
     if(memo) html += `<div class="ev-banner">🎉 ${esc(memo)}</div>`;
-    if(named.length===0){ html += `<div class="none">휴무 · 근무 없음</div>`; }
+    if(named.length===0){ html += `<div class="none">근무 없음</div>`; }
     else {
       const tags = named.map(s=>{ const dn=s.display_name||s.staff_name;
         return `<div class="tag${s.is_guest?' guest':''}"><span class="av">${esc(dn.charAt(0))}</span><span class="tnm">${esc(dn)}</span>${s.is_guest?'<span class="gtag">게스트</span>':''}</div>`;
@@ -223,6 +257,7 @@ async function renderWeek(){
   $('dateLabel').innerHTML = `${mon.getMonth()+1}/${mon.getDate()} ~ ${sun.getMonth()+1}/${sun.getDate()}<small>주간 · 좌우로 넘겨보세요</small>`;
   $('list').innerHTML = `<div style="text-align:center;padding:30px"><span class="spin"></span></div>`;
   const shifts = await fetchRange(ymd(mon), ymd(sun)); if(shifts===null) return;
+  const closed = await fetchClosures(ymd(mon), ymd(sun));
   const todayStr = ymd(new Date());
   const groups = (wpFilter==='전체'?WORKPLACES:[wpFilter]);
   let cols='';
@@ -233,6 +268,7 @@ async function renderWeek(){
     const isToday = ds===todayStr, weekend = (day.getDay()===0||day.getDay()===6);
     let body=''; const multi=groups.length>1;
     groups.forEach(wp=>{
+      if(closed.has(ds+'|'+wp)){ body += `<div class="dcol-off">🌙 휴무</div>`; return; }
       const filled=dayShifts.filter(s=>s.workplace===wp&&(s.display_name||s.staff_name));
       if(filled.length===0) return;
       filled.sort((a,b)=> ((b.is_guest?1:0)-(a.is_guest?1:0)) || String(a.start_time).localeCompare(String(b.start_time)));

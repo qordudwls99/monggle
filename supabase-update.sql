@@ -146,11 +146,51 @@ begin
     where id = p_shift_id;
 end; $$;
 
--- 9) 이제 직원 테이블의 근무지 컬럼 제거
+-- 9) 휴무일 (근무지별 날짜 단위 휴무 지정)
+create table if not exists closures (
+  work_date date not null,
+  workplace text not null,
+  primary key (work_date, workplace)
+);
+alter table closures enable row level security;
+create or replace view closure_view as select work_date, workplace from closures;
+grant select on closure_view to anon, authenticated;
+
+create or replace function admin_set_day_off(p_admin_id bigint, p_pin text,
+  p_date date, p_workplace text, p_off boolean)
+returns void language plpgsql security definer set search_path = public as $$
+declare v staff;
+begin
+  v := _verify(p_admin_id, p_pin);
+  if v.id is null or not v.is_admin then raise exception '관리자만 가능합니다'; end if;
+  if p_off then
+    delete from shifts where work_date = p_date and workplace = p_workplace;
+    insert into closures(work_date, workplace) values (p_date, p_workplace)
+      on conflict do nothing;
+  else
+    delete from closures where work_date = p_date and workplace = p_workplace;
+  end if;
+end; $$;
+
+-- 10) 직원 권한 변경 (일반 ↔ 관리자)
+create or replace function admin_set_role(p_admin_id bigint, p_pin text,
+  p_target_id bigint, p_is_admin boolean)
+returns void language plpgsql security definer set search_path = public as $$
+declare v staff;
+begin
+  v := _verify(p_admin_id, p_pin);
+  if v.id is null or not v.is_admin then raise exception '관리자만 가능합니다'; end if;
+  if p_target_id = p_admin_id and not p_is_admin then
+    raise exception '본인 권한은 내릴 수 없어요'; end if;
+  update staff set is_admin = p_is_admin where id = p_target_id;
+end; $$;
+
+-- 11) 이제 직원 테이블의 근무지 컬럼 제거
 alter table staff drop column if exists workplace;
 
 -- 실행 권한
 grant execute on function
   staff_login, staff_directory, admin_add_staff, admin_set_pin,
-  admin_add_shift, admin_update_shift, admin_set_day_event, admin_import_shifts
+  admin_add_shift, admin_update_shift, admin_set_day_event, admin_import_shifts,
+  admin_set_day_off, admin_set_role
 to anon, authenticated;

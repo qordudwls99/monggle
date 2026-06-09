@@ -425,6 +425,10 @@ async function fetchShifts(dateStr){
   if(error){ toast('스케줄 로딩 실패: '+error.message, true); return []; }
   return data || [];
 }
+async function fetchClosures(from,to){
+  const { data } = await supa.from('closure_view').select('*').gte('work_date',from).lte('work_date',to);
+  return new Set((data||[]).map(c=>c.work_date+'|'+c.workplace));
+}
 async function fetchRange(from,to){
   const { data, error } = await supa.from('shift_view').select('*')
     .gte('work_date', from).lte('work_date', to).order('work_date').order('workplace').order('start_time');
@@ -534,6 +538,7 @@ async function renderWeek(){
   $('dateLabel').innerHTML = `${mon.getMonth()+1}/${mon.getDate()} ~ ${sun.getMonth()+1}/${sun.getDate()}<small>주간 · 좌우로 넘겨보세요</small>`;
   list.innerHTML = `<div style="text-align:center;padding:30px"><span class="spin"></span></div>`;
   const shifts = await fetchRange(ymd(mon), ymd(sun));
+  const closed = await fetchClosures(ymd(mon), ymd(sun));
   const todayStr = ymd(new Date());
   const groups = (wpFilter==='전체'?WORKPLACES:[wpFilter]);
   let cols='';
@@ -543,8 +548,8 @@ async function renderWeek(){
     const memo = dayShifts.find(r=>r.workplace===wpFilter && r.memo)?.memo;
     const isToday = ds===todayStr, weekend=(day.getDay()===0||day.getDay()===6);
     let body=''; const multi=groups.length>1;
-    if(dayShifts.length===0){ body = `<div class="dcol-off">휴무</div>`; }
-    else groups.forEach(wp=>{
+    groups.forEach(wp=>{
+      if(closed.has(ds+'|'+wp)){ body += `<div class="dcol-off">🌙 휴무</div>`; return; }
       const rows=dayShifts.filter(s=>s.workplace===wp); if(rows.length===0) return;
       const filled=rows.filter(s=>s.display_name||s.staff_name);
       filled.sort((a,b)=> ((b.is_guest?1:0)-(a.is_guest?1:0)) || String(a.start_time).localeCompare(String(b.start_time)));
@@ -552,6 +557,7 @@ async function renderWeek(){
       const nm=filled.map(s=>`<div class="nm${s.is_guest?' guest':''}">${esc(s.display_name||s.staff_name)}</div>`).join('')+(open>0?`<div class="nm op">모집중 ${open}</div>`:'');
       body += `<div class="wpgrp">${multi?`<div class="wpgrp-h"><span class="wp-dot ${wp}"></span>${wp}</div>`:''}${nm||'<div class="nm op">모집중</div>'}</div>`;
     });
+    if(!body) body = `<div class="dcol-off">휴무</div>`;
     cols += `<div class="daycol${isToday?' today':''}" data-goday="${ds}">
       <div class="dcol-h${weekend?' weekend':''}"><div class="dow">${DAYS[day.getDay()]}</div>${day.getMonth()+1}/${day.getDate()}${isToday?' <span class="tdy">오늘</span>':''}${memo?`<div class="dcol-ev">${esc(memo)}</div>`:''}</div>
       <div class="dcol-body">${body}</div></div>`;
@@ -571,20 +577,24 @@ async function renderDay(){
   const admin = !!(session && session.is_admin);
   list.innerHTML = `<div style="text-align:center;padding:30px"><span class="spin"></span></div>`;
   const shifts = await fetchShifts(ymd(selectedDate));
+  const closed = await fetchClosures(ymd(selectedDate), ymd(selectedDate));
   const groups = (wpFilter==='전체'?WORKPLACES:[wpFilter]);
   let html='';
   let total=0;
   groups.forEach(wp=>{
+    const isClosed = closed.has(ymd(selectedDate)+'|'+wp);
     const rows = shifts.filter(s=>s.workplace===wp)
       .sort((a,b)=> (shiftOrder(a)-shiftOrder(b)) || String(a.start_time).localeCompare(String(b.start_time)));
-    total += rows.length;
+    total += rows.length + (isClosed?1:0);
     const ev = rows.find(r=>r.memo)?.memo;
     const evBtn = admin ? `<button class="btn ghost" data-ev="${wp}" data-cur="${esc(ev||'')}" style="padding:4px 9px;font-size:11px">📝 이벤트${ev?'':'+'}</button>` : '';
-    const addBtn = admin ? `<button class="btn primary" data-add="${wp}" style="padding:4px 10px;font-size:11px">➕ 추가</button>` : '';
-    html += `<div class="wp-sec"><div class="wp-h"><span class="wp-dot ${wp}"></span><span class="wp-name">${wp}</span><span class="wp-count" style="margin-left:auto">${rows.length}명</span>${evBtn}${addBtn}</div>`;
+    const offBtn = admin ? `<button class="btn ghost" data-off="${wp}" data-on="${isClosed?1:0}" style="padding:4px 9px;font-size:11px">${isClosed?'🌙 휴무해제':'🌙 휴무'}</button>` : '';
+    const addBtn = (admin && !isClosed) ? `<button class="btn primary" data-add="${wp}" style="padding:4px 10px;font-size:11px">➕ 추가</button>` : '';
+    html += `<div class="wp-sec"><div class="wp-h"><span class="wp-dot ${wp}"></span><span class="wp-name">${wp}</span><span class="wp-count" style="margin-left:auto">${isClosed?'휴무':rows.length+'명'}</span>${offBtn}${evBtn}${addBtn}</div>`;
+    if(isClosed){ html += `<div class="card" style="text-align:center;color:var(--ink2);font-weight:800;font-size:14px">🌙 휴무일</div></div>`; return; }
     if(ev) html += `<div class="ev-banner">🎉 ${esc(ev)}</div>`;
     if(rows.length===0){
-      html += `<div class="card" style="text-align:center;color:var(--muted);font-weight:700;font-size:13px">${admin?'근무 없음 · ➕추가로 등록':'휴무 · 근무 없음'}</div>`;
+      html += `<div class="card" style="text-align:center;color:var(--muted);font-weight:700;font-size:13px">${admin?'근무 없음 · ➕추가 또는 🌙휴무':'휴무 · 근무 없음'}</div>`;
     } else {
       rows.forEach(s=> html += shiftCard(s, admin));
     }
@@ -600,6 +610,11 @@ async function renderDay(){
     const cur=b.dataset.cur||'';
     const ev=prompt('이 날의 이벤트 이름 (지우려면 비워두기):', cur); if(ev===null) return;
     await rpc('admin_set_day_event', { p_admin_id:session.id, p_date:ymd(selectedDate), p_workplace:b.dataset.ev, p_event:ev.trim() }, ev.trim()?'이벤트를 저장했어요':'이벤트를 지웠어요');
+  });
+  list.querySelectorAll('[data-off]').forEach(b=>b.onclick=async()=>{
+    const turnOn = b.dataset.on!=='1';
+    if(turnOn && !confirm('이 날을 휴무로 지정할까요? 해당 근무지의 그날 근무는 삭제됩니다.')) return;
+    await rpc('admin_set_day_off', { p_admin_id:session.id, p_date:ymd(selectedDate), p_workplace:b.dataset.off, p_off:turnOn }, turnOn?'휴무로 지정했어요':'휴무를 해제했어요');
   });
   list.querySelectorAll('[data-add]').forEach(b=>b.onclick=()=>openShiftAdd(b.dataset.add));
   list.querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>openShiftEdit(JSON.parse(b.dataset.edit)));
@@ -796,9 +811,15 @@ function renderStaffList(){
       <span class="mname">${esc(s.name)}</span>
       ${s.is_admin?'<span class="madmin">★관리자</span>':''}
       ${s.has_pin===false?'<span class="mwp" style="background:#fff7ed;color:#ea580c">PIN없음</span>':''}
+      ${s.id!==session.id?`<button class="btn ghost" data-role="${s.id}" data-admin="${s.is_admin?1:0}">${s.is_admin?'일반으로':'관리자로'}</button>`:''}
       <button class="btn ghost" data-pin="${s.id}">PIN</button>
       ${s.id!==session.id?`<button class="btn warn" data-del-staff="${s.id}">삭제</button>`:''}
     </div>`).join('');
+  mng.querySelectorAll('[data-role]').forEach(b=>b.onclick=async()=>{
+    const makeAdmin = b.dataset.admin!=='1';
+    const ok = await rpc('admin_set_role', { p_admin_id:session.id, p_target_id:Number(b.dataset.role), p_is_admin:makeAdmin }, makeAdmin?'관리자로 변경했어요':'일반으로 변경했어요');
+    if(ok) await loadDirectory();
+  });
   mng.querySelectorAll('[data-pin]').forEach(b=>b.onclick=async()=>{
     const np=prompt('새 PIN을 입력하세요 (지우려면 비워두기):'); if(np===null) return;
     const ok = await rpc('admin_set_pin', { p_admin_id:session.id, p_target_id:Number(b.dataset.pin), p_new_pin:np.trim() }, 'PIN을 설정했어요');
