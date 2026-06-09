@@ -45,6 +45,25 @@ body{
 .body{position:relative;z-index:10;flex:1;padding:0 16px 28px;overflow-y:auto}
 .screen{display:none}.screen.on{display:block}
 
+/* view toggle */
+.seg{display:flex;background:rgba(255,255,255,.45);border-radius:99px;padding:4px;margin-bottom:11px}
+.seg button{flex:1;border:none;cursor:pointer;font-family:inherit;font-weight:800;font-size:13px;padding:8px 0;border-radius:99px;background:none;color:rgba(255,255,255,.92);transition:.15s}
+.seg button.on{background:#fff;color:var(--violet);box-shadow:0 6px 14px -7px rgba(80,40,150,.5)}
+
+/* week view */
+.daycard{background:var(--card);border-radius:18px;padding:13px 15px;margin-bottom:10px;box-shadow:0 12px 28px -16px rgba(80,50,150,.35),0 2px 5px rgba(80,50,150,.05);cursor:pointer}
+.daycard.today{outline:2px solid var(--violet2)}
+.dh{display:flex;align-items:center;gap:8px;margin-bottom:9px}
+.dh-d{font-weight:900;font-size:15px;color:var(--ink)}
+.daycard.weekend .dh-d{color:var(--pink)}
+.dh-ev{font-size:11px;font-weight:800;color:#ea580c;background:#fff7ed;padding:3px 8px;border-radius:99px}
+.dh-today{font-size:10px;font-weight:900;color:#fff;background:var(--violet2);padding:3px 8px;border-radius:99px}
+.wline{display:flex;align-items:flex-start;gap:7px;padding:5px 0;font-size:13.5px}
+.wline .wn{font-weight:900;font-size:12px;min-width:50px;color:var(--ink2);display:flex;align-items:center;gap:5px}
+.wline .wpeople{flex:1;font-weight:700;color:var(--ink);line-height:1.5}
+.wline .wpeople .op{color:#94a3b8;font-weight:600}
+.dh-off{font-size:12.5px;color:var(--muted);font-weight:700}
+
 /* date bar */
 .datebar{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px;
   background:rgba(255,255,255,.62);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-radius:18px;padding:8px 10px;box-shadow:0 8px 22px -12px rgba(80,40,150,.4)}
@@ -189,6 +208,10 @@ select.fld{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns
     <div class="body">
       <!-- 스케줄 -->
       <div id="screen-schedule" class="screen on">
+        <div class="seg" id="viewSeg">
+          <button data-v="day" class="on">📅 일별</button>
+          <button data-v="week">🗓️ 주간(월~일)</button>
+        </div>
         <div class="datebar">
           <button id="prevDay">‹</button>
           <div class="dlabel" id="dateLabel"></div>
@@ -310,8 +333,10 @@ const CONFIG = {
 };
 
 const WORKPLACES = ['메이드','데빌','마츠리'];
+const DAYS = ['일','월','화','수','목','금','토'];
 const $ = id => document.getElementById(id);
 const esc = s => (s==null?'':String(s)).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const mondayOf = d => { const x=new Date(d); x.setDate(x.getDate()-((x.getDay()+6)%7)); x.setHours(0,0,0,0); return x; };
 
 let supa = null;
 let session = JSON.parse(localStorage.getItem('shift_session') || 'null'); // {id,name,workplace,is_admin,pin}
@@ -319,6 +344,7 @@ let staffList = [];
 let selectedDate = new Date();
 let wpFilter = '전체';
 let currentTab = 'schedule';
+let viewMode = 'day';
 let pendingSubShiftId = null;
 
 /* ---------- 부팅 ---------- */
@@ -352,6 +378,12 @@ async function fetchShifts(dateStr){
   let q = supa.from('shift_view').select('*').eq('work_date', dateStr)
     .order('workplace').order('start_time');
   const { data, error } = await q;
+  if(error){ toast('스케줄 로딩 실패: '+error.message, true); return []; }
+  return data || [];
+}
+async function fetchRange(from,to){
+  const { data, error } = await supa.from('shift_view').select('*')
+    .gte('work_date', from).lte('work_date', to).order('work_date').order('workplace').order('start_time');
   if(error){ toast('스케줄 로딩 실패: '+error.message, true); return []; }
   return data || [];
 }
@@ -450,7 +482,45 @@ function renderChips(){
 }
 
 /* ---------- 스케줄 렌더 ---------- */
-async function renderSchedule(){
+function renderSchedule(){ viewMode==='week' ? renderWeek() : renderDay(); }
+
+async function renderWeek(){
+  const list = $('scheduleList');
+  const mon = mondayOf(selectedDate); const sun = new Date(mon); sun.setDate(sun.getDate()+6);
+  $('dateLabel').innerHTML = `${mon.getMonth()+1}/${mon.getDate()} ~ ${sun.getMonth()+1}/${sun.getDate()}<small>주간</small>`;
+  list.innerHTML = `<div style="text-align:center;padding:30px"><span class="spin"></span></div>`;
+  const shifts = await fetchRange(ymd(mon), ymd(sun));
+  const todayStr = ymd(new Date());
+  const groups = (wpFilter==='전체'?WORKPLACES:[wpFilter]);
+  let html='';
+  for(let i=0;i<7;i++){
+    const day=new Date(mon); day.setDate(day.getDate()+i); const ds=ymd(day);
+    const dayShifts = shifts.filter(s=>s.work_date===ds);
+    const memo = dayShifts.find(r=>r.memo)?.memo;
+    const isToday = ds===todayStr, weekend=(day.getDay()===0||day.getDay()===6);
+    let inner='';
+    if(dayShifts.length===0){ inner = `<div class="dh-off">휴무 · 근무 없음</div>`; }
+    else groups.forEach(wp=>{
+      const rows=dayShifts.filter(s=>s.workplace===wp); if(rows.length===0) return;
+      const names=rows.filter(s=>s.staff_name).map(s=>esc(s.staff_name));
+      const open=rows.length-names.length;
+      const ppl=names.join(', ')+(open>0?`<span class="op">${names.length?' · ':''}모집중 ${open}</span>`:'');
+      inner += `<div class="wline"><span class="wn"><span class="wp-dot ${wp}"></span>${wp}</span><span class="wpeople">${ppl||'<span class="op">모집중</span>'}</span></div>`;
+    });
+    html += `<div class="daycard${isToday?' today':''}${weekend?' weekend':''}" data-goday="${ds}">
+      <div class="dh"><span class="dh-d">${day.getMonth()+1}/${day.getDate()} (${DAYS[day.getDay()]})</span>
+      ${isToday?'<span class="dh-today">오늘</span>':''}${memo?`<span class="dh-ev">${esc(memo)}</span>`:''}</div>
+      ${inner}</div>`;
+  }
+  list.innerHTML = html;
+  list.querySelectorAll('[data-goday]').forEach(c=>c.onclick=()=>{
+    selectedDate=new Date(c.dataset.goday+'T00:00:00'); viewMode='day';
+    $('viewSeg').querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.v==='day'));
+    renderSchedule();
+  });
+}
+
+async function renderDay(){
   renderDateLabel();
   const list = $('scheduleList');
   list.innerHTML = `<div style="text-align:center;padding:30px"><span class="spin"></span></div>`;
@@ -504,7 +574,6 @@ function shiftCard(s){
   const memo = s.memo? `<div class="s-memo">📝 ${esc(s.memo)}</div>`:'';
   return `<div class="card">
     <div class="s-row">
-      <div class="s-time">${esc(s.start_time)}~${esc(s.end_time)}</div>
       ${nameHtml}${badge}
     </div>${memo}${acts}</div>`;
 }
@@ -657,8 +726,13 @@ let tt; function toast(msg, err){ const t=$('toast'); t.textContent=msg; t.class
 function wireUI(){
   document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>switchTab(t.dataset.tab));
   $('whoBtn').onclick = ()=> session ? (confirm(session.name+'님, 로그아웃 할까요?')&&logout()) : openLogin();
-  $('prevDay').onclick = ()=>{ selectedDate.setDate(selectedDate.getDate()-1); renderSchedule(); };
-  $('nextDay').onclick = ()=>{ selectedDate.setDate(selectedDate.getDate()+1); renderSchedule(); };
+  $('viewSeg').querySelectorAll('button').forEach(b=>b.onclick=()=>{
+    viewMode=b.dataset.v;
+    $('viewSeg').querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b));
+    renderSchedule();
+  });
+  $('prevDay').onclick = ()=>{ selectedDate.setDate(selectedDate.getDate()-(viewMode==='week'?7:1)); renderSchedule(); };
+  $('nextDay').onclick = ()=>{ selectedDate.setDate(selectedDate.getDate()+(viewMode==='week'?7:1)); renderSchedule(); };
   $('todayBtn').onclick = ()=>{ selectedDate=new Date(); renderSchedule(); };
   $('loginBtn').onclick = doLogin;
   $('loginClose').onclick = closeLogin;

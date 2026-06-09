@@ -25,16 +25,18 @@ body{
   radial-gradient(1.5px 1.5px at 42% 38%,#fff7,transparent),radial-gradient(2px 2px at 86% 50%,#fff6,transparent),
   radial-gradient(1.5px 1.5px at 28% 62%,#fff5,transparent),radial-gradient(2px 2px at 62% 76%,#fff6,transparent)}
 
-/* header */
-.head{position:relative;z-index:10;padding:max(22px,calc(env(safe-area-inset-top) + 14px)) 18px 10px}
+.head{position:relative;z-index:10;padding:max(22px,calc(env(safe-area-inset-top) + 14px)) 18px 8px}
 .kicker{font-size:10px;font-weight:800;letter-spacing:3px;color:rgba(255,255,255,.82)}
 .brand{font-size:23px;font-weight:900;color:#fff;text-shadow:0 2px 8px rgba(80,40,150,.35)}
 .brand-sub{font-size:12.5px;font-weight:700;color:rgba(255,255,255,.9);margin-top:3px}
 
-/* body */
 .body{position:relative;z-index:10;flex:1;padding:8px 16px 28px;overflow-y:auto}
 
-/* date bar */
+/* view toggle */
+.seg{display:flex;background:rgba(255,255,255,.45);border-radius:99px;padding:4px;margin-bottom:11px}
+.seg button{flex:1;border:none;cursor:pointer;font-family:inherit;font-weight:800;font-size:13px;padding:8px 0;border-radius:99px;background:none;color:rgba(255,255,255,.92);transition:.15s}
+.seg button.on{background:#fff;color:var(--violet);box-shadow:0 6px 14px -7px rgba(80,40,150,.5)}
+
 .datebar{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px;
   background:rgba(255,255,255,.62);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-radius:18px;padding:8px 10px;box-shadow:0 8px 22px -12px rgba(80,40,150,.4)}
 .datebar button{border:none;cursor:pointer;background:#fff;width:34px;height:34px;border-radius:12px;font-size:17px;font-weight:900;color:var(--violet);font-family:inherit}
@@ -42,7 +44,6 @@ body{
 .datebar .dlabel small{display:block;font-size:11px;font-weight:700;color:var(--muted)}
 .today-btn{font-size:11px !important;width:auto !important;padding:0 11px;height:34px}
 
-/* workplace chips */
 .chips{display:flex;gap:7px;margin-bottom:14px;flex-wrap:wrap}
 .chip{border:none;cursor:pointer;font-family:inherit;font-weight:800;font-size:12.5px;padding:7px 14px;border-radius:99px;background:rgba(255,255,255,.55);color:var(--ink2)}
 .chip.on{color:#fff;box-shadow:0 6px 14px -6px rgba(80,40,150,.5)}
@@ -51,39 +52,45 @@ body{
 .chip.on[data-w="데빌"]{background:var(--devil)}
 .chip.on[data-w="마츠리"]{background:var(--matsuri)}
 
-/* workplace section */
+/* day view */
 .wp-sec{margin-bottom:16px}
 .wp-h{display:flex;align-items:center;gap:8px;margin:0 2px 9px}
-.wp-dot{width:11px;height:11px;border-radius:50%}
+.wp-dot{width:11px;height:11px;border-radius:50%;flex-shrink:0}
 .wp-dot.메이드{background:var(--maid)}.wp-dot.데빌{background:var(--devil)}.wp-dot.마츠리{background:var(--matsuri)}
 .wp-name{font-weight:900;font-size:16px;color:#fff;text-shadow:0 1px 5px rgba(80,40,150,.3)}
 .wp-count{font-size:12px;font-weight:800;color:rgba(255,255,255,.85)}
+.names{background:var(--card);border-radius:18px;padding:14px 15px;box-shadow:0 12px 28px -16px rgba(80,50,150,.35),0 2px 5px rgba(80,50,150,.05);display:flex;flex-wrap:wrap;gap:8px}
+.tag{background:#f3effb;color:var(--ink);font-weight:800;font-size:14px;padding:7px 13px;border-radius:12px}
+.tag.open{background:#f1f5f9;color:#64748b;font-weight:700}
+.memo-row{font-size:12px;color:var(--ink2);margin:8px 2px 0}
+.none{text-align:center;color:var(--muted);font-weight:700;font-size:13px;background:var(--card);border-radius:18px;padding:14px}
 
-/* shift card */
-.card{background:var(--card);border-radius:18px;padding:14px 15px;margin-bottom:10px;box-shadow:0 12px 28px -16px rgba(80,50,150,.35),0 2px 5px rgba(80,50,150,.05)}
-.s-row{display:flex;align-items:center;gap:12px}
-.s-time{font-weight:900;font-size:15px;color:var(--ink);min-width:96px}
-.s-name{flex:1;font-weight:800;font-size:15px;color:var(--ink)}
-.s-name.empty{color:var(--muted);font-weight:700}
-.s-memo{font-size:12px;color:var(--ink2);margin-top:7px;padding-top:7px;border-top:1px dashed #eee6fb}
-.none{text-align:center;color:var(--muted);font-weight:700;font-size:13px}
+/* week view */
+.daycard{background:var(--card);border-radius:18px;padding:13px 15px;margin-bottom:10px;box-shadow:0 12px 28px -16px rgba(80,50,150,.35),0 2px 5px rgba(80,50,150,.05)}
+.daycard.today{outline:2px solid var(--violet2)}
+.daycard.weekend .dh-d{color:var(--pink)}
+.dh{display:flex;align-items:center;gap:8px;margin-bottom:9px}
+.dh-d{font-weight:900;font-size:15px;color:var(--ink)}
+.dh-ev{font-size:11px;font-weight:800;color:#ea580c;background:#fff7ed;padding:3px 8px;border-radius:99px}
+.dh-today{font-size:10px;font-weight:900;color:#fff;background:var(--violet2);padding:3px 8px;border-radius:99px}
+.wline{display:flex;align-items:flex-start;gap:7px;padding:5px 0;font-size:13.5px}
+.wline .wn{font-weight:900;font-size:12px;padding:2px 0;min-width:42px;color:var(--ink2)}
+.wline .wpeople{flex:1;font-weight:700;color:var(--ink);line-height:1.5}
+.wline .wpeople .op{color:#94a3b8;font-weight:600}
+.dh-off{font-size:12.5px;color:var(--muted);font-weight:700}
 
-/* empty */
 .empty-box{text-align:center;padding:44px 20px;color:#fff}
 .empty-box .e-ic{font-size:46px}
 .empty-box .e-t{font-weight:900;font-size:16px;margin-top:10px;text-shadow:0 1px 5px rgba(80,40,150,.3)}
 .empty-box .e-s{font-size:13px;font-weight:600;opacity:.9;margin-top:5px}
-
 .spin{display:inline-block;width:20px;height:20px;border:3px solid rgba(255,255,255,.35);border-top-color:#fff;border-radius:50%;animation:rot .8s linear infinite}
 @keyframes rot{to{transform:rotate(360deg)}}
 
-/* setup screen */
 .setup{padding:40px 22px;color:#fff}
 .setup h1{font-size:24px;font-weight:900;text-shadow:0 2px 8px rgba(80,40,150,.32)}
 .setup p{font-size:14px;line-height:1.7;margin-top:12px;font-weight:600;opacity:.95}
 .setup code{background:rgba(255,255,255,.22);padding:2px 7px;border-radius:6px;font-size:13px;font-weight:800}
 
-/* footer */
 .foot{position:relative;z-index:10;text-align:center;padding:6px 16px max(18px,env(safe-area-inset-bottom));font-size:11px;font-weight:700;color:rgba(255,255,255,.6)}
 .foot a{color:rgba(255,255,255,.7);text-decoration:underline}
 </style>
@@ -92,7 +99,6 @@ body{
 <div class="stars"></div>
 <div class="app">
 
-  <!-- 설정 미완료 안내 -->
   <div id="setupScreen" class="setup" style="display:none">
     <h1>🌙 출근 시프트</h1>
     <p>아직 Supabase 연결이 안 됐어요. <code>index.html</code> 상단 <code>CONFIG</code> 값을 채워주세요. 자세한 내용은 <code>SHIFT_SETUP.md</code> 참고.</p>
@@ -106,14 +112,18 @@ body{
     </div>
 
     <div class="body">
+      <div class="seg" id="viewSeg">
+        <button data-v="day" class="on">📅 일별</button>
+        <button data-v="week">🗓️ 주간(월~일)</button>
+      </div>
       <div class="datebar">
-        <button id="prevDay">‹</button>
+        <button id="prev">‹</button>
         <div class="dlabel" id="dateLabel"></div>
-        <button id="nextDay">›</button>
+        <button id="next">›</button>
         <button class="today-btn" id="todayBtn">오늘</button>
       </div>
       <div class="chips" id="wpChips"></div>
-      <div id="scheduleList"></div>
+      <div id="list"></div>
     </div>
 
     <div class="foot">출근자이신가요? <a href="staff.html">직원용 페이지로 →</a></div>
@@ -123,18 +133,19 @@ body{
 <script type="module">
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
-/* CONFIG · Supabase (직원용 staff.html 과 동일하게 유지) */
 const CONFIG = {
   SUPABASE_URL:      'https://izpotztbvjazfvcntqyh.supabase.co',
   SUPABASE_ANON_KEY: 'sb_publishable_ToHVeUEnJVmlHCcu_-QcnQ_ofP55Q_N',
 };
 
 const WORKPLACES = ['메이드','데빌','마츠리'];
+const DAYS = ['일','월','화','수','목','금','토'];
 const $ = id => document.getElementById(id);
 const esc = s => (s==null?'':String(s)).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const ymd = d => d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+const mondayOf = d => { const x=new Date(d); x.setDate(x.getDate()-((x.getDay()+6)%7)); x.setHours(0,0,0,0); return x; };
 
-let supa = null, selectedDate = new Date(), wpFilter = '전체';
+let supa=null, selectedDate=new Date(), wpFilter='전체', viewMode='day';
 
 function isConfigured(){
   return CONFIG.SUPABASE_URL && !CONFIG.SUPABASE_URL.startsWith('YOUR_') &&
@@ -145,56 +156,86 @@ function boot(){
   supa = createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
   $('mainApp').style.display='flex';
   renderChips();
-  $('prevDay').onclick = ()=>{ selectedDate.setDate(selectedDate.getDate()-1); render(); };
-  $('nextDay').onclick = ()=>{ selectedDate.setDate(selectedDate.getDate()+1); render(); };
+  $('viewSeg').querySelectorAll('button').forEach(b=>b.onclick=()=>{
+    viewMode=b.dataset.v;
+    $('viewSeg').querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b));
+    render();
+  });
+  $('prev').onclick = ()=>{ selectedDate.setDate(selectedDate.getDate()-(viewMode==='week'?7:1)); render(); };
+  $('next').onclick = ()=>{ selectedDate.setDate(selectedDate.getDate()+(viewMode==='week'?7:1)); render(); };
   $('todayBtn').onclick = ()=>{ selectedDate=new Date(); render(); };
   render();
   setInterval(()=>{ if(document.visibilityState==='visible') render(); }, 30000);
 }
 
-function renderDateLabel(){
-  const d = selectedDate, days=['일','월','화','수','목','금','토'];
-  const isToday = ymd(d)===ymd(new Date());
-  $('dateLabel').innerHTML = `${d.getMonth()+1}월 ${d.getDate()}일 (${days[d.getDay()]})<small>${isToday?'오늘':''}</small>`;
-}
 function renderChips(){
   const c = $('wpChips');
-  c.innerHTML = ['전체',...WORKPLACES].map(w=>
-    `<button class="chip${w===wpFilter?' on':''}" data-w="${w}">${w}</button>`).join('');
+  c.innerHTML = ['전체',...WORKPLACES].map(w=>`<button class="chip${w===wpFilter?' on':''}" data-w="${w}">${w}</button>`).join('');
   c.querySelectorAll('.chip').forEach(b=>b.onclick=()=>{ wpFilter=b.dataset.w; renderChips(); render(); });
 }
-async function render(){
-  renderDateLabel();
-  const list = $('scheduleList');
-  list.innerHTML = `<div style="text-align:center;padding:30px"><span class="spin"></span></div>`;
+async function fetchRange(from,to){
   const { data, error } = await supa.from('shift_view').select('*')
-    .eq('work_date', ymd(selectedDate)).order('workplace').order('start_time');
-  if(error){ list.innerHTML = `<div class="empty-box"><div class="e-ic">⚠️</div><div class="e-t">불러오기 실패</div><div class="e-s">${esc(error.message)}</div></div>`; return; }
-  const shifts = data || [];
+    .gte('work_date', from).lte('work_date', to).order('work_date').order('workplace').order('start_time');
+  if(error){ $('list').innerHTML=`<div class="empty-box"><div class="e-ic">⚠️</div><div class="e-t">불러오기 실패</div><div class="e-s">${esc(error.message)}</div></div>`; return null; }
+  return data||[];
+}
+
+function render(){ viewMode==='week' ? renderWeek() : renderDay(); }
+
+async function renderDay(){
+  const d=selectedDate, isToday=ymd(d)===ymd(new Date());
+  $('dateLabel').innerHTML = `${d.getMonth()+1}월 ${d.getDate()}일 (${DAYS[d.getDay()]})<small>${isToday?'오늘':''}</small>`;
+  $('list').innerHTML = `<div style="text-align:center;padding:30px"><span class="spin"></span></div>`;
+  const shifts = await fetchRange(ymd(d), ymd(d)); if(shifts===null) return;
   const groups = (wpFilter==='전체'?WORKPLACES:[wpFilter]);
   let html='', total=0;
   groups.forEach(wp=>{
-    const rows = shifts.filter(s=>s.workplace===wp);
-    total += rows.length;
+    const rows = shifts.filter(s=>s.workplace===wp); total+=rows.length;
+    const memo = rows.find(r=>r.memo)?.memo;
     html += `<div class="wp-sec"><div class="wp-h"><span class="wp-dot ${wp}"></span><span class="wp-name">${wp}</span><span class="wp-count">${rows.length}명</span></div>`;
-    if(rows.length===0){
-      html += `<div class="card none">오늘 근무 없음</div>`;
-    } else {
-      rows.forEach(s=>{
-        const name = s.staff_name
-          ? `<span class="s-name">${esc(s.staff_name)}</span>`
-          : `<span class="s-name empty">미정</span>`;
-        const memo = s.memo? `<div class="s-memo">📝 ${esc(s.memo)}</div>`:'';
-        html += `<div class="card"><div class="s-row"><div class="s-time">${esc(s.start_time)}~${esc(s.end_time)}</div>${name}</div>${memo}</div>`;
-      });
+    if(rows.length===0){ html += `<div class="none">오늘 근무 없음</div>`; }
+    else {
+      const tags = rows.map(s=> s.staff_name
+        ? `<span class="tag">${esc(s.staff_name)}</span>`
+        : `<span class="tag open">모집중</span>`).join('');
+      html += `<div class="names">${tags}</div>`;
+      if(memo) html += `<div class="memo-row">📝 ${esc(memo)}</div>`;
     }
     html += `</div>`;
   });
-  if(total===0){
-    list.innerHTML = `<div class="empty-box"><div class="e-ic">🗓️</div><div class="e-t">이 날은 등록된 근무가 없어요</div><div class="e-s">다른 날짜를 확인해 보세요</div></div>`;
-    return;
+  $('list').innerHTML = total===0
+    ? `<div class="empty-box"><div class="e-ic">🗓️</div><div class="e-t">이 날은 등록된 근무가 없어요</div><div class="e-s">다른 날짜를 확인해 보세요</div></div>`
+    : html;
+}
+
+async function renderWeek(){
+  const mon=mondayOf(selectedDate); const sun=new Date(mon); sun.setDate(sun.getDate()+6);
+  $('dateLabel').innerHTML = `${mon.getMonth()+1}/${mon.getDate()} ~ ${sun.getMonth()+1}/${sun.getDate()}<small>주간</small>`;
+  $('list').innerHTML = `<div style="text-align:center;padding:30px"><span class="spin"></span></div>`;
+  const shifts = await fetchRange(ymd(mon), ymd(sun)); if(shifts===null) return;
+  const todayStr = ymd(new Date());
+  const groups = (wpFilter==='전체'?WORKPLACES:[wpFilter]);
+  let html='';
+  for(let i=0;i<7;i++){
+    const day=new Date(mon); day.setDate(day.getDate()+i); const ds=ymd(day);
+    const dayShifts = shifts.filter(s=>s.work_date===ds);
+    const memo = dayShifts.find(r=>r.memo)?.memo;
+    const isToday = ds===todayStr, weekend = (day.getDay()===0||day.getDay()===6);
+    let inner='';
+    if(dayShifts.length===0){ inner = `<div class="dh-off">휴무 · 근무 없음</div>`; }
+    else groups.forEach(wp=>{
+      const rows=dayShifts.filter(s=>s.workplace===wp); if(rows.length===0) return;
+      const names=rows.filter(s=>s.staff_name).map(s=>esc(s.staff_name));
+      const open=rows.length-names.length;
+      const ppl = names.join(', ') + (open>0?`<span class="op">${names.length?' · ':''}모집중 ${open}</span>`:'');
+      inner += `<div class="wline"><span class="wn"><span class="wp-dot ${wp}"></span> ${wp}</span><span class="wpeople">${ppl||'<span class="op">모집중</span>'}</span></div>`;
+    });
+    html += `<div class="daycard${isToday?' today':''}${weekend?' weekend':''}">
+      <div class="dh"><span class="dh-d">${day.getMonth()+1}/${day.getDate()} (${DAYS[day.getDay()]})</span>
+      ${isToday?'<span class="dh-today">오늘</span>':''}${memo?`<span class="dh-ev">${esc(memo)}</span>`:''}</div>
+      ${inner}</div>`;
   }
-  list.innerHTML = html;
+  $('list').innerHTML = html;
 }
 
 boot();
