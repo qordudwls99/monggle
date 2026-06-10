@@ -29,6 +29,14 @@ body{
   padding:7px 13px;border-radius:99px;box-shadow:0 4px 12px -8px rgba(80,40,50,.3);cursor:pointer;font-family:inherit}
 .who .nm{font-weight:800;font-size:13px;color:var(--ink)}
 .who .role{font-size:10px;font-weight:800;color:var(--rose-deep)}
+.who .wav{width:26px;height:26px;border-radius:50%;background:#f5e5e8;color:var(--rose-deep);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;background-size:cover;background-position:center}
+/* 마이페이지 */
+.mp-bar{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.mp-logout{background:none;border:none;cursor:pointer;font-family:inherit;font-size:13px;font-weight:800;color:#c0455c;padding:6px 2px}
+.mp-close{background:none;border:none;cursor:pointer;font-family:inherit;font-size:13px;font-weight:700;color:var(--muted);padding:6px 2px}
+.mp-pic{display:flex;flex-direction:column;align-items:center;gap:11px;margin:16px 0 12px}
+.bigav{width:88px;height:88px;border-radius:50%;background:#f5e5e8;color:var(--rose-deep);display:flex;align-items:center;justify-content:center;font-size:34px;font-weight:800;background-size:cover;background-position:center}
+.mp-name{text-align:center;font-size:17px;font-weight:800;color:var(--ink);margin-bottom:18px}
 
 /* tabs */
 .tabs{position:relative;z-index:10;display:flex;gap:6px;padding:4px 16px 10px;overflow-x:auto}
@@ -98,7 +106,7 @@ body{
 /* shift card */
 .card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:13px 14px;margin-bottom:9px;box-shadow:0 6px 16px -14px rgba(80,40,50,.35)}
 .s-row{display:flex;align-items:center;gap:11px}
-.s-row .av{width:34px;height:34px;border-radius:50%;background:#f5e5e8;color:var(--rose-deep);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;flex-shrink:0}
+.s-row .av{width:34px;height:34px;border-radius:50%;background:#f5e5e8;color:var(--rose-deep);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;flex-shrink:0;background-size:cover;background-position:center}
 .s-row .av.guest{background:#f3e7c8;color:var(--gold)}
 .s-row .av.none{background:#f2eaeb;color:#c8aeb2}
 .s-time{font-weight:800;font-size:15px;color:var(--ink);min-width:96px}
@@ -330,6 +338,23 @@ select.fld{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns
   </div>
 </div>
 
+<!-- 마이페이지 -->
+<div class="modal" id="myModal">
+  <div class="modal-c">
+    <div class="mp-bar"><button class="mp-logout" id="myLogout">로그아웃</button><button class="mp-close" id="myClose">닫기</button></div>
+    <div class="modal-t">마이페이지</div>
+    <div class="mp-pic">
+      <div class="bigav" id="myAv"></div>
+      <button class="btn ghost" id="myPicBtn">프로필 사진 변경</button>
+      <input type="file" id="myPicFile" accept="image/*" style="display:none">
+    </div>
+    <div class="mp-name" id="myName"></div>
+    <label class="fl">인스타그램</label>
+    <input class="fld" id="myIg" placeholder="인스타 아이디 또는 링크">
+    <button class="btn primary full" id="mySave">저장</button>
+  </div>
+</div>
+
 <!-- 근무 추가/수정 모달 (관리자) -->
 <div class="modal" id="shiftModal">
   <div class="modal-c">
@@ -492,7 +517,7 @@ async function doLogin(){
   if(error){ toast(error.message.replace(/^.*?:\s*/,'') || '로그인 실패', true); return; }
   if(!data || data.length===0){ toast('이름 또는 PIN이 올바르지 않아요', true); return; }
   const me = data[0];
-  session = { id:me.id, name:me.name, is_admin:me.is_admin, pin };
+  session = { id:me.id, name:me.name, is_admin:me.is_admin, avatar:me.avatar_url||null, pin };
   localStorage.setItem('shift_session', JSON.stringify(session));
   closeLogin();
   renderWho();
@@ -506,10 +531,52 @@ function logout(){
   switchTab('schedule');
   toast('로그아웃 했어요');
 }
+async function openMyPage(){
+  $('myName').textContent = session.name;
+  $('myAv').style.cssText = avStyle(session.avatar);
+  $('myAv').textContent = session.avatar?'':session.name.charAt(0);
+  $('myIg').value='';
+  $('myModal').classList.add('show');
+  try{ const r=await supa.rpc('my_profile',{p_staff_id:session.id,p_pin:session.pin});
+    if(r.data){ $('myIg').value=r.data.instagram||''; } }catch(e){}
+}
+async function saveMyProfile(){
+  const ok = await rpc('set_my_instagram', { p_staff_id:session.id, p_insta:$('myIg').value.trim() }, '저장했어요');
+}
+function resizeImage(file){
+  return new Promise((res,rej)=>{
+    const img=new Image(); const rd=new FileReader();
+    rd.onload=()=>{ img.onload=()=>{
+      const S=256, c=document.createElement('canvas'); c.width=S;c.height=S;
+      const ctx=c.getContext('2d'); const m=Math.min(img.width,img.height);
+      ctx.drawImage(img,(img.width-m)/2,(img.height-m)/2,m,m,0,0,S,S);
+      c.toBlob(b=>res(b),'image/jpeg',0.85);
+    }; img.onerror=rej; img.src=rd.result; };
+    rd.onerror=rej; rd.readAsDataURL(file);
+  });
+}
+async function uploadAvatar(ev){
+  const file=ev.target.files[0]; if(!file) return;
+  toast('사진 올리는 중…');
+  try{
+    const blob=await resizeImage(file);
+    const path=`${session.id}-${Date.now()}.jpg`;
+    const up=await supa.storage.from('avatars').upload(path, blob, {contentType:'image/jpeg',upsert:true});
+    if(up.error) throw up.error;
+    const url=supa.storage.from('avatars').getPublicUrl(path).data.publicUrl;
+    const { error }=await supa.rpc('set_my_avatar',{p_staff_id:session.id,p_pin:session.pin,p_url:url});
+    if(error) throw error;
+    session.avatar=url; localStorage.setItem('shift_session',JSON.stringify(session));
+    $('myAv').style.cssText=avStyle(url); $('myAv').textContent='';
+    renderWho(); toast('프로필 사진을 바꿨어요');
+  }catch(e){ toast('사진 업로드 실패: '+(e.message||e), true); }
+}
+function avStyle(url){ return url?`background-image:url('${url.replace(/'/g,"%27")}')`:''; }
 function renderWho(){
   const btn = $('whoBtn');
   if(session){
-    btn.innerHTML = `<span class="nm">${esc(session.name)}</span>${session.is_admin?'<span class="role">관리자</span>':''} <span style="color:#a99ec9">⌄</span>`;
+    const av = `<span class="wav" style="${avStyle(session.avatar)}">${session.avatar?'':esc(session.name.charAt(0))}</span>`;
+    btn.innerHTML = `${av}<span class="nm">${esc(session.name)}</span>${session.is_admin?'<span class="role">관리자</span>':''}`;
   } else {
     btn.innerHTML = `<span class="nm">로그인</span>`;
   }
@@ -725,7 +792,8 @@ function shiftCard(s, admin, apps){
   }
   const acts = btns.length ? `<div class="s-acts">${btns.join('')}</div>` : '';
   const who = s.staff_id?s.staff_name:(s.guest_name||'');
-  const av = `<span class="av${(!s.staff_id&&s.guest_name)?' guest':''}${who?'':' none'}">${esc(who.charAt(0)||'·')}</span>`;
+  const avImg = s.staff_id && s.staff_avatar;
+  const av = `<span class="av${(!s.staff_id&&s.guest_name)?' guest':''}${who?'':' none'}" style="${avImg?avStyle(s.staff_avatar):''}">${avImg?'':esc(who.charAt(0)||'·')}</span>`;
   return `<div class="card"><div class="s-row">${av}${nameHtml}${badge}</div>${appHtml}${acts}</div>`;
 }
 function bindShiftCards(root){
@@ -851,13 +919,8 @@ async function renderMine(){
     $('mineLogin').onclick = openLogin;
     return;
   }
-  $('mineSub').textContent = `${session.name}님의 정보와 다가오는 근무예요.`;
+  $('mineSub').textContent = `${session.name}님의 다가오는 근무예요.`;
   list.innerHTML = `<div style="text-align:center;padding:30px"><span class="spin"></span></div>`;
-  let myIg=''; try{ const r=await supa.rpc('my_instagram',{p_staff_id:session.id,p_pin:session.pin}); myIg=r.data||''; }catch(e){}
-  const igCard = `<div class="form-card"><div class="fc-t">내 인스타그램</div>
-    <div style="font-size:12px;color:var(--ink2);font-weight:600;margin-bottom:9px">손님 페이지에서 내 이름 옆 인스타 아이콘으로 연결돼요.</div>
-    <input class="fld" id="myIgInput" placeholder="인스타 아이디 또는 링크" value="${esc(myIg)}">
-    <button class="btn primary full" id="myIgSave">인스타그램 저장</button></div>`;
   const shifts = await fetchMyShifts();
   const days=['일','월','화','수','목','금','토'];
   const shiftsHtml = shifts.length===0
@@ -877,10 +940,7 @@ async function renderMine(){
       </div>
       <div class="s-acts">${act}</div></div>`;
   }).join('');
-  list.innerHTML = igCard + shiftsHtml;
-  $('myIgSave').onclick = async()=>{
-    const ok = await rpc('set_my_instagram', { p_staff_id:session.id, p_insta:$('myIgInput').value.trim() }, '인스타그램을 저장했어요');
-  };
+  list.innerHTML = shiftsHtml;
   bindShiftCards(list);
   list.querySelectorAll('[data-act="mine-cancel"]').forEach(b=>b.onclick=async()=>{
     // 내 근무의 열린 대타 요청을 찾아 취소
@@ -1071,7 +1131,13 @@ let tt; function toast(msg, err){ const t=$('toast'); t.textContent=msg; t.class
 /* ---------- UI 연결 ---------- */
 function wireUI(){
   document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>switchTab(t.dataset.tab));
-  $('whoBtn').onclick = ()=> session ? (confirm(session.name+'님, 로그아웃 할까요?')&&logout()) : openLogin();
+  $('whoBtn').onclick = ()=> session ? openMyPage() : openLogin();
+  $('myClose').onclick = ()=> $('myModal').classList.remove('show');
+  $('myLogout').onclick = ()=>{ $('myModal').classList.remove('show'); logout(); };
+  $('mySave').onclick = saveMyProfile;
+  $('myPicBtn').onclick = ()=> $('myPicFile').click();
+  $('myPicFile').onchange = uploadAvatar;
+  $('myModal').onclick = e=>{ if(e.target.id==='myModal') $('myModal').classList.remove('show'); };
   $('viewSeg').querySelectorAll('button').forEach(b=>b.onclick=()=>{
     viewMode=b.dataset.v;
     $('viewSeg').querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b));

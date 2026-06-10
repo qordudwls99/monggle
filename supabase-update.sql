@@ -410,3 +410,74 @@ end; $$;
 
 grant execute on function staff_login, staff_directory, admin_unlock_staff,
   admin_add_staff, admin_set_pin to anon, authenticated;
+
+-- ============================================================
+--  v6) 마이페이지 · 프로필 사진(아바타)
+-- ============================================================
+alter table staff add column if not exists avatar_url text;
+
+-- 공개 스토리지 버킷 (프로필 사진)
+insert into storage.buckets (id, name, public) values ('avatars','avatars',true)
+  on conflict (id) do update set public = true;
+
+drop policy if exists "avatars_read"   on storage.objects;
+drop policy if exists "avatars_insert" on storage.objects;
+drop policy if exists "avatars_update" on storage.objects;
+create policy "avatars_read"   on storage.objects for select to anon, authenticated using (bucket_id='avatars');
+create policy "avatars_insert" on storage.objects for insert to anon, authenticated with check (bucket_id='avatars');
+create policy "avatars_update" on storage.objects for update to anon, authenticated using (bucket_id='avatars') with check (bucket_id='avatars');
+
+-- 로그인 반환에 아바타 포함 (잠금 로직 유지)
+create or replace function staff_login(p_name text, p_pin text)
+returns table(id bigint, name text, is_admin boolean, avatar_url text)
+language plpgsql security definer set search_path = public as $$
+declare s staff;
+begin
+  select * into s from staff where staff.name = p_name;
+  if s.id is null then return; end if;
+  if s.locked then raise exception '계정이 잠겼어요. 관리자에게 문의하세요.'; end if;
+  if s.pin is not null and s.pin = p_pin then
+    update staff set failed_attempts = 0 where staff.id = s.id;
+    return query select s.id, s.name, s.is_admin, s.avatar_url;
+  else
+    update staff set failed_attempts = s.failed_attempts + 1,
+                     locked = (s.failed_attempts + 1 >= 5) where staff.id = s.id;
+    if s.failed_attempts + 1 >= 5 then
+      raise exception '5회 틀려 계정이 잠겼어요. 관리자에게 문의하세요.';
+    else
+      raise exception 'PIN이 틀렸어요. (남은 시도 %회)', 5 - (s.failed_attempts + 1);
+    end if;
+  end if;
+end; $$;
+
+-- shift_view 에 아바타 추가
+drop view if exists shift_view;
+create view shift_view as
+  select sh.id, sh.work_date, sh.workplace, sh.start_time, sh.end_time,
+         sh.status, sh.memo, sh.staff_id, st.name as staff_name,
+         sh.guest_name, coalesce(st.name, sh.guest_name) as display_name,
+         (sh.staff_id is null and sh.guest_name is not null) as is_guest,
+         st.instagram as staff_instagram, st.avatar_url as staff_avatar
+  from shifts sh left join staff st on st.id = sh.staff_id;
+grant select on shift_view to anon, authenticated;
+
+-- 본인 프로필 조회 / 아바타 저장
+create or replace function my_profile(p_staff_id bigint, p_pin text)
+returns json language plpgsql security definer set search_path = public as $$
+declare v staff;
+begin
+  v := _verify(p_staff_id, p_pin);
+  if v.id is null then raise exception 'PIN이 올바르지 않습니다'; end if;
+  return json_build_object('name',v.name,'instagram',v.instagram,'avatar_url',v.avatar_url,'is_admin',v.is_admin);
+end; $$;
+
+create or replace function set_my_avatar(p_staff_id bigint, p_pin text, p_url text)
+returns void language plpgsql security definer set search_path = public as $$
+declare v staff;
+begin
+  v := _verify(p_staff_id, p_pin);
+  if v.id is null then raise exception 'PIN이 올바르지 않습니다'; end if;
+  update staff set avatar_url = nullif(trim(p_url), '') where id = p_staff_id;
+end; $$;
+
+grant execute on function staff_login, my_profile, set_my_avatar to anon, authenticated;
