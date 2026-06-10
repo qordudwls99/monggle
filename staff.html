@@ -1023,8 +1023,9 @@ function renderStaffList(){
   mng.querySelectorAll('[data-pin]').forEach(b=>b.onclick=async()=>{
     const np=prompt('새 PIN 6자리 숫자 (지우려면 비워두기):'); if(np===null) return;
     if(np.trim() && !/^\d{6}$/.test(np.trim())){ toast('PIN은 6자리 숫자로 입력하세요', true); return; }
-    const ok = await rpc('admin_set_pin', { p_admin_id:session.id, p_target_id:Number(b.dataset.pin), p_new_pin:np.trim() }, 'PIN을 설정했어요');
-    if(ok) await loadDirectory();
+    const tid=Number(b.dataset.pin);
+    const ok = await rpc('admin_set_pin', { p_admin_id:session.id, p_target_id:tid, p_new_pin:np.trim() }, 'PIN을 설정했어요');
+    if(ok){ if(tid===session.id && np.trim()){ session.pin=np.trim(); localStorage.setItem('shift_session',JSON.stringify(session)); } await loadDirectory(); }
   });
   mng.querySelectorAll('[data-del-staff]').forEach(b=>b.onclick=async()=>{
     if(!confirm('이 스태프를 삭제할까요? 배정된 근무는 빈 자리가 됩니다.')) return;
