@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>디자인 미리보기 · 출근 시프트</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Apple SD Gothic Neo','Pretendard','Noto Sans KR',-apple-system,system-ui,sans-serif;
+  background:#e9eaee;color:#222;padding:34px 16px 80px;display:flex;flex-direction:column;align-items:center;gap:8px}
+.lead{text-align:center;max-width:680px;margin-bottom:18px}
+.lead h1{font-size:23px;font-weight:800;letter-spacing:-.5px}
+.lead p{font-size:14px;color:#5b606b;margin-top:8px;line-height:1.6}
+.row{display:flex;gap:34px;flex-wrap:wrap;justify-content:center;align-items:flex-start}
+.col{display:flex;flex-direction:column;align-items:center;gap:14px}
+.tag{font-size:13px;font-weight:800;color:#3a3f4a;background:#fff;border:1px solid #d7dae0;padding:7px 16px;border-radius:99px}
+.desc{font-size:12px;color:#6b7280;max-width:300px;text-align:center;line-height:1.6}
+
+/* phone frame */
+.phone{position:relative;width:340px;height:710px;background:#0b0b0f;border-radius:50px;padding:11px;
+  box-shadow:0 30px 70px -30px rgba(30,30,50,.55)}
+.screen{position:relative;width:100%;height:100%;border-radius:40px;overflow:hidden}
+.island{position:absolute;top:10px;left:50%;transform:translateX(-50%);width:104px;height:29px;background:#000;border-radius:99px;z-index:30}
+.app{width:100%;height:100%;overflow:hidden;display:flex;flex-direction:column}
+.statusbar{height:46px;flex-shrink:0}
+.body{flex:1;overflow:hidden;padding:0 20px}
+
+/* ============ A · 모노 에디토리얼 ============ */
+.A{background:#f6f4ef}
+.A .body{padding-top:6px}
+.A .kick{font-size:10px;font-weight:800;letter-spacing:3px;color:#a98b6a;text-transform:uppercase}
+.A .h{font-size:27px;font-weight:800;color:#211c17;letter-spacing:-.5px;margin-top:3px}
+.A .datebar{display:flex;align-items:center;justify-content:space-between;margin:20px 0 14px;
+  padding:13px 0;border-top:1px solid #e2dcd2;border-bottom:1px solid #e2dcd2}
+.A .datebar .d{font-size:16px;font-weight:800;color:#211c17}
+.A .datebar .nav{font-size:18px;color:#b3a591}
+.A .tabs{display:flex;gap:22px;margin-bottom:6px}
+.A .tabs span{font-size:14px;font-weight:700;color:#b3a08c;padding-bottom:8px}
+.A .tabs span.on{color:#9a3412;border-bottom:2px solid #9a3412}
+.A .evt{margin:16px 0 4px;font-size:12px;font-weight:800;color:#9a3412;letter-spacing:.5px;
+  border-left:3px solid #9a3412;padding-left:10px;text-transform:uppercase}
+.A .list{margin-top:10px}
+.A .it{display:flex;align-items:center;gap:14px;padding:14px 0;border-bottom:1px solid #ece6da}
+.A .it .no{font-size:12px;font-weight:700;color:#c4b6a2;width:18px}
+.A .it .nm{font-size:16px;font-weight:600;color:#26211b;flex:1}
+.A .it .gt{font-size:10px;font-weight:800;color:#9a3412;letter-spacing:.5px}
+
+/* ============ B · 소프트 뉴트럴 ============ */
+.B{background:#f5f6f8}
+.B .body{padding-top:10px}
+.B .top{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
+.B .h{font-size:19px;font-weight:800;color:#1f2430}
+.B .who{font-size:12px;font-weight:700;color:#6b7280;background:#fff;border:1px solid #e5e7eb;padding:6px 12px;border-radius:8px}
+.B .seg{display:flex;background:#eceef1;border-radius:10px;padding:3px;margin-bottom:16px}
+.B .seg span{flex:1;text-align:center;font-size:13px;font-weight:700;color:#7b8090;padding:8px 0;border-radius:8px}
+.B .seg span.on{background:#fff;color:#4f46e5;box-shadow:0 1px 2px rgba(20,20,40,.08)}
+.B .datebar{display:flex;align-items:center;justify-content:center;gap:14px;margin-bottom:14px}
+.B .datebar .d{font-size:15px;font-weight:800;color:#1f2430}
+.B .datebar .nav{width:30px;height:30px;border-radius:8px;background:#fff;border:1px solid #e5e7eb;color:#6b7280;display:flex;align-items:center;justify-content:center;font-size:15px}
+.B .evt{display:inline-block;font-size:11.5px;font-weight:700;color:#b45309;background:#fef6e7;border:1px solid #f6e2b8;padding:4px 11px;border-radius:7px;margin-bottom:12px}
+.B .card{background:#fff;border:1px solid #e7e9ed;border-radius:12px;padding:6px 6px}
+.B .it{display:flex;align-items:center;gap:12px;padding:11px 10px;border-radius:9px}
+.B .it+.it{border-top:1px solid #f0f1f4}
+.B .it .mono{width:30px;height:30px;border-radius:8px;background:#eef0ff;color:#4f46e5;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800}
+.B .it .nm{font-size:14.5px;font-weight:600;color:#2b303a;flex:1}
+.B .it .gt{font-size:10px;font-weight:800;color:#92660d;background:#fef6e7;padding:3px 8px;border-radius:6px}
+
+/* ============ C · 다크 프리미엄 ============ */
+.C{background:#121317}
+.C .body{padding-top:10px}
+.C .kick{font-size:9.5px;font-weight:700;letter-spacing:3px;color:#6f7686;text-transform:uppercase}
+.C .h{font-size:21px;font-weight:800;color:#f0f1f4;margin-top:3px;letter-spacing:-.3px}
+.C .datebar{display:flex;align-items:center;justify-content:space-between;margin:18px 0 14px}
+.C .datebar .d{font-size:15px;font-weight:800;color:#e9ebf0}
+.C .datebar .nav{width:32px;height:32px;border-radius:10px;background:#1c1e25;border:1px solid #2a2d36;color:#8b919d;display:flex;align-items:center;justify-content:center;font-size:15px}
+.C .tabs{display:flex;gap:8px;margin-bottom:16px}
+.C .tabs span{font-size:12.5px;font-weight:700;color:#8b919d;padding:7px 14px;border-radius:99px;border:1px solid #2a2d36}
+.C .tabs span.on{color:#121317;background:#d9b27c;border-color:#d9b27c}
+.C .evt{display:inline-block;font-size:11px;font-weight:700;color:#d9b27c;border:1px solid #4a3f2c;background:#211d15;padding:4px 11px;border-radius:7px;margin-bottom:14px}
+.C .it{display:flex;align-items:center;gap:13px;padding:14px 2px;border-bottom:1px solid #20232b}
+.C .it .mono{width:32px;height:32px;border-radius:50%;background:#20232b;color:#d9b27c;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;border:1px solid #2f333d}
+.C .it .nm{font-size:15px;font-weight:600;color:#e7e9ee;flex:1}
+.C .it .gt{font-size:10px;font-weight:800;color:#d9b27c;letter-spacing:.5px}
+</style>
+</head>
+<body>
+  <div class="lead">
+    <h1>UI 디자인 방향 미리보기</h1>
+    <p>같은 화면(직원용 · 메이드 6/14)을 세 가지 스타일로 보여드려요. 이모지를 빼고 더 “디자인된” 느낌으로 잡았어요.<br>마음에 드는 걸 고르시면(A / B / C), 그 방향으로 실제 앱에 적용할게요. <b>지금은 미리보기일 뿐 코드엔 반영 안 했어요.</b></p>
+  </div>
+
+  <div class="row">
+    <!-- A -->
+    <div class="col">
+      <div class="tag">A · 모노 에디토리얼</div>
+      <div class="phone"><div class="island"></div><div class="screen"><div class="app A">
+        <div class="statusbar"></div>
+        <div class="body">
+          <div class="kick">Staff Schedule</div>
+          <div class="h">출근 시프트</div>
+          <div class="datebar"><span class="nav">‹</span><span class="d">6월 14일 토요일</span><span class="nav">›</span></div>
+          <div class="tabs"><span class="on">메이드</span><span>데빌</span><span>마츠리</span></div>
+          <div class="evt">제로생일</div>
+          <div class="list">
+            <div class="it"><span class="no">01</span><span class="nm">제로</span></div>
+            <div class="it"><span class="no">02</span><span class="nm">츠나</span></div>
+            <div class="it"><span class="no">03</span><span class="nm">미즈</span></div>
+            <div class="it"><span class="no">04</span><span class="nm">코메</span></div>
+            <div class="it"><span class="no">05</span><span class="nm">이카</span></div>
+            <div class="it"><span class="no">06</span><span class="nm">린다</span><span class="gt">GUEST</span></div>
+          </div>
+        </div>
+      </div></div></div>
+      <div class="desc">잡지 같은 절제된 무드. 따뜻한 종이색 + 테라코타 포인트, 줄 구분선 위주. 차분하고 고급스러움.</div>
+    </div>
+
+    <!-- B -->
+    <div class="col">
+      <div class="tag">B · 소프트 뉴트럴</div>
+      <div class="phone"><div class="island"></div><div class="screen"><div class="app B">
+        <div class="statusbar"></div>
+        <div class="body">
+          <div class="top"><span class="h">출근 시프트</span><span class="who">제로 · 관리자</span></div>
+          <div class="seg"><span class="on">일별</span><span>주간</span></div>
+          <div class="datebar"><span class="nav">‹</span><span class="d">6월 14일 (토)</span><span class="nav">›</span></div>
+          <div class="evt">제로생일</div>
+          <div style="font-size:12px;font-weight:700;color:#9aa0ab;margin:0 2px 8px">메이드 · 6명</div>
+          <div class="card">
+            <div class="it"><span class="mono">제</span><span class="nm">제로</span></div>
+            <div class="it"><span class="mono">츠</span><span class="nm">츠나</span></div>
+            <div class="it"><span class="mono">미</span><span class="nm">미즈</span></div>
+            <div class="it"><span class="mono">코</span><span class="nm">코메</span></div>
+            <div class="it"><span class="mono">린</span><span class="nm">린다</span><span class="gt">게스트</span></div>
+          </div>
+        </div>
+      </div></div></div>
+      <div class="desc">Notion·Linear 느낌의 깔끔한 업무 툴. 연회색 배경 + 흰 카드 + 인디고 포인트. 가독성·정돈감 최고.</div>
+    </div>
+
+    <!-- C -->
+    <div class="col">
+      <div class="tag">C · 다크 프리미엄</div>
+      <div class="phone"><div class="island"></div><div class="screen"><div class="app C">
+        <div class="statusbar"></div>
+        <div class="body">
+          <div class="kick">Staff Schedule</div>
+          <div class="h">출근 시프트</div>
+          <div class="datebar"><span class="d">6월 14일 (토)</span><span class="nav">›</span></div>
+          <div class="tabs"><span class="on">메이드</span><span>데빌</span><span>마츠리</span></div>
+          <div class="evt">제로생일</div>
+          <div>
+            <div class="it"><span class="mono">제</span><span class="nm">제로</span></div>
+            <div class="it"><span class="mono">츠</span><span class="nm">츠나</span></div>
+            <div class="it"><span class="mono">미</span><span class="nm">미즈</span></div>
+            <div class="it"><span class="mono">코</span><span class="nm">코메</span></div>
+            <div class="it"><span class="mono">린</span><span class="nm">린다</span><span class="gt">GUEST</span></div>
+          </div>
+        </div>
+      </div></div></div>
+      <div class="desc">어둡고 시크한 프리미엄 무드. 차콜 + 샌드골드 포인트. 야간 매장 분위기와 잘 어울림.</div>
+    </div>
+  </div>
+</body>
+</html>
