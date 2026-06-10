@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>출근 시프트 · 미리보기</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{
+  min-height:100vh;display:flex;flex-direction:column;align-items:center;gap:20px;
+  padding:30px 16px 60px;
+  font-family:'Apple SD Gothic Neo','Pretendard','Noto Sans KR',-apple-system,system-ui,sans-serif;
+  background:radial-gradient(135% 95% at 50% -10%, #ffe1c9 0%, #fbd0e4 22%, #c9b8f3 55%, #9d8df0 100%);
+  background-attachment:fixed;
+}
+.title{color:#fff;text-align:center;text-shadow:0 2px 10px rgba(80,40,150,.4)}
+.title h1{font-size:24px;font-weight:900;letter-spacing:-.5px}
+.title p{font-size:13.5px;font-weight:600;opacity:.92;margin-top:5px}
+
+/* 화면 전환 토글 */
+.seg{display:inline-flex;background:rgba(255,255,255,.45);border-radius:99px;padding:5px;gap:4px;backdrop-filter:blur(10px)}
+.seg button{border:none;cursor:pointer;font-family:inherit;font-weight:800;font-size:13.5px;padding:9px 20px;border-radius:99px;background:none;color:#fff;transition:.15s}
+.seg button.on{background:#fff;color:#7c3aed;box-shadow:0 6px 14px -7px rgba(80,40,150,.6)}
+
+/* 아이폰 프레임 */
+.phone{
+  position:relative;
+  width:392px;height:812px;
+  background:#0b0b0f;
+  border-radius:56px;
+  padding:13px;
+  box-shadow:0 0 0 2px #2a2a32, 0 40px 90px -30px rgba(40,20,80,.7), inset 0 0 3px rgba(255,255,255,.2);
+  flex-shrink:0;
+}
+/* 측면 버튼 */
+.phone::before{content:"";position:absolute;left:-3px;top:170px;width:3px;height:64px;background:#23232a;border-radius:3px 0 0 3px;box-shadow:0 92px 0 #23232a,0 168px 0 #23232a}
+.phone::after{content:"";position:absolute;right:-3px;top:210px;width:3px;height:96px;background:#23232a;border-radius:0 3px 3px 0}
+.screen{position:relative;width:100%;height:100%;border-radius:44px;overflow:hidden;background:#fff}
+/* 다이내믹 아일랜드 */
+.island{position:absolute;top:11px;left:50%;transform:translateX(-50%);width:118px;height:33px;background:#000;border-radius:99px;z-index:10;pointer-events:none}
+.screen iframe{width:100%;height:100%;border:none;display:block}
+
+.hint{color:rgba(255,255,255,.85);font-size:12.5px;font-weight:600;text-align:center;max-width:360px;line-height:1.6}
+.hint a{color:#fff;font-weight:800}
+
+@media (max-width:440px){
+  .phone{transform:scale(.82);transform-origin:top center;margin-bottom:-150px}
+}
+</style>
+</head>
+<body>
+  <div class="title">
+    <h1>📱 출근 시프트 미리보기</h1>
+    <p>아이폰 화면에서 어떻게 보이는지 확인하세요</p>
+  </div>
+
+  <div class="seg" id="seg">
+    <button class="on" data-src="staff.html">직원용</button>
+    <button data-src="index.html">손님용</button>
+  </div>
+
+  <div class="phone">
+    <div class="screen">
+      <div class="island"></div>
+      <iframe id="frame" src="staff.html" title="출근 시프트"></iframe>
+    </div>
+  </div>
+
+  <div class="hint">
+    실제 동작하는 화면이에요. 로그인·신청·관리 모두 그대로 작동합니다.<br>
+    실제 폰에서 열려면 <a href="staff.html">직원용 페이지 바로가기 →</a>
+  </div>
+
+<script>
+  const seg=document.getElementById('seg'), frame=document.getElementById('frame');
+  seg.querySelectorAll('button').forEach(b=>b.onclick=()=>{
+    seg.querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b));
+    frame.src=b.dataset.src;
+  });
+</script>
+</body>
+</html>
