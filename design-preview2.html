@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>디자인 미리보기 2 · 라이트 프리미엄</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Apple SD Gothic Neo','Pretendard','Noto Sans KR',-apple-system,system-ui,sans-serif;
+  background:#ecebe7;color:#222;padding:34px 16px 80px;display:flex;flex-direction:column;align-items:center}
+.lead{text-align:center;max-width:680px;margin-bottom:24px}
+.lead h1{font-size:23px;font-weight:800;letter-spacing:-.5px}
+.lead p{font-size:14px;color:#5b606b;margin-top:8px;line-height:1.6}
+.row{display:flex;gap:34px;flex-wrap:wrap;justify-content:center;align-items:flex-start}
+.col{display:flex;flex-direction:column;align-items:center;gap:14px}
+.tag{font-size:13px;font-weight:800;color:#3a3f4a;background:#fff;border:1px solid #d7dae0;padding:7px 16px;border-radius:99px}
+.desc{font-size:12px;color:#6b7280;max-width:300px;text-align:center;line-height:1.6}
+
+.phone{position:relative;width:340px;height:710px;background:#0b0b0f;border-radius:50px;padding:11px;
+  box-shadow:0 30px 70px -30px rgba(30,30,50,.55)}
+.screen{position:relative;width:100%;height:100%;border-radius:40px;overflow:hidden}
+.island{position:absolute;top:10px;left:50%;transform:translateX(-50%);width:104px;height:29px;background:#000;border-radius:99px;z-index:30}
+.app{width:100%;height:100%;overflow:hidden;display:flex;flex-direction:column}
+.statusbar{height:46px;flex-shrink:0}
+.body{flex:1;overflow:hidden;padding:6px 20px 0}
+
+/* 공통 레이아웃 (색만 변수로) */
+.app .kick{font-size:9.5px;font-weight:800;letter-spacing:3px;text-transform:uppercase}
+.app .h{font-size:24px;font-weight:800;letter-spacing:-.4px;margin-top:3px}
+.app .datebar{display:flex;align-items:center;justify-content:space-between;margin:18px 0 14px;padding:12px 0;border-top:1px solid;border-bottom:1px solid}
+.app .datebar .d{font-size:15.5px;font-weight:800}
+.app .datebar .nav{font-size:18px}
+.app .tabs{display:flex;gap:8px;margin-bottom:14px}
+.app .tabs span{font-size:12.5px;font-weight:700;padding:7px 15px;border-radius:99px;border:1px solid transparent}
+.app .evt{display:inline-block;font-size:11px;font-weight:800;letter-spacing:.5px;padding:5px 12px;border-radius:8px;margin-bottom:12px}
+.app .cnt{font-size:12px;font-weight:700;margin:0 2px 9px}
+.app .it{display:flex;align-items:center;gap:13px;padding:13px 2px;border-bottom:1px solid}
+.app .it .mono{width:33px;height:33px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800}
+.app .it .nm{font-size:15px;font-weight:600;flex:1}
+.app .it .gt{font-size:10px;font-weight:800;letter-spacing:.5px;padding:3px 8px;border-radius:6px}
+
+/* L1 샴페인 */
+.L1{background:#f8f4ec}
+.L1 .kick{color:#b8923f}
+.L1 .h{color:#3a3026}
+.L1 .datebar{border-color:#e7ddc9}.L1 .datebar .d{color:#3a3026}.L1 .datebar .nav{color:#c3b291}
+.L1 .tabs span{color:#b09a72;border-color:#e7ddc9}
+.L1 .tabs span.on{background:#c69a52;color:#fff;border-color:#c69a52}
+.L1 .evt{color:#9a6f1e;background:#f3e7c8;border:1px solid #e8d39a}
+.L1 .cnt{color:#b0a081}
+.L1 .it{border-color:#ece2cf}
+.L1 .it .mono{background:#f0e6cf;color:#9a6f1e}
+.L1 .it .nm{color:#34291f}
+.L1 .it .gt{color:#9a6f1e;background:#f3e7c8}
+
+/* L2 더스티 로즈 */
+.L2{background:#faf4f3}
+.L2 .kick{color:#bb7c86}
+.L2 .h{color:#3f2e30}
+.L2 .datebar{border-color:#efdedf}.L2 .datebar .d{color:#3f2e30}.L2 .datebar .nav{color:#cdb2b5}
+.L2 .tabs span{color:#b5919a;border-color:#efdedf}
+.L2 .tabs span.on{background:#bd7783;color:#fff;border-color:#bd7783}
+.L2 .evt{color:#a85565;background:#f7e6e9;border:1px solid #eecdd3}
+.L2 .cnt{color:#bba6a8}
+.L2 .it{border-color:#f0e3e4}
+.L2 .it .mono{background:#f5e5e8;color:#a85565}
+.L2 .it .nm{color:#382a2b}
+.L2 .it .gt{color:#a85565;background:#f7e6e9}
+
+/* L3 라떼 */
+.L3{background:#f5efe6}
+.L3 .kick{color:#a07f55}
+.L3 .h{color:#3b332a}
+.L3 .datebar{border-color:#e6dccb}.L3 .datebar .d{color:#3b332a}.L3 .datebar .nav{color:#c0b099}
+.L3 .tabs span{color:#a8916f;border-color:#e6dccb}
+.L3 .tabs span.on{background:#9c7a52;color:#fff;border-color:#9c7a52}
+.L3 .evt{color:#876132;background:#efe3d0;border:1px solid #e0cdaf}
+.L3 .cnt{color:#ad9c83}
+.L3 .it{border-color:#eae0d0}
+.L3 .it .mono{background:#ece1cf;color:#876132}
+.L3 .it .nm{color:#352d23}
+.L3 .it .gt{color:#876132;background:#efe3d0}
+</style>
+</head>
+<body>
+  <div class="lead">
+    <h1>라이트 프리미엄 (C 기반, 밝게)</h1>
+    <p>C의 고급스러운 구조(모노그램·절제된 포인트·이모지 없음)는 그대로 두고, 메이드카페에 맞게 <b>밝고 따뜻한 톤</b>으로 바꿨어요.<br>L1 / L2 / L3 중 골라주세요. (포인트 색만 바꾸는 것도 가능해요)</p>
+  </div>
+
+  <div class="row" id="row"></div>
+
+<script>
+const item=(m,n,g)=>`<div class="it"><span class="mono">${m}</span><span class="nm">${n}</span>${g?'<span class="gt">게스트</span>':''}</div>`;
+const inner = `
+  <div class="statusbar"></div>
+  <div class="body">
+    <div class="kick">Staff Schedule</div>
+    <div class="h">출근 시프트</div>
+    <div class="datebar"><span class="nav">‹</span><span class="d">6월 14일 토요일</span><span class="nav">›</span></div>
+    <div class="tabs"><span class="on">메이드</span><span>데빌</span><span>마츠리</span></div>
+    <div class="evt">제로생일</div>
+    <div class="cnt">메이드 · 6명</div>
+    ${item('제','제로')}${item('츠','츠나')}${item('미','미즈')}${item('코','코메')}${item('이','이카')}${item('린','린다',1)}
+  </div>`;
+const opts=[
+  ['L1','L1 · 샴페인','아이보리 + 샴페인 골드. 우아한 티룸 느낌. 따뜻하면서 고급스러움.'],
+  ['L2','L2 · 더스티 로즈','차분한 장밋빛. 메이드카페의 사랑스러움을 “어른스럽게” 표현.'],
+  ['L3','L3 · 라떼','포근한 베이지+카라멜 브라운. 아늑한 카페 무드.'],
+];
+document.getElementById('row').innerHTML = opts.map(([cls,tag,desc])=>`
+  <div class="col">
+    <div class="tag">${tag}</div>
+    <div class="phone"><div class="island"></div><div class="screen"><div class="app ${cls}">${inner}</div></div></div>
+    <div class="desc">${desc}</div>
+  </div>`).join('');
+</script>
+</body>
+</html>
