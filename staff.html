@@ -202,6 +202,18 @@ select.fld{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns
 .setup .box{background:#fff;border:1px solid var(--line);border-radius:14px;padding:16px;margin-top:18px;font-size:13px;line-height:1.7}
 .spin{display:inline-block;width:18px;height:18px;border:3px solid #f0e3e4;border-top-color:var(--rose);border-radius:50%;animation:rot .8s linear infinite;vertical-align:middle}
 @keyframes rot{to{transform:rotate(360deg)}}
+/* 전환 애니메이션 */
+@keyframes slideR{from{opacity:0;transform:translateX(22px)}to{opacity:1;transform:translateX(0)}}
+@keyframes slideL{from{opacity:0;transform:translateX(-22px)}to{opacity:1;transform:translateX(0)}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.anim-r{animation:slideR .26s cubic-bezier(.22,.61,.36,1)}
+.anim-l{animation:slideL .26s cubic-bezier(.22,.61,.36,1)}
+.anim-f{animation:fadeUp .24s ease}
+.screen.on{animation:fadeUp .24s ease}
+.tab,.chip,.seg button,.datebar button,.daycol,.card,.who{transition:transform .12s ease, background .15s ease, color .15s ease, border-color .15s ease}
+.tab:active,.chip:active,.daycol:active,.who:active{transform:scale(.96)}
+.datebar button:active{transform:scale(.85)}
+.seg button:active{transform:scale(.97)}
 </style>
 </head>
 <body>
@@ -434,6 +446,12 @@ let selectedDate = new Date();
 let wpFilter = '메이드';
 let currentTab = 'schedule';
 let viewMode = 'day';
+let navDir = 0;
+function animList(){
+  const l=$('scheduleList'); if(!l) return;
+  const c = navDir>0?'anim-r':navDir<0?'anim-l':'anim-f';
+  l.classList.remove('anim-r','anim-l','anim-f'); void l.offsetWidth; l.classList.add(c);
+}
 let pendingSubShiftId = null;
 
 /* ---------- 부팅 ---------- */
@@ -706,6 +724,7 @@ async function renderWeek(){
       <div class="dcol-body">${body}</div></div>`;
   }
   list.innerHTML = `<div class="weekgrid">${cols}</div>`;
+  animList();
   list.querySelectorAll('[data-goday]').forEach(c=>c.onclick=()=>{
     selectedDate=new Date(c.dataset.goday+'T00:00:00'); viewMode='day';
     $('viewSeg').querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.v==='day'));
@@ -746,9 +765,10 @@ async function renderDay(){
   });
   if(total===0 && !admin){
     list.innerHTML = `<div class="empty-box"><div class="e-ic"></div><div class="e-t">이 날은 등록된 근무가 없어요</div><div class="e-s">다른 날짜를 확인해 보세요</div></div>`;
-    return;
+    animList(); return;
   }
   list.innerHTML = html;
+  animList();
   bindShiftCards(list);
   list.querySelectorAll('[data-ev]').forEach(b=>b.onclick=async()=>{
     const cur=b.dataset.cur||'';
@@ -1145,13 +1165,13 @@ function wireUI(){
   $('myPicFile').onchange = uploadAvatar;
   $('myModal').onclick = e=>{ if(e.target.id==='myModal') $('myModal').classList.remove('show'); };
   $('viewSeg').querySelectorAll('button').forEach(b=>b.onclick=()=>{
-    viewMode=b.dataset.v;
+    viewMode=b.dataset.v; navDir=0;
     $('viewSeg').querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b));
     renderSchedule();
   });
-  $('prevDay').onclick = ()=>{ selectedDate.setDate(selectedDate.getDate()-(viewMode==='week'?7:1)); renderSchedule(); };
-  $('nextDay').onclick = ()=>{ selectedDate.setDate(selectedDate.getDate()+(viewMode==='week'?7:1)); renderSchedule(); };
-  $('todayBtn').onclick = ()=>{ selectedDate=new Date(); renderSchedule(); };
+  $('prevDay').onclick = ()=>{ navDir=-1; selectedDate.setDate(selectedDate.getDate()-(viewMode==='week'?7:1)); renderSchedule(); };
+  $('nextDay').onclick = ()=>{ navDir=1; selectedDate.setDate(selectedDate.getDate()+(viewMode==='week'?7:1)); renderSchedule(); };
+  $('todayBtn').onclick = ()=>{ navDir=0; selectedDate=new Date(); renderSchedule(); };
   $('loginBtn').onclick = doLogin;
   $('loginClose').onclick = closeLogin;
   $('loginPin').onkeydown = e=>{ if(e.key==='Enter') doLogin(); };

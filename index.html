@@ -95,6 +95,17 @@ body{
 .empty-box .e-s{font-size:13px;font-weight:500;margin-top:6px}
 .spin{display:inline-block;width:20px;height:20px;border:3px solid #f0e3e4;border-top-color:var(--rose);border-radius:50%;animation:rot .8s linear infinite}
 @keyframes rot{to{transform:rotate(360deg)}}
+/* 전환 애니메이션 */
+@keyframes slideR{from{opacity:0;transform:translateX(22px)}to{opacity:1;transform:translateX(0)}}
+@keyframes slideL{from{opacity:0;transform:translateX(-22px)}to{opacity:1;transform:translateX(0)}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.anim-r{animation:slideR .26s cubic-bezier(.22,.61,.36,1)}
+.anim-l{animation:slideL .26s cubic-bezier(.22,.61,.36,1)}
+.anim-f{animation:fadeUp .24s ease}
+.seg button,.chip,.datebar button,.daycol,.tag .ig{transition:transform .12s ease, background .15s ease, color .15s ease, border-color .15s ease}
+.chip:active,.daycol:active,.tag .ig:active{transform:scale(.95)}
+.datebar button:active{transform:scale(.85)}
+.seg button:active{transform:scale(.97)}
 
 .setup{padding:40px 22px;color:var(--ink)}
 .setup h1{font-size:24px;font-weight:800}
@@ -157,7 +168,7 @@ const IG_SVG = '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stro
 const mondayOf = d => { const x=new Date(d); x.setDate(x.getDate()-((x.getDay()+6)%7)); x.setHours(0,0,0,0); return x; };
 const avStyle = url => url?`background-image:url('${String(url).replace(/'/g,'%27')}')`:'';
 
-let supa=null, selectedDate=new Date(), wpFilter='메이드', viewMode='day';
+let supa=null, selectedDate=new Date(), wpFilter='메이드', viewMode='day', navDir=0;
 let minDate=null, maxDate=null;   // 손님이 볼 수 있는 범위 (1개월 전 ~ 마지막 등록일)
 
 function isConfigured(){
@@ -196,15 +207,19 @@ async function boot(){
   renderChips();
   await loadBounds(); clampSel();
   $('viewSeg').querySelectorAll('button').forEach(b=>b.onclick=()=>{
-    viewMode=b.dataset.v;
+    viewMode=b.dataset.v; navDir=0;
     $('viewSeg').querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b));
     render();
   });
-  $('prev').onclick = ()=>{ selectedDate.setDate(selectedDate.getDate()-(viewMode==='week'?7:1)); clampSel(); render(); };
-  $('next').onclick = ()=>{ selectedDate.setDate(selectedDate.getDate()+(viewMode==='week'?7:1)); clampSel(); render(); };
-  $('todayBtn').onclick = ()=>{ selectedDate=new Date(); clampSel(); render(); };
+  $('prev').onclick = ()=>{ navDir=-1; selectedDate.setDate(selectedDate.getDate()-(viewMode==='week'?7:1)); clampSel(); render(); };
+  $('next').onclick = ()=>{ navDir=1; selectedDate.setDate(selectedDate.getDate()+(viewMode==='week'?7:1)); clampSel(); render(); };
+  $('todayBtn').onclick = ()=>{ navDir=0; selectedDate=new Date(); clampSel(); render(); };
   render();
-  setInterval(async()=>{ if(document.visibilityState==='visible'){ await loadBounds(); render(); } }, 30000);
+  setInterval(async()=>{ if(document.visibilityState==='visible'){ navDir=0; await loadBounds(); render(); } }, 30000);
+}
+function animList(){
+  const l=$('list'); const c = navDir>0?'anim-r':navDir<0?'anim-l':'anim-f';
+  l.classList.remove('anim-r','anim-l','anim-f'); void l.offsetWidth; l.classList.add(c);
 }
 
 function renderChips(){
@@ -257,6 +272,7 @@ async function renderDay(){
   $('list').innerHTML = total===0
     ? `<div class="empty-box"><div class="e-ic"></div><div class="e-t">이 날은 등록된 근무가 없어요</div><div class="e-s">다른 날짜를 확인해 보세요</div></div>`
     : html;
+  animList();
 }
 
 async function renderWeek(){
@@ -288,6 +304,7 @@ async function renderWeek(){
       <div class="dcol-body">${body}</div></div>`;
   }
   $('list').innerHTML = `<div class="weekgrid">${cols}</div>`;
+  animList();
   $('list').querySelectorAll('[data-goday]').forEach(c=>c.onclick=()=>{
     selectedDate=new Date(c.dataset.goday+'T00:00:00'); viewMode='day';
     $('viewSeg').querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.v==='day'));
