@@ -397,8 +397,7 @@ select.fld{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns
     <div class="modal-t">출근자 로그인</div>
     <div class="modal-s">이름을 고르고 PIN을 입력하세요</div>
     <label class="fl">이름 (검색)</label>
-    <input class="fld" id="loginName" list="loginNames" placeholder="이름을 입력해 검색" autocomplete="off">
-    <datalist id="loginNames"></datalist>
+    <input class="fld" id="loginName" placeholder="이름 입력" autocomplete="off">
     <label class="fl">PIN</label>
     <input type="password" class="fld" id="loginPin" inputmode="numeric" maxlength="6" placeholder="PIN 입력">
     <button class="btn primary full" id="loginBtn">로그인</button>
@@ -529,9 +528,7 @@ async function rpc(fn, args, okMsg){
 }
 
 /* ---------- 로그인 ---------- */
-function fillLoginNames(){
-  $('loginNames').innerHTML = staffList.map(s=>`<option value="${esc(s.name)}"></option>`).join('');
-}
+function fillLoginNames(){ /* 로그인 시 이름 목록 노출 안 함 (직접 입력) */ }
 function openLogin(){ $('loginModal').classList.add('show'); }
 function closeLogin(){ $('loginModal').classList.remove('show'); $('loginPin').value=''; }
 async function doLogin(){
