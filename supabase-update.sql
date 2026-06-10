@@ -428,7 +428,8 @@ create policy "avatars_insert" on storage.objects for insert to anon, authentica
 create policy "avatars_update" on storage.objects for update to anon, authenticated using (bucket_id='avatars') with check (bucket_id='avatars');
 
 -- 로그인 반환에 아바타 포함 (잠금 로직 유지)
-create or replace function staff_login(p_name text, p_pin text)
+drop function if exists staff_login(text, text);
+create function staff_login(p_name text, p_pin text)
 returns table(id bigint, name text, is_admin boolean, avatar_url text)
 language plpgsql security definer set search_path = public as $$
 declare s staff;
