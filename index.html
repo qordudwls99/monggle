@@ -7,102 +7,96 @@
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;-webkit-font-smoothing:antialiased}
 :root{
-  --ink:#3a2a63; --ink2:#6b5a95; --muted:#a99ec9;
-  --violet:#7c3aed; --violet2:#a78bfa; --pink:#f472b6; --amber:#fbbf24;
-  --maid:#f472b6; --devil:#7c3aed; --matsuri:#fb923c;
-  --card:rgba(255,255,255,.95);
-  --bg:radial-gradient(135% 95% at 50% -15%, #ffe1c9 0%, #fbd0e4 25%, #c9b8f3 57%, #9d8df0 100%);
+  --ink:#3f2e30; --ink2:#8a7173; --muted:#b5919a;
+  --rose:#bd7783; --rose-deep:#a85565; --gold:#9a6f1e;
+  --maid:#c27c87; --devil:#8e7aa6; --matsuri:#c2925e;
+  --card:#ffffff; --line:#f0e3e4; --paper:#faf4f3;
 }
 html,body{height:100%}
 body{
   font-family:'Apple SD Gothic Neo','Pretendard','Noto Sans KR',-apple-system,system-ui,'Malgun Gothic',sans-serif;
-  color:var(--ink); background:var(--bg); background-attachment:fixed;
+  color:var(--ink); background:var(--paper);
   display:flex; justify-content:center; letter-spacing:-0.2px;
 }
 .app{width:100%;max-width:480px;min-height:100vh;min-height:100dvh;position:relative;display:flex;flex-direction:column}
-.stars{position:fixed;inset:0;opacity:.5;pointer-events:none;background-image:
-  radial-gradient(2px 2px at 18% 20%,#fff9,transparent),radial-gradient(2px 2px at 72% 14%,#fff6,transparent),
-  radial-gradient(1.5px 1.5px at 42% 38%,#fff7,transparent),radial-gradient(2px 2px at 86% 50%,#fff6,transparent),
-  radial-gradient(1.5px 1.5px at 28% 62%,#fff5,transparent),radial-gradient(2px 2px at 62% 76%,#fff6,transparent)}
+.stars{display:none}
 
-.head{position:relative;z-index:10;padding:max(22px,calc(env(safe-area-inset-top) + 14px)) 18px 8px}
-.kicker{font-size:10px;font-weight:800;letter-spacing:3px;color:rgba(255,255,255,.82)}
-.brand{font-size:23px;font-weight:900;color:#fff;text-shadow:0 2px 8px rgba(80,40,150,.35)}
-.brand-sub{font-size:12.5px;font-weight:700;color:rgba(255,255,255,.9);margin-top:3px}
+.head{position:relative;z-index:10;padding:max(22px,calc(env(safe-area-inset-top) + 14px)) 20px 8px}
+.kicker{font-size:10px;font-weight:800;letter-spacing:3px;color:var(--rose);text-transform:uppercase}
+.brand{font-size:24px;font-weight:800;color:var(--ink);letter-spacing:-.5px}
+.brand-sub{font-size:12.5px;font-weight:600;color:var(--muted);margin-top:4px}
 
-.body{position:relative;z-index:10;flex:1;padding:8px 16px 28px;overflow-y:auto}
+.body{position:relative;z-index:10;flex:1;padding:8px 20px 28px;overflow-y:auto}
 
 /* view toggle */
-.seg{display:flex;background:rgba(255,255,255,.45);border-radius:99px;padding:4px;margin-bottom:11px}
-.seg button{flex:1;border:none;cursor:pointer;font-family:inherit;font-weight:800;font-size:13px;padding:8px 0;border-radius:99px;background:none;color:rgba(255,255,255,.92);transition:.15s}
-.seg button.on{background:#fff;color:var(--violet);box-shadow:0 6px 14px -7px rgba(80,40,150,.5)}
+.seg{display:flex;background:#f3e7e9;border-radius:12px;padding:4px;margin-bottom:14px}
+.seg button{flex:1;border:none;cursor:pointer;font-family:inherit;font-weight:700;font-size:13px;padding:9px 0;border-radius:9px;background:none;color:var(--muted);transition:.15s}
+.seg button.on{background:#fff;color:var(--rose-deep);box-shadow:0 1px 3px rgba(80,40,50,.12)}
 
-.datebar{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px;
-  background:rgba(255,255,255,.62);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-radius:18px;padding:8px 10px;box-shadow:0 8px 22px -12px rgba(80,40,150,.4)}
-.datebar button{border:none;cursor:pointer;background:#fff;width:34px;height:34px;border-radius:12px;font-size:17px;font-weight:900;color:var(--violet);font-family:inherit}
-.datebar .dlabel{flex:1;text-align:center;font-weight:900;font-size:15px;color:var(--ink)}
+.datebar{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:14px;padding:11px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.datebar button{border:none;cursor:pointer;background:none;width:32px;height:32px;font-size:19px;font-weight:700;color:var(--rose);font-family:inherit}
+.datebar .dlabel{flex:1;text-align:center;font-weight:800;font-size:15.5px;color:var(--ink)}
 .datebar .dlabel small{display:block;font-size:11px;font-weight:700;color:var(--muted)}
-.today-btn{font-size:11px !important;width:auto !important;padding:0 11px;height:34px}
+.today-btn{font-size:11px !important;width:auto !important;padding:0 11px;height:32px;color:var(--muted) !important}
 
-.chips{display:flex;gap:7px;margin-bottom:14px;flex-wrap:wrap}
-.chip{border:none;cursor:pointer;font-family:inherit;font-weight:800;font-size:12.5px;padding:7px 14px;border-radius:99px;background:rgba(255,255,255,.55);color:var(--ink2)}
-.chip.on{color:#fff;box-shadow:0 6px 14px -6px rgba(80,40,150,.5)}
-.chip.on[data-w="전체"]{background:linear-gradient(135deg,#a78bfa,#f472b6)}
+.chips{display:flex;gap:7px;margin-bottom:18px;flex-wrap:wrap}
+.chip{border:1px solid var(--line);cursor:pointer;font-family:inherit;font-weight:700;font-size:12.5px;padding:7px 15px;border-radius:99px;background:#fff;color:var(--muted)}
+.chip.on{color:#fff;border-color:transparent}
 .chip.on[data-w="메이드"]{background:var(--maid)}
 .chip.on[data-w="데빌"]{background:var(--devil)}
 .chip.on[data-w="마츠리"]{background:var(--matsuri)}
 
 /* day view */
-.wp-sec{margin-bottom:16px}
-.wp-h{display:flex;align-items:center;gap:8px;margin:2px 2px 10px}
-.wp-dot{width:11px;height:11px;border-radius:50%;flex-shrink:0}
+.wp-sec{margin-bottom:22px}
+.wp-h{display:flex;align-items:center;gap:8px;margin:2px 2px 6px;padding-bottom:10px;border-bottom:1px solid var(--line)}
+.wp-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
 .wp-dot.메이드{background:var(--maid)}.wp-dot.데빌{background:var(--devil)}.wp-dot.마츠리{background:var(--matsuri)}
-.wp-name{font-weight:900;font-size:17px;color:#fff;text-shadow:0 1px 5px rgba(80,40,150,.3)}
-.wp-count{margin-left:auto;font-size:11.5px;font-weight:800;color:#fff;background:rgba(255,255,255,.22);padding:3px 11px;border-radius:99px}
-.names{display:flex;flex-direction:column;gap:8px}
-.tag{display:flex;align-items:center;gap:11px;background:var(--card);border-radius:16px;padding:10px 13px;box-shadow:0 10px 22px -15px rgba(80,50,150,.45),0 1px 3px rgba(80,50,150,.05);font-weight:800;font-size:15px;color:var(--ink)}
-.tag .av{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#a78bfa,#f472b6);color:#fff;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:900;flex-shrink:0}
+.wp-name{font-weight:800;font-size:16px;color:var(--ink)}
+.wp-count{margin-left:auto;font-size:11.5px;font-weight:700;color:var(--muted)}
+.names{display:flex;flex-direction:column}
+.tag{display:flex;align-items:center;gap:13px;padding:13px 4px;border-bottom:1px solid var(--line);font-weight:600;font-size:15px;color:var(--ink)}
+.tag .av{width:34px;height:34px;border-radius:50%;background:#f5e5e8;color:var(--rose-deep);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;flex-shrink:0}
 .tag .tnm{flex:1}
-.tag .gtag{font-size:10.5px;font-weight:900;color:#b45309;background:#fef3c7;padding:3px 9px;border-radius:99px}
-.tag .ig{display:flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:11px;color:#fff;flex-shrink:0;background:linear-gradient(45deg,#f09433,#e6683c 25%,#dc2743 50%,#cc2366 75%,#bc1888)}
-.tag.guest{background:linear-gradient(120deg,#fffaf0,#fff3df)}
-.tag.guest .av{background:linear-gradient(135deg,#fbbf24,#fb923c)}
-.ev-banner{display:flex;align-items:center;justify-content:center;gap:7px;background:linear-gradient(120deg,#fff7ed,#ffe8cc);color:#c2410c;font-weight:900;font-size:14.5px;padding:11px 14px;border-radius:14px;margin-bottom:9px;box-shadow:0 10px 22px -14px rgba(234,88,12,.5)}
+.tag .gtag{font-size:10px;font-weight:800;color:var(--gold);background:#f3e7c8;padding:3px 9px;border-radius:6px;letter-spacing:.3px}
+.tag .ig{display:flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:9px;color:#fff;flex-shrink:0;background:linear-gradient(45deg,#f09433,#e6683c 25%,#dc2743 50%,#cc2366 75%,#bc1888)}
+.tag.guest .av{background:#f3e7c8;color:var(--gold)}
+.ev-banner{display:flex;align-items:center;gap:8px;background:#f7e6e9;color:var(--rose-deep);font-weight:800;font-size:13.5px;padding:10px 14px;border-radius:10px;margin-bottom:12px;border:1px solid #eecdd3}
+.ev-banner::before{content:"●";font-size:7px}
 .memo-row{font-size:12px;color:var(--ink2);margin:8px 2px 0}
-.none{text-align:center;color:var(--muted);font-weight:700;font-size:13px;background:var(--card);border-radius:16px;padding:16px}
+.none{text-align:center;color:var(--muted);font-weight:600;font-size:13px;padding:16px}
 
 /* week view — 4(위)+3(아래) 그리드, 화면 꽉 차게 */
 .weekgrid{display:grid;grid-template-columns:repeat(4,1fr);grid-auto-rows:1fr;gap:8px;min-height:calc(100dvh - 235px)}
-.daycol{background:var(--card);border-radius:16px;padding:11px 8px;box-shadow:0 12px 26px -16px rgba(80,50,150,.4),0 2px 5px rgba(80,50,150,.05);cursor:pointer;min-width:0;display:flex;flex-direction:column}
-.daycol.today{outline:2.5px solid var(--violet2)}
-.dcol-h{text-align:center;font-weight:900;font-size:12px;color:var(--ink);margin-bottom:9px;padding-bottom:7px;border-bottom:1px solid #f3effb;line-height:1.3}
-.dcol-h .dow{font-size:18px;line-height:1.2}
-.dcol-h.weekend .dow{color:var(--pink)}
-.dcol-h .tdy{display:inline-block;color:#fff;background:var(--violet2);font-size:9.5px;font-weight:900;padding:1px 6px;border-radius:99px;margin-left:3px}
-.dcol-ev{display:block;margin:4px auto 0;font-size:9.5px;font-weight:800;color:#ea580c;background:#fff7ed;padding:2px 6px;border-radius:99px;line-height:1.3;width:fit-content}
+.daycol{background:#fff;border:1px solid var(--line);border-radius:14px;padding:10px 8px;box-shadow:0 6px 16px -14px rgba(80,40,50,.4);cursor:pointer;min-width:0;display:flex;flex-direction:column}
+.daycol.today{border-color:var(--rose);box-shadow:0 0 0 1px var(--rose)}
+.dcol-h{text-align:center;font-weight:800;font-size:12px;color:var(--ink);margin-bottom:9px;padding-bottom:7px;border-bottom:1px solid var(--line);line-height:1.3}
+.dcol-h .dow{font-size:17px;line-height:1.2}
+.dcol-h.weekend .dow{color:var(--rose-deep)}
+.dcol-h .tdy{display:inline-block;color:#fff;background:var(--rose);font-size:9px;font-weight:800;padding:1px 6px;border-radius:99px;margin-left:3px}
+.dcol-ev{display:block;margin:4px auto 0;font-size:9px;font-weight:800;color:var(--rose-deep);background:#f7e6e9;padding:2px 7px;border-radius:99px;line-height:1.3;width:fit-content}
 .dcol-body{flex:1;overflow-y:auto}
 .wpgrp{margin-bottom:7px}
 .wpgrp:last-child{margin-bottom:0}
-.wpgrp-h{display:flex;align-items:center;justify-content:center;gap:3px;font-size:10px;font-weight:900;color:var(--ink2);margin-bottom:4px}
-.wpgrp .nm{font-size:13.5px;font-weight:700;color:var(--ink);padding:5px 2px;text-align:center;background:#f6f3ff;border-radius:9px;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.wpgrp .nm.op{background:none;color:#94a3b8;font-weight:600;font-size:11.5px}
-.wpgrp .nm.guest{background:#fef3c7;color:#b45309}
-.dcol-off{text-align:center;font-size:12px;color:var(--muted);font-weight:700;padding:14px 0}
+.wpgrp-h{display:flex;align-items:center;justify-content:center;gap:3px;font-size:10px;font-weight:800;color:var(--muted);margin-bottom:4px}
+.wpgrp .nm{font-size:13px;font-weight:600;color:var(--ink);padding:5px 2px;text-align:center;background:#f8eef0;border-radius:8px;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.wpgrp .nm.op{background:none;color:var(--muted);font-weight:600;font-size:11px}
+.wpgrp .nm.guest{background:#f3e7c8;color:var(--gold)}
+.dcol-off{text-align:center;font-size:12px;color:var(--muted);font-weight:600;padding:14px 0}
 
-.empty-box{text-align:center;padding:44px 20px;color:#fff}
-.empty-box .e-ic{font-size:46px}
-.empty-box .e-t{font-weight:900;font-size:16px;margin-top:10px;text-shadow:0 1px 5px rgba(80,40,150,.3)}
-.empty-box .e-s{font-size:13px;font-weight:600;opacity:.9;margin-top:5px}
-.spin{display:inline-block;width:20px;height:20px;border:3px solid rgba(255,255,255,.35);border-top-color:#fff;border-radius:50%;animation:rot .8s linear infinite}
+.empty-box{text-align:center;padding:50px 20px;color:var(--muted)}
+.empty-box .e-ic{font-size:32px;opacity:.45}
+.empty-box .e-t{font-weight:800;font-size:16px;margin-top:12px;color:var(--ink)}
+.empty-box .e-s{font-size:13px;font-weight:500;margin-top:6px}
+.spin{display:inline-block;width:20px;height:20px;border:3px solid #f0e3e4;border-top-color:var(--rose);border-radius:50%;animation:rot .8s linear infinite}
 @keyframes rot{to{transform:rotate(360deg)}}
 
-.setup{padding:40px 22px;color:#fff}
-.setup h1{font-size:24px;font-weight:900;text-shadow:0 2px 8px rgba(80,40,150,.32)}
-.setup p{font-size:14px;line-height:1.7;margin-top:12px;font-weight:600;opacity:.95}
-.setup code{background:rgba(255,255,255,.22);padding:2px 7px;border-radius:6px;font-size:13px;font-weight:800}
+.setup{padding:40px 22px;color:var(--ink)}
+.setup h1{font-size:24px;font-weight:800}
+.setup p{font-size:14px;line-height:1.7;margin-top:12px;font-weight:600;color:var(--ink2)}
+.setup code{background:#f3e7e9;color:var(--rose-deep);padding:2px 7px;border-radius:6px;font-size:13px;font-weight:800}
 
-.foot{position:relative;z-index:10;text-align:center;padding:6px 16px max(18px,env(safe-area-inset-bottom));font-size:11px;font-weight:700;color:rgba(255,255,255,.6)}
-.foot a{color:rgba(255,255,255,.7);text-decoration:underline}
+.foot{position:relative;z-index:10;text-align:center;padding:6px 16px max(18px,env(safe-area-inset-bottom));font-size:11px;font-weight:700;color:var(--muted)}
+.foot a{color:var(--rose-deep);text-decoration:underline}
 </style>
 </head>
 <body>
@@ -110,7 +104,7 @@ body{
 <div class="app">
 
   <div id="setupScreen" class="setup" style="display:none">
-    <h1>🌙 출근 시프트</h1>
+    <h1>출근 시프트</h1>
     <p>아직 Supabase 연결이 안 됐어요. <code>index.html</code> 상단 <code>CONFIG</code> 값을 채워주세요. 자세한 내용은 <code>SHIFT_SETUP.md</code> 참고.</p>
   </div>
 
@@ -118,13 +112,13 @@ body{
     <div class="head">
       <div class="kicker">TODAY</div>
       <div class="brand">출근 시프트</div>
-      <div class="brand-sub">오늘 누가 출근하는지 확인하세요 ✨</div>
+      <div class="brand-sub">오늘 누가 출근하는지 확인하세요</div>
     </div>
 
     <div class="body">
       <div class="seg" id="viewSeg">
-        <button data-v="day" class="on">📅 일별</button>
-        <button data-v="week">🗓️ 주간(월~일)</button>
+        <button data-v="day" class="on">일별</button>
+        <button data-v="week">주간(월~일)</button>
       </div>
       <div class="datebar">
         <button id="prev">‹</button>
@@ -239,8 +233,8 @@ async function renderDay(){
     named.sort((a,b)=> ((b.is_guest?1:0)-(a.is_guest?1:0)) || String(a.start_time).localeCompare(String(b.start_time)));
     const memo = rows.find(r=>r.memo)?.memo;
     html += `<div class="wp-sec"><div class="wp-h"><span class="wp-dot ${wp}"></span><span class="wp-name">${wp}</span><span class="wp-count">${isClosed?'휴무':named.length+'명'}</span></div>`;
-    if(isClosed){ html += `<div class="none">🌙 휴무일</div></div>`; return; }
-    if(memo) html += `<div class="ev-banner">🎉 ${esc(memo)}</div>`;
+    if(isClosed){ html += `<div class="none">휴무일</div></div>`; return; }
+    if(memo) html += `<div class="ev-banner">${esc(memo)}</div>`;
     if(named.length===0){ html += `<div class="none">근무 없음</div>`; }
     else {
       const tags = named.map(s=>{ const dn=s.display_name||s.staff_name;
@@ -252,7 +246,7 @@ async function renderDay(){
     html += `</div>`;
   });
   $('list').innerHTML = total===0
-    ? `<div class="empty-box"><div class="e-ic">🗓️</div><div class="e-t">이 날은 등록된 근무가 없어요</div><div class="e-s">다른 날짜를 확인해 보세요</div></div>`
+    ? `<div class="empty-box"><div class="e-ic"></div><div class="e-t">이 날은 등록된 근무가 없어요</div><div class="e-s">다른 날짜를 확인해 보세요</div></div>`
     : html;
 }
 
@@ -272,7 +266,7 @@ async function renderWeek(){
     const isToday = ds===todayStr, weekend = (day.getDay()===0||day.getDay()===6);
     let body=''; const multi=groups.length>1;
     groups.forEach(wp=>{
-      if(closed.has(ds+'|'+wp)){ body += `<div class="dcol-off">🌙 휴무</div>`; return; }
+      if(closed.has(ds+'|'+wp)){ body += `<div class="dcol-off">휴무</div>`; return; }
       const filled=dayShifts.filter(s=>s.workplace===wp&&(s.display_name||s.staff_name));
       if(filled.length===0) return;
       filled.sort((a,b)=> ((b.is_guest?1:0)-(a.is_guest?1:0)) || String(a.start_time).localeCompare(String(b.start_time)));
