@@ -38,23 +38,35 @@ create table if not exists night_members (
   id bigint generated always as identity primary key,
   work_date date not null,
   workplace text not null,
-  member_name text not null,
+  member_name text,                                   -- 게스트 이름 (직원이면 null 가능)
+  staff_id bigint references staff(id) on delete cascade,
   created_at timestamptz not null default now()
 );
+alter table night_members add column if not exists staff_id bigint references staff(id) on delete cascade;
+alter table night_members alter column member_name drop not null;
 alter table night_members enable row level security;
+
 create or replace view night_member_view as
-  select id, work_date, workplace, member_name from night_members order by id;
+  select nm.id, nm.work_date, nm.workplace, nm.staff_id,
+         coalesce(st.name, nm.member_name) as member_name,
+         st.avatar_url as avatar, st.instagram as instagram,
+         (nm.staff_id is null) as is_guest
+  from night_members nm left join staff st on st.id = nm.staff_id
+  order by nm.id;
 grant select on night_member_view to anon, authenticated;
 
-create or replace function admin_add_night_member(p_admin_id bigint, p_pin text,
-  p_date date, p_workplace text, p_name text)
+drop function if exists admin_add_night_member(bigint, text, date, text, text);
+create function admin_add_night_member(p_admin_id bigint, p_pin text,
+  p_date date, p_workplace text, p_staff_id bigint default null, p_name text default null)
 returns void language plpgsql security definer set search_path = public as $$
 declare v staff;
 begin
   v := _verify(p_admin_id, p_pin);
   if v.id is null or not v.is_admin then raise exception '관리자만 가능합니다'; end if;
-  if nullif(trim(p_name),'') is null then raise exception '이름을 입력하세요'; end if;
-  insert into night_members(work_date, workplace, member_name) values (p_date, p_workplace, trim(p_name));
+  if p_staff_id is null and nullif(trim(p_name),'') is null then
+    raise exception '직원을 선택하거나 게스트 이름을 입력하세요'; end if;
+  insert into night_members(work_date, workplace, staff_id, member_name)
+    values (p_date, p_workplace, p_staff_id, nullif(trim(p_name),''));
 end; $$;
 
 create or replace function admin_remove_night_member(p_admin_id bigint, p_pin text, p_id bigint)

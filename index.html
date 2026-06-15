@@ -71,17 +71,24 @@ body{
 .night-banner{display:flex;align-items:center;gap:8px;background:#ece9f4;color:#4f4a7a;font-weight:800;font-size:13.5px;padding:10px 14px;border-radius:10px;margin-bottom:12px;border:1px solid #d8d3ea}
 .night-banner::before{content:"☾";font-size:13px}
 .night-tag{display:block;margin:4px auto 0;font-size:9px;font-weight:800;color:#4f4a7a;background:#ece9f4;padding:2px 7px;border-radius:99px;width:fit-content}
-.names.compact{display:grid;grid-template-columns:repeat(2,1fr);gap:7px}
-.names.compact .tag{border:1px solid var(--line);border-radius:11px;padding:8px 9px;gap:8px}
-.names.compact .tag .av{width:28px;height:28px;font-size:12px}
-.names.compact .tag .tnm{font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.names.compact .tag .ig{width:26px;height:26px}
-.night-sec{margin-top:10px;padding:12px;background:#f6f5fb;border:1px solid #e4e0f0;border-radius:12px}
-.night-sec-h{font-size:12px;font-weight:800;color:#4f4a7a;margin-bottom:8px}
-.nmlist{display:grid;grid-template-columns:repeat(2,1fr);gap:6px}
-.night-row{display:flex;align-items:center;gap:8px;padding:5px 2px;min-width:0}
-.night-row .nmav{width:26px;height:26px;border-radius:50%;background:#e6e2f2;color:#4f4a7a;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0}
-.night-row .nmname{flex:1;font-weight:700;font-size:13.5px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* 주간/야간 좌우 배치 */
+.daynight{display:grid;grid-template-columns:1fr 1fr;gap:8px;align-items:start}
+.dn-col{background:#fbfaff;border:1px solid var(--line);border-radius:12px;padding:9px}
+.dn-col.night{background:#f6f5fb;border-color:#e4e0f0}
+.dn-h{font-size:11.5px;font-weight:800;color:var(--ink2);text-align:center;margin-bottom:6px}
+.dn-col.night .dn-h{color:#4f4a7a}
+.dn-col .names{gap:0}
+.dn-col .tag{padding:8px 4px;gap:8px}
+.dn-col .tag .av{width:26px;height:26px;font-size:11px}
+.dn-col .tag .tnm{font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dn-col .tag .ig{width:24px;height:24px}
+.dn-empty{text-align:center;color:var(--muted);font-weight:600;font-size:12px;padding:8px 0}
+.night-row{display:flex;align-items:center;gap:8px;padding:7px 2px;min-width:0;border-bottom:1px solid #efeaf6}
+.night-row:last-of-type{border-bottom:none}
+.night-row .nmav{width:26px;height:26px;border-radius:50%;background:#e6e2f2;color:#4f4a7a;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0;background-size:cover;background-position:center}
+.night-row .nmav.guest{background:#f3e7c8;color:var(--gold)}
+.night-row .nmname{flex:1;font-weight:700;font-size:13px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.night-row .ig.sm{width:24px;height:24px;border-radius:7px}
 .memo-row{font-size:12px;color:var(--ink2);margin:8px 2px 0}
 .none{text-align:center;color:var(--muted);font-weight:600;font-size:13px;padding:16px}
 
@@ -283,22 +290,23 @@ async function renderDay(){
     if(isClosed){ html += `<div class="none">휴무일</div></div>`; return; }
     if(nightHrs) html += `<div class="night-banner">${esc(nightHrs)}</div>`;
     if(memo) html += `<div class="ev-banner">${esc(memo)}</div>`;
-    if(named.length===0){ html += `<div class="none">근무 없음</div>`; }
-    else {
-      const tags = named.map(s=>{ const dn=s.display_name||s.staff_name;
-        const ig=(!s.is_guest)?igUrl(s.staff_instagram):null;
-        const avi=(!s.is_guest)&&s.staff_avatar;
-        const av=`<span class="av" style="${avi?avStyle(s.staff_avatar):''}">${avi?'':esc(dn.charAt(0))}</span>`;
-        return `<div class="tag${s.is_guest?' guest':''}">${av}<span class="tnm">${esc(dn)}</span>${s.is_guest?'<span class="gtag">게스트</span>':''}${ig?`<a class="ig" href="${esc(ig)}" target="_blank" rel="noopener">${IG_SVG}</a>`:''}</div>`;
-      }).join('');
-      html += `<div class="names${nightHrs?' compact':''}">${tags}</div>`;
-    }
+    const tagHtml = s=>{ const dn=s.display_name||s.staff_name;
+      const ig=(!s.is_guest)?igUrl(s.staff_instagram):null;
+      const avi=(!s.is_guest)&&s.staff_avatar;
+      const av=`<span class="av" style="${avi?avStyle(s.staff_avatar):''}">${avi?'':esc(dn.charAt(0))}</span>`;
+      return `<div class="tag${s.is_guest?' guest':''}">${av}<span class="tnm">${esc(dn)}</span>${s.is_guest?'<span class="gtag">게스트</span>':''}${ig?`<a class="ig" href="${esc(ig)}" target="_blank" rel="noopener">${IG_SVG}</a>`:''}</div>`;
+    };
     if(nightHrs){
       const mem = nmem[ymd(d)+'|'+wp]||[];
-      html += `<div class="night-sec"><div class="night-sec-h">야간 멤버</div><div class="nmlist">`;
-      if(mem.length===0) html += `<div class="night-row" style="color:var(--muted);font-weight:600">미정</div>`;
-      else mem.forEach(m=> html += `<div class="night-row"><span class="nmav">${esc(m.member_name.charAt(0))}</span><span class="nmname">${esc(m.member_name)}</span></div>`);
-      html += `</div></div>`;
+      const dayCol = named.length ? named.map(tagHtml).join('') : `<div class="dn-empty">없음</div>`;
+      const nightCol = mem.length ? mem.map(m=>{
+        const ig=(!m.is_guest)?igUrl(m.instagram):null; const avi=!m.is_guest&&m.avatar;
+        return `<div class="night-row"><span class="nmav${m.is_guest?' guest':''}" style="${avi?avStyle(m.avatar):''}">${avi?'':esc((m.member_name||'·').charAt(0))}</span><span class="nmname">${esc(m.member_name)}</span>${ig?`<a class="ig sm" href="${esc(ig)}" target="_blank" rel="noopener">${IG_SVG}</a>`:''}</div>`;
+      }).join('') : `<div class="dn-empty">미정</div>`;
+      html += `<div class="daynight"><div class="dn-col"><div class="dn-h">주간</div><div class="names">${dayCol}</div></div><div class="dn-col night"><div class="dn-h">야간</div>${nightCol}</div></div>`;
+    } else {
+      if(named.length===0){ html += `<div class="none">근무 없음</div>`; }
+      else html += `<div class="names">${named.map(tagHtml).join('')}</div>`;
     }
     html += `</div>`;
   });

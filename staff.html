@@ -129,18 +129,24 @@ body{
 .night-banner{display:flex;align-items:center;gap:8px;background:#ece9f4;color:#4f4a7a;font-weight:800;font-size:13.5px;padding:10px 14px;border-radius:10px;margin-bottom:12px;border:1px solid #d8d3ea}
 .night-banner::before{content:"☾";font-size:13px}
 .night-tag{display:block;margin:4px auto 0;font-size:9px;font-weight:800;color:#4f4a7a;background:#ece9f4;padding:2px 7px;border-radius:99px;width:fit-content}
-.roster.compact{display:grid;grid-template-columns:repeat(2,1fr);gap:7px}
-.roster.compact .card{margin-bottom:0;padding:9px 10px}
-.roster.compact .s-row{gap:8px}
-.roster.compact .av{width:28px;height:28px;font-size:12px}
-.roster.compact .s-name,.roster.compact .editbtn{font-size:13.5px}
-.night-sec{margin-top:10px;padding:12px;background:#f6f5fb;border:1px solid #e4e0f0;border-radius:12px}
-.night-sec-h{font-size:12px;font-weight:800;color:#4f4a7a;margin-bottom:8px}
-.nmlist{display:grid;grid-template-columns:repeat(2,1fr);gap:6px}
-.night-row{display:flex;align-items:center;gap:8px;padding:5px 2px;min-width:0}
-.night-row .nmav{width:26px;height:26px;border-radius:50%;background:#e6e2f2;color:#4f4a7a;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0}
-.night-row .nmname{flex:1;font-weight:700;font-size:13.5px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.night-row .nmdel{padding:4px 8px;font-size:10.5px;flex-shrink:0}
+/* 주간/야간 좌우 배치 */
+.daynight{display:grid;grid-template-columns:1fr 1fr;gap:8px;align-items:start}
+.dn-col{background:#fbfaff;border:1px solid var(--line);border-radius:12px;padding:9px}
+.dn-col.night{background:#f6f5fb;border-color:#e4e0f0}
+.dn-h{font-size:11.5px;font-weight:800;color:var(--ink2);text-align:center;margin-bottom:8px}
+.dn-col.night .dn-h{color:#4f4a7a}
+.dn-col .card{margin-bottom:6px;padding:8px 9px;border-radius:10px}
+.dn-col .s-row{gap:7px}
+.dn-col .av{width:26px;height:26px;font-size:11px}
+.dn-col .s-name,.dn-col .editbtn{font-size:13px}
+.dn-col .badge{font-size:9.5px;padding:2px 6px}
+.dn-empty{text-align:center;color:var(--muted);font-weight:600;font-size:12px;padding:8px 0}
+.night-row{display:flex;align-items:center;gap:8px;padding:6px 2px;min-width:0;border-bottom:1px solid #efeaf6}
+.night-row:last-of-type{border-bottom:none}
+.night-row .nmav{width:26px;height:26px;border-radius:50%;background:#e6e2f2;color:#4f4a7a;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0;background-size:cover;background-position:center}
+.night-row .nmav.guest{background:#f3e7c8;color:var(--gold)}
+.night-row .nmname{flex:1;font-weight:700;font-size:13px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.night-row .nmdel{padding:3px 7px;font-size:11px;flex-shrink:0}
 .applist{margin-top:10px;padding-top:10px;border-top:1px dashed var(--line);display:flex;flex-direction:column;gap:7px}
 .approw{display:flex;align-items:center;justify-content:space-between;font-size:13.5px;font-weight:700;color:var(--ink)}
 .approw .apbtns{display:flex;gap:6px}
@@ -388,6 +394,20 @@ select.fld{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns
   </div>
 </div>
 
+<!-- 야간 멤버 추가 모달 -->
+<div class="modal" id="nmModal">
+  <div class="modal-c">
+    <div class="modal-t">야간 멤버 추가</div>
+    <div class="modal-s" id="nm-sub"></div>
+    <label class="fl">직원 선택</label>
+    <select class="fld" id="nm-staff"></select>
+    <label class="fl">또는 게스트 이름</label>
+    <input class="fld" id="nm-guest" placeholder="게스트 이름 (계정 없는 사람)">
+    <button class="btn primary full" id="nm-save">추가</button>
+    <button class="closex" id="nm-close">취소</button>
+  </div>
+</div>
+
 <!-- 근무 추가/수정 모달 (관리자) -->
 <div class="modal" id="shiftModal">
   <div class="modal-c">
@@ -616,6 +636,23 @@ async function uploadAvatar(ev){
   }catch(e){ toast('사진 업로드 실패: '+(e.message||e), true); }
 }
 function avStyle(url){ return url?`background-image:url('${url.replace(/'/g,"%27")}')`:''; }
+
+/* 야간 멤버 추가 모달 */
+let nmWp=null;
+function openNmAdd(wp){
+  nmWp=wp;
+  $('nm-sub').textContent=`${ymd(selectedDate)} · ${wp} 야간`;
+  $('nm-staff').innerHTML=`<option value="">— 직원 선택 —</option>`+staffList.map(s=>`<option value="${s.id}">${esc(s.name)}</option>`).join('');
+  $('nm-guest').value='';
+  $('nmModal').classList.add('show');
+}
+async function nmSave(){
+  const sid=$('nm-staff').value?Number($('nm-staff').value):null;
+  const guest=$('nm-guest').value.trim();
+  if(!sid && !guest){ toast('직원을 고르거나 게스트 이름을 입력하세요', true); return; }
+  const ok = await rpc('admin_add_night_member', { p_admin_id:session.id, p_date:ymd(selectedDate), p_workplace:nmWp, p_staff_id:sid, p_name:guest||null }, '야간 멤버를 추가했어요');
+  if(ok) $('nmModal').classList.remove('show');
+}
 function renderWho(){
   const btn = $('whoBtn');
   if(session){
@@ -778,26 +815,28 @@ async function renderDay(){
     const evBtn = admin ? `<button class="btn ghost" data-ev="${wp}" data-cur="${esc(ev||'')}" style="padding:4px 9px;font-size:11px">이벤트${ev?'':'+'}</button>` : '';
     const offBtn = admin ? `<button class="btn ghost" data-off="${wp}" data-on="${isClosed?1:0}" style="padding:4px 9px;font-size:11px">${isClosed?'휴무해제':'휴무'}</button>` : '';
     const nightBtn = (admin && !isClosed && wp==='데빌') ? `<button class="btn ghost" data-night="${wp}" data-on="${nightHrs?1:0}" data-hrs="${esc(nightHrs||'')}" style="padding:4px 9px;font-size:11px">${nightHrs?'야간해제':'야간'}</button>` : '';
-    const addBtn = (admin && !isClosed) ? `<button class="btn primary" data-add="${wp}" style="padding:4px 10px;font-size:11px">추가</button>` : '';
+    const addBtn = (admin && !isClosed && !nightHrs) ? `<button class="btn primary" data-add="${wp}" style="padding:4px 10px;font-size:11px">추가</button>` : '';
     html += `<div class="wp-sec"><div class="wp-h"><span class="wp-dot ${wp}"></span><span class="wp-name">${wp}</span><span class="wp-count" style="margin-left:auto">${isClosed?'휴무':rows.length+'명'}</span>${offBtn}${nightBtn}${evBtn}${addBtn}</div>`;
     if(isClosed){ html += `<div class="card" style="text-align:center;color:var(--ink2);font-weight:800;font-size:14px">휴무일</div></div>`; return; }
     if(nightHrs) html += `<div class="night-banner">${esc(nightHrs)}</div>`;
     if(ev) html += `<div class="ev-banner">${esc(ev)}</div>`;
-    if(rows.length===0){
-      html += `<div class="card" style="text-align:center;color:var(--muted);font-weight:700;font-size:13px">${admin?'근무 없음 ·추가 또는휴무':'휴무 · 근무 없음'}</div>`;
-    } else {
-      html += `<div class="roster${nightHrs?' compact':''}">`;
-      rows.forEach(s=> html += shiftCard(s, admin, apps[s.id]));
-      html += `</div>`;
-    }
     if(nightHrs){
+      // 주간(왼쪽) / 야간(오른쪽) 좌우 배치
       const mem = nmem[ymd(selectedDate)+'|'+wp]||[];
-      html += `<div class="night-sec"><div class="night-sec-h">야간 멤버 ${mem.length?'· '+mem.length+'명':''}</div><div class="nmlist">`;
-      mem.forEach(m=>{ html += `<div class="night-row"><span class="nmav">${esc(m.member_name.charAt(0))}</span><span class="nmname">${esc(m.member_name)}</span>${admin?`<button class="btn warn nmdel" data-nmdel="${m.id}">삭제</button>`:''}</div>`; });
-      html += `</div>`;
-      if(admin) html += `<button class="btn ghost full" data-nmadd="${wp}" style="margin-top:8px">야간 멤버 추가</button>`;
-      else if(mem.length===0) html += `<div class="night-row" style="color:var(--muted);font-weight:600">아직 미정</div>`;
-      html += `</div>`;
+      let dayCol = rows.length ? rows.map(s=>shiftCard(s, admin, apps[s.id])).join('') : `<div class="dn-empty">없음</div>`;
+      if(admin) dayCol += `<button class="btn ghost full" data-add="${wp}" style="margin-top:6px;font-size:12px">+ 주간 추가</button>`;
+      let nightCol = mem.length ? mem.map(m=>{
+        const avi=!m.is_guest&&m.avatar;
+        return `<div class="night-row"><span class="nmav${m.is_guest?' guest':''}" style="${avi?avStyle(m.avatar):''}">${avi?'':esc((m.member_name||'·').charAt(0))}</span><span class="nmname">${esc(m.member_name)}</span>${admin?`<button class="btn warn nmdel" data-nmdel="${m.id}">×</button>`:''}</div>`;
+      }).join('') : `<div class="dn-empty">미정</div>`;
+      if(admin) nightCol += `<button class="btn ghost full" data-nmadd="${wp}" style="margin-top:6px;font-size:12px">+ 야간 멤버</button>`;
+      html += `<div class="daynight"><div class="dn-col"><div class="dn-h">주간</div>${dayCol}</div><div class="dn-col night"><div class="dn-h">야간 ${mem.length?mem.length+'명':''}</div>${nightCol}</div></div>`;
+    } else {
+      if(rows.length===0){
+        html += `<div class="card" style="text-align:center;color:var(--muted);font-weight:700;font-size:13px">${admin?'근무 없음 ·추가 또는휴무':'휴무 · 근무 없음'}</div>`;
+      } else {
+        rows.forEach(s=> html += shiftCard(s, admin, apps[s.id]));
+      }
     }
     html += `</div>`;
   });
@@ -824,10 +863,7 @@ async function renderDay(){
     if(turnOn){ const r=prompt('영업시간 표시 (시작한 날 기준):', b.dataset.hrs||hrs); if(r===null) return; hrs=r.trim()||hrs; }
     await rpc('admin_set_night', { p_admin_id:session.id, p_date:ymd(selectedDate), p_workplace:b.dataset.night, p_on:turnOn, p_hours:hrs }, turnOn?'야간영업으로 표시했어요':'야간영업을 해제했어요');
   });
-  list.querySelectorAll('[data-nmadd]').forEach(b=>b.onclick=async()=>{
-    const nm=prompt('야간 멤버 이름 (직원/게스트):'); if(nm===null||!nm.trim()) return;
-    await rpc('admin_add_night_member', { p_admin_id:session.id, p_date:ymd(selectedDate), p_workplace:b.dataset.nmadd, p_name:nm.trim() }, '야간 멤버를 추가했어요');
-  });
+  list.querySelectorAll('[data-nmadd]').forEach(b=>b.onclick=()=>openNmAdd(b.dataset.nmadd));
   list.querySelectorAll('[data-nmdel]').forEach(b=>b.onclick=()=>
     rpc('admin_remove_night_member', { p_admin_id:session.id, p_id:Number(b.dataset.nmdel) }, '야간 멤버를 뺐어요'));
   list.querySelectorAll('[data-add]').forEach(b=>b.onclick=()=>openShiftAdd(b.dataset.add));
@@ -1212,6 +1248,9 @@ function wireUI(){
   $('myClose').onclick = ()=> $('myModal').classList.remove('show');
   $('myLogout').onclick = ()=>{ $('myModal').classList.remove('show'); logout(); };
   $('mySave').onclick = saveMyProfile;
+  $('nm-save').onclick = nmSave;
+  $('nm-close').onclick = ()=> $('nmModal').classList.remove('show');
+  $('nmModal').onclick = e=>{ if(e.target.id==='nmModal') $('nmModal').classList.remove('show'); };
   $('myPicBtn').onclick = ()=> $('myPicFile').click();
   $('myPicFile').onchange = uploadAvatar;
   $('myModal').onclick = e=>{ if(e.target.id==='myModal') $('myModal').classList.remove('show'); };
