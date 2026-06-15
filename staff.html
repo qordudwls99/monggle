@@ -129,6 +129,11 @@ body{
 .night-banner{display:flex;align-items:center;gap:8px;background:#ece9f4;color:#4f4a7a;font-weight:800;font-size:13.5px;padding:10px 14px;border-radius:10px;margin-bottom:12px;border:1px solid #d8d3ea}
 .night-banner::before{content:"☾";font-size:13px}
 .night-tag{display:block;margin:4px auto 0;font-size:9px;font-weight:800;color:#4f4a7a;background:#ece9f4;padding:2px 7px;border-radius:99px;width:fit-content}
+.night-sec{margin-top:10px;padding:12px;background:#f6f5fb;border:1px solid #e4e0f0;border-radius:12px}
+.night-sec-h{font-size:12px;font-weight:800;color:#4f4a7a;margin-bottom:8px}
+.night-row{display:flex;align-items:center;gap:10px;padding:7px 2px}
+.night-row .nmname{flex:1;font-weight:700;font-size:14.5px;color:var(--ink)}
+.night-row .nmdel{padding:5px 10px;font-size:11px}
 .applist{margin-top:10px;padding-top:10px;border-top:1px dashed var(--line);display:flex;flex-direction:column;gap:7px}
 .approw{display:flex;align-items:center;justify-content:space-between;font-size:13.5px;font-weight:700;color:var(--ink)}
 .approw .apbtns{display:flex;gap:6px}
@@ -498,6 +503,10 @@ async function fetchNight(from,to){
   const { data } = await supa.from('night_view').select('*').gte('work_date',from).lte('work_date',to);
   const m={}; (data||[]).forEach(n=>m[n.work_date+'|'+n.workplace]=n.hours); return m;
 }
+async function fetchNightMembers(dateStr){
+  const { data } = await supa.from('night_member_view').select('*').eq('work_date',dateStr);
+  const m={}; (data||[]).forEach(r=>(m[r.work_date+'|'+r.workplace]=m[r.work_date+'|'+r.workplace]||[]).push(r)); return m;
+}
 async function fetchApplications(dateStr){
   const { data } = await supa.from('application_view').select('*').eq('work_date',dateStr);
   const map={}; (data||[]).forEach(a=>(map[a.shift_id]=map[a.shift_id]||[]).push(a));
@@ -747,6 +756,7 @@ async function renderDay(){
   const shifts = await fetchShifts(ymd(selectedDate));
   const closed = await fetchClosures(ymd(selectedDate), ymd(selectedDate));
   const night = await fetchNight(ymd(selectedDate), ymd(selectedDate));
+  const nmem = await fetchNightMembers(ymd(selectedDate));
   const apps = await fetchApplications(ymd(selectedDate));
   const groups = (wpFilter==='전체'?WORKPLACES:[wpFilter]);
   let html='';
@@ -770,6 +780,14 @@ async function renderDay(){
       html += `<div class="card" style="text-align:center;color:var(--muted);font-weight:700;font-size:13px">${admin?'근무 없음 ·추가 또는휴무':'휴무 · 근무 없음'}</div>`;
     } else {
       rows.forEach(s=> html += shiftCard(s, admin, apps[s.id]));
+    }
+    if(nightHrs){
+      const mem = nmem[ymd(selectedDate)+'|'+wp]||[];
+      html += `<div class="night-sec"><div class="night-sec-h">야간 멤버 ${mem.length?'· '+mem.length+'명':''}</div>`;
+      mem.forEach(m=>{ html += `<div class="night-row"><span class="av guest" style="width:30px;height:30px;font-size:13px">${esc(m.member_name.charAt(0))}</span><span class="nmname">${esc(m.member_name)}</span>${admin?`<button class="btn warn nmdel" data-nmdel="${m.id}">삭제</button>`:''}</div>`; });
+      if(admin) html += `<button class="btn ghost full" data-nmadd="${wp}" style="margin-top:8px">야간 멤버 추가</button>`;
+      else if(mem.length===0) html += `<div class="night-row" style="color:var(--muted);font-weight:600">아직 미정</div>`;
+      html += `</div>`;
     }
     html += `</div>`;
   });
@@ -796,6 +814,12 @@ async function renderDay(){
     if(turnOn){ const r=prompt('야간영업 시간 (시작한 날 기준):', b.dataset.hrs||'22:00 ~ 익일 05:00'); if(r===null) return; hrs=r.trim()||'22:00 ~ 익일 05:00'; }
     await rpc('admin_set_night', { p_admin_id:session.id, p_date:ymd(selectedDate), p_workplace:b.dataset.night, p_on:turnOn, p_hours:hrs }, turnOn?'야간영업으로 표시했어요':'야간영업을 해제했어요');
   });
+  list.querySelectorAll('[data-nmadd]').forEach(b=>b.onclick=async()=>{
+    const nm=prompt('야간 멤버 이름 (직원/게스트):'); if(nm===null||!nm.trim()) return;
+    await rpc('admin_add_night_member', { p_admin_id:session.id, p_date:ymd(selectedDate), p_workplace:b.dataset.nmadd, p_name:nm.trim() }, '야간 멤버를 추가했어요');
+  });
+  list.querySelectorAll('[data-nmdel]').forEach(b=>b.onclick=()=>
+    rpc('admin_remove_night_member', { p_admin_id:session.id, p_id:Number(b.dataset.nmdel) }, '야간 멤버를 뺐어요'));
   list.querySelectorAll('[data-add]').forEach(b=>b.onclick=()=>openShiftAdd(b.dataset.add));
   list.querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>openShiftEdit(JSON.parse(b.dataset.edit)));
 }

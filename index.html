@@ -71,6 +71,11 @@ body{
 .night-banner{display:flex;align-items:center;gap:8px;background:#ece9f4;color:#4f4a7a;font-weight:800;font-size:13.5px;padding:10px 14px;border-radius:10px;margin-bottom:12px;border:1px solid #d8d3ea}
 .night-banner::before{content:"☾";font-size:13px}
 .night-tag{display:block;margin:4px auto 0;font-size:9px;font-weight:800;color:#4f4a7a;background:#ece9f4;padding:2px 7px;border-radius:99px;width:fit-content}
+.night-sec{margin-top:10px;padding:12px;background:#f6f5fb;border:1px solid #e4e0f0;border-radius:12px}
+.night-sec-h{font-size:12px;font-weight:800;color:#4f4a7a;margin-bottom:8px}
+.night-row{display:flex;align-items:center;gap:10px;padding:7px 2px}
+.night-row .av{width:30px;height:30px;border-radius:50%;background:#e6e2f2;color:#4f4a7a;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;flex-shrink:0}
+.night-row .nmname{flex:1;font-weight:700;font-size:14.5px;color:var(--ink)}
 .memo-row{font-size:12px;color:var(--ink2);margin:8px 2px 0}
 .none{text-align:center;color:var(--muted);font-weight:600;font-size:13px;padding:16px}
 
@@ -244,6 +249,10 @@ async function fetchNight(from,to){
   const { data } = await supa.from('night_view').select('*').gte('work_date',from).lte('work_date',to);
   const m={}; (data||[]).forEach(n=>m[n.work_date+'|'+n.workplace]=n.hours); return m;
 }
+async function fetchNightMembers(dateStr){
+  const { data } = await supa.from('night_member_view').select('*').eq('work_date',dateStr);
+  const m={}; (data||[]).forEach(r=>(m[r.work_date+'|'+r.workplace]=m[r.work_date+'|'+r.workplace]||[]).push(r)); return m;
+}
 
 function render(){ updateNav(); viewMode==='week' ? renderWeek() : renderDay(); }
 
@@ -254,6 +263,7 @@ async function renderDay(){
   const shifts = await fetchRange(ymd(d), ymd(d)); if(shifts===null) return;
   const closed = await fetchClosures(ymd(d), ymd(d));
   const night = await fetchNight(ymd(d), ymd(d));
+  const nmem = await fetchNightMembers(ymd(d));
   const groups = (wpFilter==='전체'?WORKPLACES:[wpFilter]);
   let html='', total=0;
   groups.forEach(wp=>{
@@ -276,6 +286,13 @@ async function renderDay(){
         return `<div class="tag${s.is_guest?' guest':''}">${av}<span class="tnm">${esc(dn)}</span>${s.is_guest?'<span class="gtag">게스트</span>':''}${ig?`<a class="ig" href="${esc(ig)}" target="_blank" rel="noopener">${IG_SVG}</a>`:''}</div>`;
       }).join('');
       html += `<div class="names">${tags}</div>`;
+    }
+    if(nightHrs){
+      const mem = nmem[ymd(d)+'|'+wp]||[];
+      html += `<div class="night-sec"><div class="night-sec-h">야간 멤버</div>`;
+      if(mem.length===0) html += `<div class="night-row" style="color:var(--muted);font-weight:600">미정</div>`;
+      else mem.forEach(m=> html += `<div class="night-row"><span class="av guest" style="width:30px;height:30px;font-size:13px">${esc(m.member_name.charAt(0))}</span><span class="nmname">${esc(m.member_name)}</span></div>`);
+      html += `</div>`;
     }
     html += `</div>`;
   });
