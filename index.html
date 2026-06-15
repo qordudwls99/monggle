@@ -68,6 +68,9 @@ body{
 .tag.guest .av{background:#f3e7c8;color:var(--gold)}
 .ev-banner{display:flex;align-items:center;gap:8px;background:#f7e6e9;color:var(--rose-deep);font-weight:800;font-size:13.5px;padding:10px 14px;border-radius:10px;margin-bottom:12px;border:1px solid #eecdd3}
 .ev-banner::before{content:"●";font-size:7px}
+.night-banner{display:flex;align-items:center;gap:8px;background:#ece9f4;color:#4f4a7a;font-weight:800;font-size:13.5px;padding:10px 14px;border-radius:10px;margin-bottom:12px;border:1px solid #d8d3ea}
+.night-banner::before{content:"☾";font-size:13px}
+.night-tag{display:block;margin:4px auto 0;font-size:9px;font-weight:800;color:#4f4a7a;background:#ece9f4;padding:2px 7px;border-radius:99px;width:fit-content}
 .memo-row{font-size:12px;color:var(--ink2);margin:8px 2px 0}
 .none{text-align:center;color:var(--muted);font-weight:600;font-size:13px;padding:16px}
 
@@ -237,6 +240,10 @@ async function fetchClosures(from,to){
   const { data } = await supa.from('closure_view').select('*').gte('work_date',from).lte('work_date',to);
   return new Set((data||[]).map(c=>c.work_date+'|'+c.workplace));
 }
+async function fetchNight(from,to){
+  const { data } = await supa.from('night_view').select('*').gte('work_date',from).lte('work_date',to);
+  const m={}; (data||[]).forEach(n=>m[n.work_date+'|'+n.workplace]=n.hours); return m;
+}
 
 function render(){ updateNav(); viewMode==='week' ? renderWeek() : renderDay(); }
 
@@ -246,16 +253,19 @@ async function renderDay(){
   $('list').innerHTML = `<div style="text-align:center;padding:30px"><span class="spin"></span></div>`;
   const shifts = await fetchRange(ymd(d), ymd(d)); if(shifts===null) return;
   const closed = await fetchClosures(ymd(d), ymd(d));
+  const night = await fetchNight(ymd(d), ymd(d));
   const groups = (wpFilter==='전체'?WORKPLACES:[wpFilter]);
   let html='', total=0;
   groups.forEach(wp=>{
     const isClosed = closed.has(ymd(d)+'|'+wp);
+    const nightHrs = night[ymd(d)+'|'+wp];
     const rows = shifts.filter(s=>s.workplace===wp);
-    const named = rows.filter(s=>s.display_name||s.staff_name); total+=named.length+(isClosed?1:0);
+    const named = rows.filter(s=>s.display_name||s.staff_name); total+=named.length+(isClosed?1:0)+(nightHrs?1:0);
     named.sort((a,b)=> ((b.is_guest?1:0)-(a.is_guest?1:0)) || String(a.start_time).localeCompare(String(b.start_time)));
     const memo = rows.find(r=>r.memo)?.memo;
     html += `<div class="wp-sec"><div class="wp-h"><span class="wp-dot ${wp}"></span><span class="wp-name">${wp}</span><span class="wp-count">${isClosed?'휴무':named.length+'명'}</span></div>`;
     if(isClosed){ html += `<div class="none">휴무일</div></div>`; return; }
+    if(nightHrs) html += `<div class="night-banner">야간영업 · ${esc(nightHrs)}</div>`;
     if(memo) html += `<div class="ev-banner">${esc(memo)}</div>`;
     if(named.length===0){ html += `<div class="none">근무 없음</div>`; }
     else {
@@ -281,6 +291,7 @@ async function renderWeek(){
   $('list').innerHTML = `<div style="text-align:center;padding:30px"><span class="spin"></span></div>`;
   const shifts = await fetchRange(ymd(mon), ymd(sun)); if(shifts===null) return;
   const closed = await fetchClosures(ymd(mon), ymd(sun));
+  const night = await fetchNight(ymd(mon), ymd(sun));
   const todayStr = ymd(new Date());
   const groups = (wpFilter==='전체'?WORKPLACES:[wpFilter]);
   let cols='';
@@ -288,6 +299,7 @@ async function renderWeek(){
     const day=new Date(mon); day.setDate(day.getDate()+i); const ds=ymd(day);
     const dayShifts = shifts.filter(s=>s.work_date===ds);
     const memo = dayShifts.find(r=>r.workplace===wpFilter && r.memo)?.memo;
+    const isNight = night[ds+'|'+wpFilter];
     const isToday = ds===todayStr, weekend = (day.getDay()===0||day.getDay()===6);
     let body=''; const multi=groups.length>1;
     groups.forEach(wp=>{
@@ -300,7 +312,7 @@ async function renderWeek(){
     });
     if(!body) body = `<div class="dcol-off">휴무</div>`;
     cols += `<div class="daycol${isToday?' today':''}" data-goday="${ds}">
-      <div class="dcol-h${weekend?' weekend':''}"><div class="dow">${DAYS[day.getDay()]}</div>${day.getMonth()+1}/${day.getDate()}${isToday?' <span class="tdy">오늘</span>':''}${memo?`<div class="dcol-ev">${esc(memo)}</div>`:''}</div>
+      <div class="dcol-h${weekend?' weekend':''}"><div class="dow">${DAYS[day.getDay()]}</div>${day.getMonth()+1}/${day.getDate()}${isToday?' <span class="tdy">오늘</span>':''}${isNight?'<div class="night-tag">야간</div>':''}${memo?`<div class="dcol-ev">${esc(memo)}</div>`:''}</div>
       <div class="dcol-body">${body}</div></div>`;
   }
   $('list').innerHTML = `<div class="weekgrid">${cols}</div>`;

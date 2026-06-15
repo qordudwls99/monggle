@@ -126,6 +126,9 @@ body{
 .badge.guest{background:#f3e7c8;color:var(--gold)}
 .ev-banner{display:flex;align-items:center;gap:8px;background:#f7e6e9;color:var(--rose-deep);font-weight:800;font-size:13.5px;padding:10px 14px;border-radius:10px;margin-bottom:12px;border:1px solid #eecdd3}
 .ev-banner::before{content:"●";font-size:7px}
+.night-banner{display:flex;align-items:center;gap:8px;background:#ece9f4;color:#4f4a7a;font-weight:800;font-size:13.5px;padding:10px 14px;border-radius:10px;margin-bottom:12px;border:1px solid #d8d3ea}
+.night-banner::before{content:"☾";font-size:13px}
+.night-tag{display:block;margin:4px auto 0;font-size:9px;font-weight:800;color:#4f4a7a;background:#ece9f4;padding:2px 7px;border-radius:99px;width:fit-content}
 .applist{margin-top:10px;padding-top:10px;border-top:1px dashed var(--line);display:flex;flex-direction:column;gap:7px}
 .approw{display:flex;align-items:center;justify-content:space-between;font-size:13.5px;font-weight:700;color:var(--ink)}
 .approw .apbtns{display:flex;gap:6px}
@@ -491,6 +494,10 @@ async function fetchClosures(from,to){
   const { data } = await supa.from('closure_view').select('*').gte('work_date',from).lte('work_date',to);
   return new Set((data||[]).map(c=>c.work_date+'|'+c.workplace));
 }
+async function fetchNight(from,to){
+  const { data } = await supa.from('night_view').select('*').gte('work_date',from).lte('work_date',to);
+  const m={}; (data||[]).forEach(n=>m[n.work_date+'|'+n.workplace]=n.hours); return m;
+}
 async function fetchApplications(dateStr){
   const { data } = await supa.from('application_view').select('*').eq('work_date',dateStr);
   const map={}; (data||[]).forEach(a=>(map[a.shift_id]=map[a.shift_id]||[]).push(a));
@@ -697,6 +704,7 @@ async function renderWeek(){
   list.innerHTML = `<div style="text-align:center;padding:30px"><span class="spin"></span></div>`;
   const shifts = await fetchRange(ymd(mon), ymd(sun));
   const closed = await fetchClosures(ymd(mon), ymd(sun));
+  const night = await fetchNight(ymd(mon), ymd(sun));
   const todayStr = ymd(new Date());
   const groups = (wpFilter==='전체'?WORKPLACES:[wpFilter]);
   let cols='';
@@ -704,6 +712,7 @@ async function renderWeek(){
     const day=new Date(mon); day.setDate(day.getDate()+i); const ds=ymd(day);
     const dayShifts = shifts.filter(s=>s.work_date===ds);
     const memo = dayShifts.find(r=>r.workplace===wpFilter && r.memo)?.memo;
+    const isNight = night[ds+'|'+wpFilter];
     const isToday = ds===todayStr, weekend=(day.getDay()===0||day.getDay()===6);
     let body=''; const multi=groups.length>1;
     groups.forEach(wp=>{
@@ -717,7 +726,7 @@ async function renderWeek(){
     });
     if(!body) body = `<div class="dcol-off">휴무</div>`;
     cols += `<div class="daycol${isToday?' today':''}" data-goday="${ds}">
-      <div class="dcol-h${weekend?' weekend':''}"><div class="dow">${DAYS[day.getDay()]}</div>${day.getMonth()+1}/${day.getDate()}${isToday?' <span class="tdy">오늘</span>':''}${memo?`<div class="dcol-ev">${esc(memo)}</div>`:''}</div>
+      <div class="dcol-h${weekend?' weekend':''}"><div class="dow">${DAYS[day.getDay()]}</div>${day.getMonth()+1}/${day.getDate()}${isToday?' <span class="tdy">오늘</span>':''}${isNight?'<div class="night-tag">야간</div>':''}${memo?`<div class="dcol-ev">${esc(memo)}</div>`:''}</div>
       <div class="dcol-body">${body}</div></div>`;
   }
   list.innerHTML = `<div class="weekgrid">${cols}</div>`;
@@ -737,21 +746,25 @@ async function renderDay(){
   list.innerHTML = `<div style="text-align:center;padding:30px"><span class="spin"></span></div>`;
   const shifts = await fetchShifts(ymd(selectedDate));
   const closed = await fetchClosures(ymd(selectedDate), ymd(selectedDate));
+  const night = await fetchNight(ymd(selectedDate), ymd(selectedDate));
   const apps = await fetchApplications(ymd(selectedDate));
   const groups = (wpFilter==='전체'?WORKPLACES:[wpFilter]);
   let html='';
   let total=0;
   groups.forEach(wp=>{
     const isClosed = closed.has(ymd(selectedDate)+'|'+wp);
+    const nightHrs = night[ymd(selectedDate)+'|'+wp];
     const rows = shifts.filter(s=>s.workplace===wp)
       .sort((a,b)=> (shiftOrder(a)-shiftOrder(b)) || String(a.start_time).localeCompare(String(b.start_time)));
-    total += rows.length + (isClosed?1:0);
+    total += rows.length + (isClosed?1:0) + (nightHrs?1:0);
     const ev = rows.find(r=>r.memo)?.memo;
     const evBtn = admin ? `<button class="btn ghost" data-ev="${wp}" data-cur="${esc(ev||'')}" style="padding:4px 9px;font-size:11px">이벤트${ev?'':'+'}</button>` : '';
     const offBtn = admin ? `<button class="btn ghost" data-off="${wp}" data-on="${isClosed?1:0}" style="padding:4px 9px;font-size:11px">${isClosed?'휴무해제':'휴무'}</button>` : '';
+    const nightBtn = (admin && !isClosed && wp==='데빌') ? `<button class="btn ghost" data-night="${wp}" data-on="${nightHrs?1:0}" data-hrs="${esc(nightHrs||'')}" style="padding:4px 9px;font-size:11px">${nightHrs?'야간해제':'야간'}</button>` : '';
     const addBtn = (admin && !isClosed) ? `<button class="btn primary" data-add="${wp}" style="padding:4px 10px;font-size:11px">추가</button>` : '';
-    html += `<div class="wp-sec"><div class="wp-h"><span class="wp-dot ${wp}"></span><span class="wp-name">${wp}</span><span class="wp-count" style="margin-left:auto">${isClosed?'휴무':rows.length+'명'}</span>${offBtn}${evBtn}${addBtn}</div>`;
+    html += `<div class="wp-sec"><div class="wp-h"><span class="wp-dot ${wp}"></span><span class="wp-name">${wp}</span><span class="wp-count" style="margin-left:auto">${isClosed?'휴무':rows.length+'명'}</span>${offBtn}${nightBtn}${evBtn}${addBtn}</div>`;
     if(isClosed){ html += `<div class="card" style="text-align:center;color:var(--ink2);font-weight:800;font-size:14px">휴무일</div></div>`; return; }
+    if(nightHrs) html += `<div class="night-banner">야간영업 · ${esc(nightHrs)}</div>`;
     if(ev) html += `<div class="ev-banner">${esc(ev)}</div>`;
     if(rows.length===0){
       html += `<div class="card" style="text-align:center;color:var(--muted);font-weight:700;font-size:13px">${admin?'근무 없음 ·추가 또는휴무':'휴무 · 근무 없음'}</div>`;
@@ -776,6 +789,12 @@ async function renderDay(){
     const turnOn = b.dataset.on!=='1';
     if(turnOn && !confirm('이 날을 휴무로 지정할까요? 해당 근무지의 그날 근무는 삭제됩니다.')) return;
     await rpc('admin_set_day_off', { p_admin_id:session.id, p_date:ymd(selectedDate), p_workplace:b.dataset.off, p_off:turnOn }, turnOn?'휴무로 지정했어요':'휴무를 해제했어요');
+  });
+  list.querySelectorAll('[data-night]').forEach(b=>b.onclick=async()=>{
+    const turnOn = b.dataset.on!=='1';
+    let hrs='22:00 ~ 익일 05:00';
+    if(turnOn){ const r=prompt('야간영업 시간 (시작한 날 기준):', b.dataset.hrs||'22:00 ~ 익일 05:00'); if(r===null) return; hrs=r.trim()||'22:00 ~ 익일 05:00'; }
+    await rpc('admin_set_night', { p_admin_id:session.id, p_date:ymd(selectedDate), p_workplace:b.dataset.night, p_on:turnOn, p_hours:hrs }, turnOn?'야간영업으로 표시했어요':'야간영업을 해제했어요');
   });
   list.querySelectorAll('[data-add]').forEach(b=>b.onclick=()=>openShiftAdd(b.dataset.add));
   list.querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>openShiftEdit(JSON.parse(b.dataset.edit)));
