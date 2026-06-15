@@ -46,7 +46,8 @@ alter table night_members add column if not exists staff_id bigint references st
 alter table night_members alter column member_name drop not null;
 alter table night_members enable row level security;
 
-create or replace view night_member_view as
+drop view if exists night_member_view;
+create view night_member_view as
   select nm.id, nm.work_date, nm.workplace, nm.staff_id,
          coalesce(st.name, nm.member_name) as member_name,
          st.avatar_url as avatar, st.instagram as instagram,
