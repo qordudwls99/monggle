@@ -129,11 +129,18 @@ body{
 .night-banner{display:flex;align-items:center;gap:8px;background:#ece9f4;color:#4f4a7a;font-weight:800;font-size:13.5px;padding:10px 14px;border-radius:10px;margin-bottom:12px;border:1px solid #d8d3ea}
 .night-banner::before{content:"☾";font-size:13px}
 .night-tag{display:block;margin:4px auto 0;font-size:9px;font-weight:800;color:#4f4a7a;background:#ece9f4;padding:2px 7px;border-radius:99px;width:fit-content}
+.roster.compact{display:grid;grid-template-columns:repeat(2,1fr);gap:7px}
+.roster.compact .card{margin-bottom:0;padding:9px 10px}
+.roster.compact .s-row{gap:8px}
+.roster.compact .av{width:28px;height:28px;font-size:12px}
+.roster.compact .s-name,.roster.compact .editbtn{font-size:13.5px}
 .night-sec{margin-top:10px;padding:12px;background:#f6f5fb;border:1px solid #e4e0f0;border-radius:12px}
 .night-sec-h{font-size:12px;font-weight:800;color:#4f4a7a;margin-bottom:8px}
-.night-row{display:flex;align-items:center;gap:10px;padding:7px 2px}
-.night-row .nmname{flex:1;font-weight:700;font-size:14.5px;color:var(--ink)}
-.night-row .nmdel{padding:5px 10px;font-size:11px}
+.nmlist{display:grid;grid-template-columns:repeat(2,1fr);gap:6px}
+.night-row{display:flex;align-items:center;gap:8px;padding:5px 2px;min-width:0}
+.night-row .nmav{width:26px;height:26px;border-radius:50%;background:#e6e2f2;color:#4f4a7a;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0}
+.night-row .nmname{flex:1;font-weight:700;font-size:13.5px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.night-row .nmdel{padding:4px 8px;font-size:10.5px;flex-shrink:0}
 .applist{margin-top:10px;padding-top:10px;border-top:1px dashed var(--line);display:flex;flex-direction:column;gap:7px}
 .approw{display:flex;align-items:center;justify-content:space-between;font-size:13.5px;font-weight:700;color:var(--ink)}
 .approw .apbtns{display:flex;gap:6px}
@@ -774,17 +781,20 @@ async function renderDay(){
     const addBtn = (admin && !isClosed) ? `<button class="btn primary" data-add="${wp}" style="padding:4px 10px;font-size:11px">추가</button>` : '';
     html += `<div class="wp-sec"><div class="wp-h"><span class="wp-dot ${wp}"></span><span class="wp-name">${wp}</span><span class="wp-count" style="margin-left:auto">${isClosed?'휴무':rows.length+'명'}</span>${offBtn}${nightBtn}${evBtn}${addBtn}</div>`;
     if(isClosed){ html += `<div class="card" style="text-align:center;color:var(--ink2);font-weight:800;font-size:14px">휴무일</div></div>`; return; }
-    if(nightHrs) html += `<div class="night-banner">야간영업 · ${esc(nightHrs)}</div>`;
+    if(nightHrs) html += `<div class="night-banner">${esc(nightHrs)}</div>`;
     if(ev) html += `<div class="ev-banner">${esc(ev)}</div>`;
     if(rows.length===0){
       html += `<div class="card" style="text-align:center;color:var(--muted);font-weight:700;font-size:13px">${admin?'근무 없음 ·추가 또는휴무':'휴무 · 근무 없음'}</div>`;
     } else {
+      html += `<div class="roster${nightHrs?' compact':''}">`;
       rows.forEach(s=> html += shiftCard(s, admin, apps[s.id]));
+      html += `</div>`;
     }
     if(nightHrs){
       const mem = nmem[ymd(selectedDate)+'|'+wp]||[];
-      html += `<div class="night-sec"><div class="night-sec-h">야간 멤버 ${mem.length?'· '+mem.length+'명':''}</div>`;
-      mem.forEach(m=>{ html += `<div class="night-row"><span class="av guest" style="width:30px;height:30px;font-size:13px">${esc(m.member_name.charAt(0))}</span><span class="nmname">${esc(m.member_name)}</span>${admin?`<button class="btn warn nmdel" data-nmdel="${m.id}">삭제</button>`:''}</div>`; });
+      html += `<div class="night-sec"><div class="night-sec-h">야간 멤버 ${mem.length?'· '+mem.length+'명':''}</div><div class="nmlist">`;
+      mem.forEach(m=>{ html += `<div class="night-row"><span class="nmav">${esc(m.member_name.charAt(0))}</span><span class="nmname">${esc(m.member_name)}</span>${admin?`<button class="btn warn nmdel" data-nmdel="${m.id}">삭제</button>`:''}</div>`; });
+      html += `</div>`;
       if(admin) html += `<button class="btn ghost full" data-nmadd="${wp}" style="margin-top:8px">야간 멤버 추가</button>`;
       else if(mem.length===0) html += `<div class="night-row" style="color:var(--muted);font-weight:600">아직 미정</div>`;
       html += `</div>`;
@@ -810,8 +820,8 @@ async function renderDay(){
   });
   list.querySelectorAll('[data-night]').forEach(b=>b.onclick=async()=>{
     const turnOn = b.dataset.on!=='1';
-    let hrs='22:00 ~ 익일 05:00';
-    if(turnOn){ const r=prompt('야간영업 시간 (시작한 날 기준):', b.dataset.hrs||'22:00 ~ 익일 05:00'); if(r===null) return; hrs=r.trim()||'22:00 ~ 익일 05:00'; }
+    let hrs='주간 16:00~22:00 · 야간 22:00~익일 05:00';
+    if(turnOn){ const r=prompt('영업시간 표시 (시작한 날 기준):', b.dataset.hrs||hrs); if(r===null) return; hrs=r.trim()||hrs; }
     await rpc('admin_set_night', { p_admin_id:session.id, p_date:ymd(selectedDate), p_workplace:b.dataset.night, p_on:turnOn, p_hours:hrs }, turnOn?'야간영업으로 표시했어요':'야간영업을 해제했어요');
   });
   list.querySelectorAll('[data-nmadd]').forEach(b=>b.onclick=async()=>{

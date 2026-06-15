@@ -9,7 +9,7 @@
 create table if not exists night_days (
   work_date date not null,
   workplace text not null,
-  hours text not null default '22:00 ~ 익일 05:00',
+  hours text not null default '주간 16:00~22:00 · 야간 22:00~익일 05:00',
   primary key (work_date, workplace)
 );
 alter table night_days enable row level security;
@@ -17,7 +17,7 @@ create or replace view night_view as select work_date, workplace, hours from nig
 grant select on night_view to anon, authenticated;
 
 create or replace function admin_set_night(p_admin_id bigint, p_pin text,
-  p_date date, p_workplace text, p_on boolean, p_hours text default '22:00 ~ 익일 05:00')
+  p_date date, p_workplace text, p_on boolean, p_hours text default '주간 16:00~22:00 · 야간 22:00~익일 05:00')
 returns void language plpgsql security definer set search_path = public as $$
 declare v staff;
 begin
@@ -25,7 +25,7 @@ begin
   if v.id is null or not v.is_admin then raise exception '관리자만 가능합니다'; end if;
   if p_on then
     insert into night_days(work_date, workplace, hours)
-      values (p_date, p_workplace, coalesce(nullif(trim(p_hours),''),'22:00 ~ 익일 05:00'))
+      values (p_date, p_workplace, coalesce(nullif(trim(p_hours),''),'주간 16:00~22:00 · 야간 22:00~익일 05:00'))
       on conflict (work_date, workplace) do update set hours = excluded.hours;
   else
     delete from night_days where work_date = p_date and workplace = p_workplace;
