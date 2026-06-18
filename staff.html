@@ -282,6 +282,11 @@ select.fld{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns
       <button class="ib-go" id="installBtn">설치</button>
       <button class="ib-x" id="installX">✕</button>
     </div>
+    <div class="installbar" id="pushBar" style="display:none">
+      <span class="ib-t">🔔 대타 댓글 알림을 받으시겠어요?</span>
+      <button class="ib-go" id="pushAskBtn">켜기</button>
+      <button class="ib-x" id="pushAskX">✕</button>
+    </div>
 
     <div class="tabs" id="tabs">
       <button class="tab on" data-tab="schedule">스케줄</button>
@@ -528,6 +533,7 @@ async function boot(){
   renderDateLabel();
   switchTab('schedule');
   if('serviceWorker' in navigator){ navigator.serviceWorker.register('/sw.js').catch(()=>{}); }
+  if(session) setTimeout(maybeAskPush, 1200);
   // 주기적 새로고침
   setInterval(()=>{ if(document.visibilityState==='visible') refreshCurrent(); }, 20000);
 }
@@ -550,10 +556,18 @@ async function enablePush(){
     if(!sub) sub = await reg.pushManager.subscribe({ userVisibleOnly:true, applicationServerKey: urlB64ToUint8(VAPID_PUBLIC) });
     const j = sub.toJSON();
     const ok = await rpc('save_push_subscription', { p_staff_id:session.id, p_endpoint:j.endpoint, p_p256dh:j.keys.p256dh, p_auth:j.keys.auth }, '알림을 켰어요! 📳');
-    if(ok) updatePushBtn(true);
+    if(ok){ updatePushBtn(true); const pb=$('pushBar'); if(pb) pb.style.display='none'; }
   }catch(e){ toast('알림 켜기 실패: '+(e.message||e), true); }
 }
 function updatePushBtn(on){ const b=$('pushBtn'); if(b){ b.textContent = on?'🔔 알림 켜짐':'🔔 알림 켜기'; } }
+function maybeAskPush(){
+  if(!session) return;
+  if(!('serviceWorker' in navigator)||!('PushManager' in window)||!('Notification' in window)) return;
+  if(Notification.permission!=='default') return;            // 이미 허용/거부면 안 물어봄
+  if(localStorage.getItem('push_ask_dismiss')) return;        // 이전에 닫았으면 안 물어봄
+  if(isIOS() && !isStandalone()) return;                      // 아이폰은 앱 설치 후에만 가능
+  $('pushBar').style.display='flex';
+}
 
 /* ---------- 데이터 ---------- */
 async function loadDirectory(){
@@ -635,6 +649,7 @@ async function doLogin(){
   renderWho();
   toast(`${me.name}님 환영해요!`);
   refreshCurrent();
+  setTimeout(maybeAskPush, 800);
 }
 function logout(){
   session = null;
@@ -1337,6 +1352,8 @@ function wireUI(){
   $('myLogout').onclick = ()=>{ $('myModal').classList.remove('show'); logout(); };
   $('mySave').onclick = saveMyProfile;
   $('pushBtn').onclick = enablePush;
+  $('pushAskBtn').onclick = enablePush;
+  $('pushAskX').onclick = ()=>{ $('pushBar').style.display='none'; localStorage.setItem('push_ask_dismiss','1'); };
   setupInstall();
   $('nm-save').onclick = nmSave;
   $('nm-close').onclick = ()=> $('nmModal').classList.remove('show');
