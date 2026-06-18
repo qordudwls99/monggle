@@ -430,6 +430,8 @@ body[data-theme="matsuri"] .kicker::after{ content:" ⛩"; letter-spacing:0; }
 
         <div class="form-card">
           <div class="fc-t">스태프 목록</div>
+          <div style="font-size:12px;color:var(--ink2);font-weight:600;margin-bottom:9px;line-height:1.5">PIN 없는 직원에게 <b>공통 임시 PIN</b>을 한 번에 깔아주세요. 직원은 로그인 후 마이페이지에서 본인 PIN으로 바꿉니다.</div>
+          <button class="btn ghost full" id="bulkPinBtn" style="margin-bottom:11px">PIN 없는 직원에게 임시 PIN 일괄 설정</button>
           <input type="text" class="fld" id="staffSearch" placeholder="이름 검색">
           <div id="staffMng"></div>
         </div>
@@ -452,6 +454,11 @@ body[data-theme="matsuri"] .kicker::after{ content:" ⛩"; letter-spacing:0; }
     <label class="fl">인스타그램</label>
     <input class="fld" id="myIg" placeholder="인스타 아이디 또는 링크">
     <button class="btn primary full" id="mySave">저장</button>
+    <div style="border-top:1px solid var(--line);margin-top:16px;padding-top:14px">
+      <label class="fl">PIN 변경 (6자리 숫자)</label>
+      <input class="fld" id="myNewPin" inputmode="numeric" maxlength="6" placeholder="새 PIN 6자리" autocomplete="off">
+      <button class="btn ghost full" id="myPinBtn">PIN 바꾸기</button>
+    </div>
     <div style="border-top:1px solid var(--line);margin-top:16px;padding-top:14px">
       <div style="font-size:12px;color:var(--ink2);font-weight:600;margin-bottom:8px">대타 게시판 댓글 알림을 폰으로 받아요</div>
       <button class="btn ghost full" id="pushBtn">🔔 알림 켜기</button>
@@ -713,6 +720,7 @@ async function openMyPage(){
   $('myAv').style.cssText = avStyle(session.avatar);
   $('myAv').textContent = session.avatar?'':session.name.charAt(0);
   $('myIg').value='';
+  $('myNewPin').value='';
   $('myModal').classList.add('show');
   try{ const r=await supa.rpc('my_profile',{p_staff_id:session.id,p_pin:session.pin});
     if(r.data){ $('myIg').value=r.data.instagram||''; } }catch(e){}
@@ -720,6 +728,22 @@ async function openMyPage(){
 }
 async function saveMyProfile(){
   const ok = await rpc('set_my_instagram', { p_staff_id:session.id, p_insta:$('myIg').value.trim() }, '저장했어요');
+}
+async function changeMyPin(){
+  const np=$('myNewPin').value.trim();
+  if(!/^\d{6}$/.test(np)){ toast('새 PIN은 6자리 숫자로 입력하세요', true); return; }
+  const { error } = await supa.rpc('set_my_pin', { p_staff_id:session.id, p_pin:session.pin, p_new_pin:np });
+  if(error){ toast(error.message.replace(/^.*?:\s*/,'')||'PIN 변경 실패', true); return; }
+  session.pin=np; localStorage.setItem('shift_session', JSON.stringify(session));
+  $('myNewPin').value=''; toast('PIN을 바꿨어요');
+}
+async function bulkSetPin(){
+  const np=prompt('PIN 없는 직원에게 깔 임시 PIN (6자리 숫자):', '000000'); if(np===null) return;
+  if(!/^\d{6}$/.test(np.trim())){ toast('임시 PIN은 6자리 숫자로 입력하세요', true); return; }
+  const { data, error } = await supa.rpc('admin_set_default_pin', { p_admin_id:session.id, p_pin:session.pin, p_new_pin:np.trim() });
+  if(error){ toast(error.message.replace(/^.*?:\s*/,'')||'설정 실패', true); return; }
+  toast(`임시 PIN을 ${data||0}명에게 설정했어요`);
+  await loadDirectory(); renderStaffList();
 }
 /* ----- 프로필 사진 크롭 ----- */
 const CROP_D = 280;   // 화면 크롭 영역(px)
@@ -1476,6 +1500,8 @@ function wireUI(){
   $('myClose').onclick = ()=> $('myModal').classList.remove('show');
   $('myLogout').onclick = ()=>{ $('myModal').classList.remove('show'); logout(); };
   $('mySave').onclick = saveMyProfile;
+  $('myPinBtn').onclick = changeMyPin;
+  $('bulkPinBtn').onclick = bulkSetPin;
   $('pushBtn').onclick = enablePush;
   $('pushAskBtn').onclick = enablePush;
   $('pushAskX').onclick = ()=>{ $('pushBar').style.display='none'; localStorage.setItem('push_ask_dismiss','1'); };
