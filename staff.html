@@ -700,13 +700,18 @@ async function doLogin(){
   if(error){ toast(error.message.replace(/^.*?:\s*/,'') || '로그인 실패', true); return; }
   if(!data || data.length===0){ toast('이름 또는 PIN이 올바르지 않아요', true); return; }
   const me = data[0];
-  session = { id:me.id, name:me.name, is_admin:me.is_admin, avatar:me.avatar_url||null, pin };
+  session = { id:me.id, name:me.name, is_admin:me.is_admin, avatar:me.avatar_url||null, pin, pin_temp:!!me.pin_temp };
   localStorage.setItem('shift_session', JSON.stringify(session));
   closeLogin();
   renderWho();
   toast(`${me.name}님 환영해요!`);
   refreshCurrent();
-  setTimeout(maybeAskPush, 800);
+  if(me.pin_temp){
+    toast('임시 PIN으로 로그인했어요. 마이페이지에서 PIN을 바꿔주세요');
+    setTimeout(openMyPage, 700);
+  } else {
+    setTimeout(maybeAskPush, 800);
+  }
 }
 function logout(){
   session = null;
@@ -734,7 +739,7 @@ async function changeMyPin(){
   if(!/^\d{6}$/.test(np)){ toast('새 PIN은 6자리 숫자로 입력하세요', true); return; }
   const { error } = await supa.rpc('set_my_pin', { p_staff_id:session.id, p_pin:session.pin, p_new_pin:np });
   if(error){ toast(error.message.replace(/^.*?:\s*/,'')||'PIN 변경 실패', true); return; }
-  session.pin=np; localStorage.setItem('shift_session', JSON.stringify(session));
+  session.pin=np; session.pin_temp=false; localStorage.setItem('shift_session', JSON.stringify(session));
   $('myNewPin').value=''; toast('PIN을 바꿨어요');
 }
 async function bulkSetPin(){
