@@ -17,6 +17,10 @@
   --rose:#bd7783; --rose-deep:#a85565; --gold:#9a6f1e;
   --maid:#c27c87; --devil:#8e7aa6; --matsuri:#c2925e;
   --card:#ffffff; --line:#f0e3e4; --paper:#faf4f3;
+  /* 테마별로 바뀌는 연한 강조 색 */
+  --soft:#f7e6e9; --soft2:#f7eef0; --avbg:#f5e5e8;
+  --seg-bg:#f3e7e9; --nm-bg:#f8eef0; --ev-border:#eecdd3;
+  --appbg:transparent;
 }
 html,body{height:100%}
 body{
@@ -24,7 +28,7 @@ body{
   color:var(--ink); background:var(--paper);
   display:flex; justify-content:center; letter-spacing:-0.2px;
 }
-.app{width:100%;max-width:480px;min-height:100vh;min-height:100dvh;position:relative;display:flex;flex-direction:column}
+.app{width:100%;max-width:480px;min-height:100vh;min-height:100dvh;position:relative;display:flex;flex-direction:column;background:var(--appbg);transition:background .4s ease}
 .stars{display:none}
 
 /* header */
@@ -35,13 +39,13 @@ body{
   padding:7px 13px;border-radius:99px;box-shadow:0 4px 12px -8px rgba(80,40,50,.3);cursor:pointer;font-family:inherit}
 .who .nm{font-weight:800;font-size:13px;color:var(--ink)}
 .who .role{font-size:10px;font-weight:800;color:var(--rose-deep)}
-.who .wav{width:26px;height:26px;border-radius:50%;background:#f5e5e8;color:var(--rose-deep);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;background-size:cover;background-position:center}
+.who .wav{width:26px;height:26px;border-radius:50%;background:var(--avbg);color:var(--rose-deep);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;background-size:cover;background-position:center}
 /* 마이페이지 */
 .mp-bar{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
 .mp-logout{background:none;border:none;cursor:pointer;font-family:inherit;font-size:13px;font-weight:800;color:#c0455c;padding:6px 2px}
 .mp-close{background:none;border:none;cursor:pointer;font-family:inherit;font-size:13px;font-weight:700;color:var(--muted);padding:6px 2px}
 .mp-pic{display:flex;flex-direction:column;align-items:center;gap:11px;margin:16px 0 12px}
-.bigav{width:88px;height:88px;border-radius:50%;background:#f5e5e8;color:var(--rose-deep);display:flex;align-items:center;justify-content:center;font-size:34px;font-weight:800;background-size:cover;background-position:center}
+.bigav{width:88px;height:88px;border-radius:50%;background:var(--avbg);color:var(--rose-deep);display:flex;align-items:center;justify-content:center;font-size:34px;font-weight:800;background-size:cover;background-position:center}
 .mp-name{text-align:center;font-size:17px;font-weight:800;color:var(--ink);margin-bottom:18px}
 
 /* tabs */
@@ -58,10 +62,10 @@ body{
 .screen{display:none}.screen.on{display:block}
 
 /* view toggle */
-.seg{display:flex;background:#f3e7e9;border-radius:12px;padding:4px;margin-bottom:14px}
+.seg{display:flex;background:var(--seg-bg);border-radius:12px;padding:4px;margin-bottom:14px}
 .seg button{flex:1;border:none;cursor:pointer;font-family:inherit;font-weight:700;font-size:13px;padding:9px 0;border-radius:9px;background:none;color:var(--muted);transition:.15s}
 .seg button.on{background:#fff;color:var(--rose-deep);box-shadow:0 1px 3px rgba(80,40,50,.12)}
-#af-kind,#sm-kind{background:#f3e7e9}
+#af-kind,#sm-kind{background:var(--seg-bg)}
 #af-kind button,#sm-kind button{color:var(--muted)}
 #af-kind button.on,#sm-kind button.on{background:#fff;color:var(--rose-deep)}
 .s-name.editbtn{flex:1;text-align:left;border:none;background:none;font-family:inherit;font-size:15px;font-weight:700;color:var(--ink);cursor:pointer;padding:0}
@@ -76,12 +80,12 @@ body{
 .dcol-h .dow{font-size:17px;line-height:1.2}
 .dcol-h.weekend .dow{color:var(--rose-deep)}
 .dcol-h .tdy{display:inline-block;color:#fff;background:var(--rose);font-size:9px;font-weight:800;padding:1px 6px;border-radius:99px;margin-left:3px}
-.dcol-ev{display:block;margin:4px auto 0;font-size:9px;font-weight:800;color:var(--rose-deep);background:#f7e6e9;padding:2px 7px;border-radius:99px;line-height:1.3;width:fit-content}
+.dcol-ev{display:block;margin:4px auto 0;font-size:9px;font-weight:800;color:var(--rose-deep);background:var(--soft);padding:2px 7px;border-radius:99px;line-height:1.3;width:fit-content}
 .dcol-body{flex:1;overflow-y:auto}
 .wpgrp{margin-bottom:7px}
 .wpgrp:last-child{margin-bottom:0}
 .wpgrp-h{display:flex;align-items:center;justify-content:center;gap:3px;font-size:10px;font-weight:800;color:var(--muted);margin-bottom:4px}
-.wpgrp .nm{font-size:13px;font-weight:600;color:var(--ink);padding:5px 2px;text-align:center;background:#f8eef0;border-radius:8px;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.wpgrp .nm{font-size:13px;font-weight:600;color:var(--ink);padding:5px 2px;text-align:center;background:var(--nm-bg);border-radius:8px;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .wpgrp .nm.op{background:none;color:var(--muted);font-weight:600;font-size:11px}
 .wpgrp .nm.guest{background:#f3e7c8;color:var(--gold)}
 .dcol-off{text-align:center;font-size:12px;color:var(--muted);font-weight:600;padding:14px 0}
@@ -112,7 +116,7 @@ body{
 /* shift card */
 .card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:13px 14px;margin-bottom:9px;box-shadow:0 6px 16px -14px rgba(80,40,50,.35)}
 .s-row{display:flex;align-items:center;gap:11px}
-.s-row .av{width:34px;height:34px;border-radius:50%;background:#f5e5e8;color:var(--rose-deep);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;flex-shrink:0;background-size:cover;background-position:center}
+.s-row .av{width:34px;height:34px;border-radius:50%;background:var(--avbg);color:var(--rose-deep);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;flex-shrink:0;background-size:cover;background-position:center}
 .s-row .av.guest{background:#f3e7c8;color:var(--gold)}
 .s-row .av.none{background:#f2eaeb;color:#c8aeb2}
 .s-time{font-weight:800;font-size:15px;color:var(--ink);min-width:96px}
@@ -120,11 +124,11 @@ body{
 .s-name{flex:1;font-weight:700;font-size:15px;color:var(--ink)}
 .s-name.empty{color:var(--muted);font-weight:600}
 .badge{font-size:11px;font-weight:800;padding:4px 9px;border-radius:99px;white-space:nowrap}
-.badge.seek{background:#f7e6e9;color:var(--rose-deep)}
+.badge.seek{background:var(--soft);color:var(--rose-deep)}
 .badge.empty{background:#f2eaeb;color:#a98c90}
-.badge.me{background:#f5e5e8;color:var(--rose-deep)}
+.badge.me{background:var(--avbg);color:var(--rose-deep)}
 .badge.guest{background:#f3e7c8;color:var(--gold)}
-.ev-banner{display:flex;align-items:center;gap:8px;background:#f7e6e9;color:var(--rose-deep);font-weight:800;font-size:13.5px;padding:10px 14px;border-radius:10px;margin-bottom:12px;border:1px solid #eecdd3}
+.ev-banner{display:flex;align-items:center;gap:8px;background:var(--soft);color:var(--rose-deep);font-weight:800;font-size:13.5px;padding:10px 14px;border-radius:10px;margin-bottom:12px;border:1px solid var(--ev-border)}
 .ev-banner::before{content:"●";font-size:7px}
 .night-banner{display:flex;align-items:center;gap:8px;background:#ece9f4;color:#4f4a7a;font-weight:800;font-size:13.5px;padding:10px 14px;border-radius:10px;margin-bottom:12px;border:1px solid #d8d3ea}
 .night-banner::before{content:"☾";font-size:13px}
@@ -156,7 +160,7 @@ body{
 .btn{border:none;cursor:pointer;font-family:inherit;font-weight:700;font-size:12.5px;padding:9px 14px;border-radius:10px;transition:transform .1s}
 .btn:active{transform:scale(.97)}
 .btn.primary{background:var(--rose);color:#fff}
-.btn.ghost{background:#f7eef0;color:var(--rose-deep)}
+.btn.ghost{background:var(--soft2);color:var(--rose-deep)}
 .btn.warn{background:#fbeef0;color:#c0455c}
 .btn.full{width:100%;text-align:center;justify-content:center}
 .btn:disabled{opacity:.5;cursor:default;transform:none}
@@ -170,7 +174,7 @@ body{
 .swap-who{font-size:12.5px;color:var(--ink2);margin-bottom:4px}
 .swap-who b{color:var(--ink)}
 .swap-reason{font-size:13px;color:var(--ink);background:var(--paper);border-radius:10px;padding:10px 12px;margin:8px 0;line-height:1.5}
-.cmt-cnt{margin-left:auto;font-size:11px;font-weight:800;color:var(--rose-deep);background:#f7e6e9;padding:3px 9px;border-radius:99px}
+.cmt-cnt{margin-left:auto;font-size:11px;font-weight:800;color:var(--rose-deep);background:var(--soft);padding:3px 9px;border-radius:99px}
 .cmts{margin-top:10px;padding-top:10px;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:7px}
 .cmt{display:flex;align-items:flex-start;gap:6px;font-size:13px;color:var(--ink);line-height:1.45}
 .cmt-b{flex:1}.cmt-b b{color:var(--rose-deep);font-weight:800;margin-right:4px}
@@ -206,7 +210,7 @@ select.fld{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns
 .mng .btn{padding:6px 10px;font-size:11.5px}
 .mng:last-child{border-bottom:none}
 .mng .mname{font-weight:800;font-size:14px;color:var(--ink);flex:1}
-.mng .mwp{font-size:11px;font-weight:800;padding:3px 8px;border-radius:99px;background:#f7eef0;color:var(--rose-deep)}
+.mng .mwp{font-size:11px;font-weight:800;padding:3px 8px;border-radius:99px;background:var(--soft2);color:var(--rose-deep)}
 .mng .madmin{font-size:10px;font-weight:800;color:var(--rose-deep)}
 
 /* modal */
@@ -228,7 +232,7 @@ select.fld{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns
 .setup h1{font-size:24px;font-weight:800}
 .setup p{font-size:14px;line-height:1.7;margin-top:12px;font-weight:600;color:var(--ink2)}
 .setup ol{margin:16px 0 0 18px;font-size:14px;line-height:1.9;font-weight:600;color:var(--ink2)}
-.setup code{background:#f3e7e9;color:var(--rose-deep);padding:2px 7px;border-radius:6px;font-size:13px;font-weight:800}
+.setup code{background:var(--seg-bg);color:var(--rose-deep);padding:2px 7px;border-radius:6px;font-size:13px;font-weight:800}
 .setup .box{background:#fff;border:1px solid var(--line);border-radius:14px;padding:16px;margin-top:18px;font-size:13px;line-height:1.7}
 .spin{display:inline-block;width:18px;height:18px;border:3px solid #f0e3e4;border-top-color:var(--rose);border-radius:50%;animation:rot .8s linear infinite;vertical-align:middle}
 @keyframes rot{to{transform:rotate(360deg)}}
@@ -248,6 +252,39 @@ select.fld{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns
 .installbar .ib-t{flex:1;font-size:12.5px;font-weight:700;color:var(--ink)}
 .installbar .ib-go{border:none;cursor:pointer;font-family:inherit;font-weight:800;font-size:12.5px;color:#fff;background:var(--rose);padding:7px 14px;border-radius:9px}
 .installbar .ib-x{border:none;cursor:pointer;background:none;color:var(--muted);font-size:14px;font-weight:800;padding:4px}
+
+/* ===== 근무지별 테마 ===== */
+body{transition:background .4s ease}
+/* 데빌 — 어둑한 보랏빛 악마 컨셉 */
+body[data-theme="devil"]{
+  --ink:#2c2433; --ink2:#6f6378; --muted:#a99cb4;
+  --rose:#8a4fb0; --rose-deep:#6a2f97; --gold:#9a6f1e;
+  --line:#e7e0ef; --paper:#f3eff7;
+  --soft:#ece2f5; --soft2:#efe8f7; --avbg:#e9dff3;
+  --seg-bg:#ece4f4; --nm-bg:#efe6f6; --ev-border:#ddd0ec;
+  --appbg:radial-gradient(120% 60% at 50% -10%, #efe6f8 0%, #f3eff7 46%, #faf7fc 100%);
+}
+body[data-theme="devil"]{ background:#f3eff7; }
+body[data-theme="devil"] .kicker::after{ content:" ♆"; letter-spacing:0; }
+body[data-theme="devil"] .ev-banner{ color:var(--rose-deep); }
+/* 마츠리 — 주홍·일본 신사/축제 컨셉 */
+body[data-theme="matsuri"]{
+  --ink:#2c2622; --ink2:#7a6f63; --muted:#b6a78f;
+  --rose:#d2462f; --rose-deep:#b23320; --gold:#b07d12;
+  --line:#efe4d3; --paper:#fbf6ed;
+  --soft:#fbe7df; --soft2:#f8efe2; --avbg:#f8e3d9;
+  --seg-bg:#f7ecdd; --nm-bg:#fbf0e6; --ev-border:#f0d8c6;
+  --appbg:radial-gradient(120% 60% at 50% -10%, #fdeede 0%, #fbf6ed 46%, #fffdf8 100%);
+}
+body[data-theme="matsuri"]{ background:#fbf6ed; }
+body[data-theme="matsuri"] .kicker::after{ content:" ⛩"; letter-spacing:0; }
+
+/* ===== 프로필 사진 크롭 ===== */
+.crop-wrap{position:relative;width:280px;height:280px;max-width:80vw;max-height:80vw;margin:14px auto 4px;border-radius:16px;overflow:hidden;background:#1c1620;touch-action:none}
+.crop-wrap canvas{display:block;width:100%;height:100%}
+.crop-ring{position:absolute;inset:0;border-radius:50%;box-shadow:0 0 0 999px rgba(22,14,20,.5);pointer-events:none}
+.crop-hint{text-align:center;font-size:12px;font-weight:700;color:var(--muted);margin:2px 0 10px}
+.crop-zoom{width:100%;margin:4px 0 14px;accent-color:var(--rose)}
 </style>
 </head>
 <body>
@@ -480,6 +517,18 @@ select.fld{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns
   </div>
 </div>
 
+<!-- 프로필 사진 크롭 모달 -->
+<div class="modal" id="cropModal">
+  <div class="modal-c">
+    <div class="modal-t">사진 맞추기</div>
+    <div class="crop-wrap"><canvas id="cropCanvas" width="280" height="280"></canvas><div class="crop-ring"></div></div>
+    <div class="crop-hint">드래그로 위치 · 슬라이더로 크기 조절</div>
+    <input type="range" id="cropZoom" class="crop-zoom" min="1" max="3" step="0.01" value="1">
+    <button class="btn primary full" id="cropApply">이 사진으로</button>
+    <button class="closex" id="cropCancel">취소</button>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script type="module">
@@ -529,6 +578,7 @@ async function boot(){
   await loadDirectory();
   wireUI();
   renderWho();
+  applyTheme(wpFilter);
   renderChips();
   renderDateLabel();
   switchTab('schedule');
@@ -671,23 +721,72 @@ async function openMyPage(){
 async function saveMyProfile(){
   const ok = await rpc('set_my_instagram', { p_staff_id:session.id, p_insta:$('myIg').value.trim() }, '저장했어요');
 }
-function resizeImage(file){
-  return new Promise((res,rej)=>{
-    const img=new Image(); const rd=new FileReader();
-    rd.onload=()=>{ img.onload=()=>{
-      const S=256, c=document.createElement('canvas'); c.width=S;c.height=S;
-      const ctx=c.getContext('2d'); const m=Math.min(img.width,img.height);
-      ctx.drawImage(img,(img.width-m)/2,(img.height-m)/2,m,m,0,0,S,S);
-      c.toBlob(b=>res(b),'image/jpeg',0.85);
-    }; img.onerror=rej; img.src=rd.result; };
-    rd.onerror=rej; rd.readAsDataURL(file);
-  });
+/* ----- 프로필 사진 크롭 ----- */
+const CROP_D = 280;   // 화면 크롭 영역(px)
+let cropState = null;
+function pickAvatar(ev){
+  const file=ev.target.files[0]; ev.target.value=''; if(!file) return;
+  const rd=new FileReader();
+  rd.onload=()=>{ const img=new Image();
+    img.onload=()=>openCrop(img);
+    img.onerror=()=>toast('이미지를 읽지 못했어요', true);
+    img.src=rd.result; };
+  rd.onerror=()=>toast('파일 읽기 실패', true);
+  rd.readAsDataURL(file);
 }
-async function uploadAvatar(ev){
-  const file=ev.target.files[0]; if(!file) return;
+function cropScale(){ return cropState.baseCover * cropState.zoom; }
+function cropCenter(){
+  const sc=cropScale();
+  cropState.offX=(CROP_D-cropState.img.width*sc)/2;
+  cropState.offY=(CROP_D-cropState.img.height*sc)/2;
+}
+function cropClamp(){
+  const sc=cropScale();
+  const w=cropState.img.width*sc, h=cropState.img.height*sc;
+  cropState.offX=Math.min(0, Math.max(CROP_D-w, cropState.offX));
+  cropState.offY=Math.min(0, Math.max(CROP_D-h, cropState.offY));
+}
+function cropDraw(){
+  const c=$('cropCanvas'), ctx=c.getContext('2d'), sc=cropScale();
+  ctx.clearRect(0,0,CROP_D,CROP_D);
+  ctx.drawImage(cropState.img, cropState.offX, cropState.offY, cropState.img.width*sc, cropState.img.height*sc);
+}
+function openCrop(img){
+  const baseCover=Math.max(CROP_D/img.width, CROP_D/img.height);
+  cropState={img, baseCover, zoom:1, offX:0, offY:0};
+  cropCenter(); cropDraw();
+  $('cropZoom').value='1';
+  $('cropModal').classList.add('show');
+}
+function cropZoomTo(val){
+  const prev=cropScale(); cropState.zoom=Number(val); const now=cropScale();
+  const cx=CROP_D/2, cy=CROP_D/2;
+  cropState.offX = cx - (cx-cropState.offX)*(now/prev);
+  cropState.offY = cy - (cy-cropState.offY)*(now/prev);
+  cropClamp(); cropDraw();
+}
+function bindCropDrag(){
+  const c=$('cropCanvas'); let drag=false, px=0, py=0;
+  const start=e=>{ drag=true; const p=e.touches?e.touches[0]:e; px=p.clientX; py=p.clientY; };
+  const move=e=>{ if(!drag||!cropState) return; const p=e.touches?e.touches[0]:e;
+    const r=c.getBoundingClientRect(), k=CROP_D/r.width;
+    cropState.offX+=(p.clientX-px)*k; cropState.offY+=(p.clientY-py)*k;
+    px=p.clientX; py=p.clientY; cropClamp(); cropDraw(); if(e.cancelable) e.preventDefault(); };
+  const end=()=>{ drag=false; };
+  c.addEventListener('mousedown',start); window.addEventListener('mousemove',move); window.addEventListener('mouseup',end);
+  c.addEventListener('touchstart',start,{passive:true}); c.addEventListener('touchmove',move,{passive:false}); c.addEventListener('touchend',end);
+}
+function applyCrop(){
+  if(!cropState) return;
+  const sc=cropScale(), S=256, r=S/CROP_D;
+  const c=document.createElement('canvas'); c.width=S; c.height=S;
+  const ctx=c.getContext('2d');
+  ctx.drawImage(cropState.img, cropState.offX*r, cropState.offY*r, cropState.img.width*sc*r, cropState.img.height*sc*r);
+  c.toBlob(blob=>{ $('cropModal').classList.remove('show'); cropState=null; if(blob) doUploadAvatar(blob); }, 'image/jpeg', 0.85);
+}
+async function doUploadAvatar(blob){
   toast('사진 올리는 중…');
   try{
-    const blob=await resizeImage(file);
     const path=`${session.id}-${Date.now()}.jpg`;
     const up=await supa.storage.from('avatars').upload(path, blob, {contentType:'image/jpeg',upsert:true});
     if(up.error) throw up.error;
@@ -803,12 +902,20 @@ function renderDateLabel(){
   $('dateLabel').innerHTML = `${d.getMonth()+1}월 ${d.getDate()}일 (${days[d.getDay()]})<small>${isToday?'오늘':''}</small>`;
 }
 
+/* ---------- 근무지 테마 ---------- */
+function applyTheme(wp){
+  const t = wp==='데빌'?'devil':wp==='마츠리'?'matsuri':'maid';
+  document.body.setAttribute('data-theme', t);
+  const colors={maid:'#bd7783',devil:'#8a4fb0',matsuri:'#d2462f'};
+  const m=document.querySelector('meta[name="theme-color"]'); if(m) m.content=colors[t];
+}
+
 /* ---------- 근무지 칩 ---------- */
 function renderChips(){
   const c = $('wpChips');
   c.innerHTML = WORKPLACES.map(w=>
     `<button class="chip${w===wpFilter?' on':''}" data-w="${w}">${w}</button>`).join('');
-  c.querySelectorAll('.chip').forEach(b=>b.onclick=()=>{ wpFilter=b.dataset.w; renderChips(); renderSchedule(); });
+  c.querySelectorAll('.chip').forEach(b=>b.onclick=()=>{ wpFilter=b.dataset.w; applyTheme(wpFilter); renderChips(); renderSchedule(); });
 }
 
 /* ---------- 스케줄 렌더 ---------- */
@@ -1047,6 +1154,16 @@ function openSubModal(shiftId, info){
 function closeSubModal(){ $('subModal').classList.remove('show'); pendingSubShiftId=null; }
 async function confirmSub(){
   const reason = $('subReason').value.trim();
+  // 보름(15일) 안에 이미 2번 이상 대타를 구했으면 한 마디
+  try{
+    const since = new Date(Date.now()-15*864e5).toISOString();
+    const { data } = await supa.from('swap_view').select('id,status,created_at')
+      .eq('requester_id', session.id).gte('created_at', since);
+    const cnt = (data||[]).filter(r=>r.status!=='cancelled').length;
+    if(cnt>=2){
+      if(!confirm(`대타를 너무 자주 구하는 거 아니예요? 양심 있어요?\n\n(최근 보름간 ${cnt}번이나 구했어요)\n\n그래도 요청할까요?`)){ return; }
+    }
+  }catch(e){}
   const ok = await rpc('request_sub', { p_staff_id:session.id, p_shift_id:pendingSubShiftId, p_reason:reason||null }, '대타 요청을 올렸어요');
   if(ok) closeSubModal();
 }
@@ -1118,7 +1235,7 @@ async function renderMine(){
     $('mineLogin').onclick = openLogin;
     return;
   }
-  $('mineSub').textContent = `${session.name}님의 다가오는 근무예요.`;
+  $('mineSub').textContent = `${session.name}님의 다가오는 근무예요. 카드를 누르면 그날 출근표로 가요.`;
   list.innerHTML = `<div style="text-align:center;padding:30px"><span class="spin"></span></div>`;
   const shifts = await fetchMyShifts();
   const days=['일','월','화','수','목','금','토'];
@@ -1131,7 +1248,7 @@ async function renderMine(){
     const act = seeking
       ? `<button class="btn ghost full" data-act="mine-cancel" data-id="${s.id}">대타 요청 취소</button>`
       : `<button class="btn ghost full" data-act="seek" data-id="${s.id}" data-info="${esc(s.workplace+' '+when)}">대타 구하기</button>`;
-    return `<div class="card">
+    return `<div class="card" data-goday="${s.work_date}" data-gowp="${esc(s.workplace)}" style="cursor:pointer">
       <div class="s-row">
         <div class="s-time" style="min-width:auto">${when}</div>
         <span class="swap-wp ${s.workplace}" style="color:#fff">${esc(s.workplace)}</span>
@@ -1141,6 +1258,14 @@ async function renderMine(){
   }).join('');
   list.innerHTML = shiftsHtml;
   bindShiftCards(list);
+  list.querySelectorAll('[data-goday]').forEach(c=>c.onclick=(e)=>{
+    if(e.target.closest('.btn')) return;
+    selectedDate=new Date(c.dataset.goday+'T00:00:00');
+    wpFilter=c.dataset.gowp; viewMode='day'; navDir=0;
+    $('viewSeg').querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.v==='day'));
+    applyTheme(wpFilter); renderChips();
+    switchTab('schedule');
+  });
   list.querySelectorAll('[data-act="mine-cancel"]').forEach(b=>b.onclick=async()=>{
     // 내 근무의 열린 대타 요청을 찾아 취소
     const { data } = await supa.from('swap_view').select('id').eq('shift_id', Number(b.dataset.id)).eq('status','open').limit(1);
@@ -1359,7 +1484,12 @@ function wireUI(){
   $('nm-close').onclick = ()=> $('nmModal').classList.remove('show');
   $('nmModal').onclick = e=>{ if(e.target.id==='nmModal') $('nmModal').classList.remove('show'); };
   $('myPicBtn').onclick = ()=> $('myPicFile').click();
-  $('myPicFile').onchange = uploadAvatar;
+  $('myPicFile').onchange = pickAvatar;
+  $('cropZoom').oninput = e=> cropZoomTo(e.target.value);
+  $('cropApply').onclick = applyCrop;
+  $('cropCancel').onclick = ()=>{ $('cropModal').classList.remove('show'); cropState=null; };
+  $('cropModal').onclick = e=>{ if(e.target.id==='cropModal'){ $('cropModal').classList.remove('show'); cropState=null; } };
+  bindCropDrag();
   $('myModal').onclick = e=>{ if(e.target.id==='myModal') $('myModal').classList.remove('show'); };
   $('viewSeg').querySelectorAll('button').forEach(b=>b.onclick=()=>{
     viewMode=b.dataset.v; navDir=0;

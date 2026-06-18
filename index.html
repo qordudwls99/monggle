@@ -17,6 +17,10 @@
   --rose:#bd7783; --rose-deep:#a85565; --gold:#9a6f1e;
   --maid:#c27c87; --devil:#8e7aa6; --matsuri:#c2925e;
   --card:#ffffff; --line:#f0e3e4; --paper:#faf4f3;
+  /* 테마별로 바뀌는 연한 강조 색 */
+  --soft:#f7e6e9; --soft2:#f7eef0; --avbg:#f5e5e8;
+  --seg-bg:#f3e7e9; --nm-bg:#f8eef0; --ev-border:#eecdd3;
+  --appbg:transparent;
 }
 html,body{height:100%}
 body{
@@ -24,7 +28,7 @@ body{
   color:var(--ink); background:var(--paper);
   display:flex; justify-content:center; letter-spacing:-0.2px;
 }
-.app{width:100%;max-width:480px;min-height:100vh;min-height:100dvh;position:relative;display:flex;flex-direction:column}
+.app{width:100%;max-width:480px;min-height:100vh;min-height:100dvh;position:relative;display:flex;flex-direction:column;background:var(--appbg);transition:background .4s ease}
 .stars{display:none}
 
 .head{position:relative;z-index:10;padding:max(22px,calc(env(safe-area-inset-top) + 14px)) 20px 8px}
@@ -35,7 +39,7 @@ body{
 .body{position:relative;z-index:10;flex:1;padding:8px 20px 28px;overflow-y:auto}
 
 /* view toggle */
-.seg{display:flex;background:#f3e7e9;border-radius:12px;padding:4px;margin-bottom:14px}
+.seg{display:flex;background:var(--seg-bg);border-radius:12px;padding:4px;margin-bottom:14px}
 .seg button{flex:1;border:none;cursor:pointer;font-family:inherit;font-weight:700;font-size:13px;padding:9px 0;border-radius:9px;background:none;color:var(--muted);transition:.15s}
 .seg button.on{background:#fff;color:var(--rose-deep);box-shadow:0 1px 3px rgba(80,40,50,.12)}
 
@@ -61,12 +65,12 @@ body{
 .wp-count{margin-left:auto;font-size:11.5px;font-weight:700;color:var(--muted)}
 .names{display:flex;flex-direction:column}
 .tag{display:flex;align-items:center;gap:13px;padding:13px 4px;border-bottom:1px solid var(--line);font-weight:600;font-size:15px;color:var(--ink)}
-.tag .av{width:34px;height:34px;border-radius:50%;background:#f5e5e8;color:var(--rose-deep);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;flex-shrink:0;background-size:cover;background-position:center}
+.tag .av{width:34px;height:34px;border-radius:50%;background:var(--avbg);color:var(--rose-deep);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;flex-shrink:0;background-size:cover;background-position:center}
 .tag .tnm{flex:1}
 .tag .gtag{font-size:10px;font-weight:800;color:var(--gold);background:#f3e7c8;padding:3px 9px;border-radius:6px;letter-spacing:.3px}
 .tag .ig{display:flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:9px;color:#fff;flex-shrink:0;background:linear-gradient(45deg,#f09433,#e6683c 25%,#dc2743 50%,#cc2366 75%,#bc1888)}
 .tag.guest .av{background:#f3e7c8;color:var(--gold)}
-.ev-banner{display:flex;align-items:center;gap:8px;background:#f7e6e9;color:var(--rose-deep);font-weight:800;font-size:13.5px;padding:10px 14px;border-radius:10px;margin-bottom:12px;border:1px solid #eecdd3}
+.ev-banner{display:flex;align-items:center;gap:8px;background:var(--soft);color:var(--rose-deep);font-weight:800;font-size:13.5px;padding:10px 14px;border-radius:10px;margin-bottom:12px;border:1px solid var(--ev-border)}
 .ev-banner::before{content:"●";font-size:7px}
 .night-banner{display:flex;align-items:center;gap:8px;background:#ece9f4;color:#4f4a7a;font-weight:800;font-size:13.5px;padding:10px 14px;border-radius:10px;margin-bottom:12px;border:1px solid #d8d3ea}
 .night-banner::before{content:"☾";font-size:13px}
@@ -100,12 +104,12 @@ body{
 .dcol-h .dow{font-size:17px;line-height:1.2}
 .dcol-h.weekend .dow{color:var(--rose-deep)}
 .dcol-h .tdy{display:inline-block;color:#fff;background:var(--rose);font-size:9px;font-weight:800;padding:1px 6px;border-radius:99px;margin-left:3px}
-.dcol-ev{display:block;margin:4px auto 0;font-size:9px;font-weight:800;color:var(--rose-deep);background:#f7e6e9;padding:2px 7px;border-radius:99px;line-height:1.3;width:fit-content}
+.dcol-ev{display:block;margin:4px auto 0;font-size:9px;font-weight:800;color:var(--rose-deep);background:var(--soft);padding:2px 7px;border-radius:99px;line-height:1.3;width:fit-content}
 .dcol-body{flex:1;overflow-y:auto}
 .wpgrp{margin-bottom:7px}
 .wpgrp:last-child{margin-bottom:0}
 .wpgrp-h{display:flex;align-items:center;justify-content:center;gap:3px;font-size:10px;font-weight:800;color:var(--muted);margin-bottom:4px}
-.wpgrp .nm{font-size:13px;font-weight:600;color:var(--ink);padding:5px 2px;text-align:center;background:#f8eef0;border-radius:8px;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.wpgrp .nm{font-size:13px;font-weight:600;color:var(--ink);padding:5px 2px;text-align:center;background:var(--nm-bg);border-radius:8px;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .wpgrp .nm.op{background:none;color:var(--muted);font-weight:600;font-size:11px}
 .wpgrp .nm.guest{background:#f3e7c8;color:var(--gold)}
 .dcol-off{text-align:center;font-size:12px;color:var(--muted);font-weight:600;padding:14px 0}
@@ -131,10 +135,33 @@ body{
 .setup{padding:40px 22px;color:var(--ink)}
 .setup h1{font-size:24px;font-weight:800}
 .setup p{font-size:14px;line-height:1.7;margin-top:12px;font-weight:600;color:var(--ink2)}
-.setup code{background:#f3e7e9;color:var(--rose-deep);padding:2px 7px;border-radius:6px;font-size:13px;font-weight:800}
+.setup code{background:var(--seg-bg);color:var(--rose-deep);padding:2px 7px;border-radius:6px;font-size:13px;font-weight:800}
 
 .foot{position:relative;z-index:10;text-align:center;padding:6px 16px max(18px,env(safe-area-inset-bottom));font-size:11px;font-weight:700;color:var(--muted)}
 .foot a{color:var(--rose-deep);text-decoration:underline}
+
+/* ===== 근무지별 테마 ===== */
+body{transition:background .4s ease}
+body[data-theme="devil"]{
+  --ink:#2c2433; --ink2:#6f6378; --muted:#a99cb4;
+  --rose:#8a4fb0; --rose-deep:#6a2f97; --gold:#9a6f1e;
+  --line:#e7e0ef; --paper:#f3eff7;
+  --soft:#ece2f5; --soft2:#efe8f7; --avbg:#e9dff3;
+  --seg-bg:#ece4f4; --nm-bg:#efe6f6; --ev-border:#ddd0ec;
+  --appbg:radial-gradient(120% 60% at 50% -10%, #efe6f8 0%, #f3eff7 46%, #faf7fc 100%);
+}
+body[data-theme="devil"]{ background:#f3eff7; }
+body[data-theme="devil"] .kicker::after{ content:" ♆"; letter-spacing:0; }
+body[data-theme="matsuri"]{
+  --ink:#2c2622; --ink2:#7a6f63; --muted:#b6a78f;
+  --rose:#d2462f; --rose-deep:#b23320; --gold:#b07d12;
+  --line:#efe4d3; --paper:#fbf6ed;
+  --soft:#fbe7df; --soft2:#f8efe2; --avbg:#f8e3d9;
+  --seg-bg:#f7ecdd; --nm-bg:#fbf0e6; --ev-border:#f0d8c6;
+  --appbg:radial-gradient(120% 60% at 50% -10%, #fdeede 0%, #fbf6ed 46%, #fffdf8 100%);
+}
+body[data-theme="matsuri"]{ background:#fbf6ed; }
+body[data-theme="matsuri"] .kicker::after{ content:" ⛩"; letter-spacing:0; }
 </style>
 </head>
 <body>
@@ -225,6 +252,7 @@ async function boot(){
   if(!isConfigured()){ $('setupScreen').style.display='block'; return; }
   supa = createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
   $('mainApp').style.display='flex';
+  applyTheme(wpFilter);
   renderChips();
   await loadBounds(); clampSel();
   $('viewSeg').querySelectorAll('button').forEach(b=>b.onclick=()=>{
@@ -243,10 +271,16 @@ function animList(){
   l.classList.remove('anim-r','anim-l','anim-f'); void l.offsetWidth; l.classList.add(c);
 }
 
+function applyTheme(wp){
+  const t = wp==='데빌'?'devil':wp==='마츠리'?'matsuri':'maid';
+  document.body.setAttribute('data-theme', t);
+  const colors={maid:'#bd7783',devil:'#8a4fb0',matsuri:'#d2462f'};
+  const m=document.querySelector('meta[name="theme-color"]'); if(m) m.content=colors[t];
+}
 function renderChips(){
   const c = $('wpChips');
   c.innerHTML = WORKPLACES.map(w=>`<button class="chip${w===wpFilter?' on':''}" data-w="${w}">${w}</button>`).join('');
-  c.querySelectorAll('.chip').forEach(b=>b.onclick=()=>{ wpFilter=b.dataset.w; renderChips(); render(); });
+  c.querySelectorAll('.chip').forEach(b=>b.onclick=()=>{ wpFilter=b.dataset.w; applyTheme(wpFilter); renderChips(); render(); });
 }
 async function fetchRange(from,to){
   const { data, error } = await supa.from('shift_view').select('*')
