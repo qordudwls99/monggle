@@ -118,6 +118,8 @@ body{
 .s-row{display:flex;align-items:center;gap:11px}
 .s-row .av{width:34px;height:34px;border-radius:50%;background:var(--avbg);color:var(--rose-deep);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;flex-shrink:0;background-size:cover;background-position:center}
 .s-row .av.guest{background:#f3e7c8;color:var(--gold)}
+.s-row .ig{display:flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:8px;color:#fff;flex-shrink:0;text-decoration:none;background:linear-gradient(45deg,#f09433,#e6683c 25%,#dc2743 50%,#cc2366 75%,#bc1888)}
+.night-row .ig.sm{display:flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:7px;color:#fff;flex-shrink:0;text-decoration:none;background:linear-gradient(45deg,#f09433,#e6683c 25%,#dc2743 50%,#cc2366 75%,#bc1888)}
 .s-row .av.none{background:#f2eaeb;color:#c8aeb2}
 .s-time{font-weight:800;font-size:15px;color:var(--ink);min-width:96px}
 .s-time small{display:block;font-size:11px;font-weight:700;color:var(--muted);margin-top:1px}
@@ -557,6 +559,8 @@ const DAYS = ['일','월','화','수','목','금','토'];
 const $ = id => document.getElementById(id);
 const esc = s => (s==null?'':String(s)).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const mondayOf = d => { const x=new Date(d); x.setDate(x.getDate()-((x.getDay()+6)%7)); x.setHours(0,0,0,0); return x; };
+const igUrl = h => { h=String(h||'').trim(); if(!h) return null; return /^https?:\/\//i.test(h)?h:'https://instagram.com/'+h.replace(/^@/,''); };
+const IG_SVG = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1.2" fill="currentColor" stroke="none"/></svg>';
 
 let supa = null;
 let session = JSON.parse(localStorage.getItem('shift_session') || 'null'); // {id,name,workplace,is_admin,pin}
@@ -687,6 +691,10 @@ async function rpc(fn, args, okMsg){
   if(okMsg) toast(okMsg);
   await refreshCurrent();
   return true;
+}
+// 관리자 전원에게 푸시 (알림탭 이벤트: 빈자리 신청 / 대타 요청)
+function notifyAdmins(title, body){
+  try{ supa.functions.invoke('notify', { body:{ to:'admins', title, body, exclude_id: session?session.id:null } }); }catch(e){}
 }
 
 /* ---------- 로그인 ---------- */
@@ -1027,7 +1035,9 @@ async function renderDay(){
       if(admin) dayCol += `<button class="btn ghost full" data-add="${wp}" style="margin-top:6px;font-size:12px">+ 주간 추가</button>`;
       let nightCol = mem.length ? mem.map(m=>{
         const avi=!m.is_guest&&m.avatar;
-        return `<div class="night-row"><span class="nmav${m.is_guest?' guest':''}" style="${avi?avStyle(m.avatar):''}">${avi?'':esc((m.member_name||'·').charAt(0))}</span><span class="nmname">${esc(m.member_name)}</span>${admin?`<button class="btn warn nmdel" data-nmdel="${m.id}">×</button>`:''}</div>`;
+        const nig=(!m.is_guest)?igUrl(m.instagram):null;
+        const nigHtml=nig?`<a class="ig sm" href="${esc(nig)}" target="_blank" rel="noopener">${IG_SVG}</a>`:'';
+        return `<div class="night-row"><span class="nmav${m.is_guest?' guest':''}" style="${avi?avStyle(m.avatar):''}">${avi?'':esc((m.member_name||'·').charAt(0))}</span><span class="nmname">${esc(m.member_name)}</span>${nigHtml}${admin?`<button class="btn warn nmdel" data-nmdel="${m.id}">×</button>`:''}</div>`;
       }).join('') : `<div class="dn-empty">미정</div>`;
       if(admin) nightCol += `<button class="btn ghost full" data-nmadd="${wp}" style="margin-top:6px;font-size:12px">+ 야간 멤버</button>`;
       html += `<div class="daynight"><div class="dn-col"><div class="dn-h">주간</div>${dayCol}</div><div class="dn-col night"><div class="dn-h">야간 ${mem.length?mem.length+'명':''}</div>${nightCol}</div></div>`;
@@ -1106,12 +1116,15 @@ function shiftCard(s, admin, apps){
   const who = s.staff_id?s.staff_name:(s.guest_name||'');
   const avImg = s.staff_id && s.staff_avatar;
   const av = `<span class="av${(!s.staff_id&&s.guest_name)?' guest':''}${who?'':' none'}" style="${avImg?avStyle(s.staff_avatar):''}">${avImg?'':esc(who.charAt(0)||'·')}</span>`;
-  return `<div class="card"><div class="s-row">${av}${nameHtml}${badge}</div>${appHtml}${acts}</div>`;
+  const ig = s.staff_id ? igUrl(s.staff_instagram) : null;
+  const igHtml = ig ? `<a class="ig" href="${esc(ig)}" target="_blank" rel="noopener">${IG_SVG}</a>` : '';
+  return `<div class="card"><div class="s-row">${av}${nameHtml}${badge}${igHtml}</div>${appHtml}${acts}</div>`;
 }
 function bindShiftCards(root){
-  root.querySelectorAll('[data-act="apply"]').forEach(b=>b.onclick=()=>{
+  root.querySelectorAll('[data-act="apply"]').forEach(b=>b.onclick=async()=>{
     if(!session){ openLogin(); return; }
-    rpc('apply_slot', { p_staff_id:session.id, p_shift_id:Number(b.dataset.id) }, '신청했어요! 관리자 승인을 기다려주세요');
+    const ok = await rpc('apply_slot', { p_staff_id:session.id, p_shift_id:Number(b.dataset.id) }, '신청했어요! 관리자 승인을 기다려주세요');
+    if(ok) notifyAdmins('빈자리 신청', `${session.name}님이 빈자리에 신청했어요`);
   });
   root.querySelectorAll('[data-act="unapply"]').forEach(b=>b.onclick=()=>
     rpc('cancel_application', { p_staff_id:session.id, p_shift_id:Number(b.dataset.id) }, '신청을 취소했어요'));
@@ -1194,7 +1207,7 @@ async function confirmSub(){
     }
   }catch(e){}
   const ok = await rpc('request_sub', { p_staff_id:session.id, p_shift_id:pendingSubShiftId, p_reason:reason||null }, '대타 요청을 올렸어요');
-  if(ok) closeSubModal();
+  if(ok){ notifyAdmins('대타 요청', `${session.name}님이 대타를 구해요`); closeSubModal(); }
 }
 
 /* ---------- 대타 게시판 ---------- */
