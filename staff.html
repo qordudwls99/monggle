@@ -255,6 +255,14 @@ select.fld{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns
 
 /* ===== 근무지별 테마 ===== */
 body{transition:background .4s ease}
+/* 메이드 — 핑크 깅엄(체크무늬) 배경 */
+body[data-theme="maid"]{
+  --appbg:
+    repeating-linear-gradient(0deg, rgba(255,255,255,.18) 0 16px, transparent 16px 32px),
+    repeating-linear-gradient(90deg, rgba(255,255,255,.18) 0 16px, transparent 16px 32px),
+    linear-gradient(180deg,#f4c7bc 0%,#f6bdcd 38%,#f6b2d6 60%,#f8a8e4 82%,#f9a2f0 100%);
+}
+body[data-theme="maid"]{ background:#f6b2d6; }
 /* 데빌 — 어둑한 보랏빛 악마 컨셉 */
 body[data-theme="devil"]{
   --ink:#2c2433; --ink2:#6f6378; --muted:#a99cb4;
@@ -906,7 +914,7 @@ function renderDateLabel(){
 function applyTheme(wp){
   const t = wp==='데빌'?'devil':wp==='마츠리'?'matsuri':'maid';
   document.body.setAttribute('data-theme', t);
-  const colors={maid:'#bd7783',devil:'#8a4fb0',matsuri:'#d2462f'};
+  const colors={maid:'#f4c7bc',devil:'#8a4fb0',matsuri:'#d2462f'};
   const m=document.querySelector('meta[name="theme-color"]'); if(m) m.content=colors[t];
 }
 
