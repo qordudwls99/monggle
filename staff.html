@@ -410,6 +410,10 @@ select.fld{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns
     <label class="fl">인스타그램</label>
     <input class="fld" id="myIg" placeholder="인스타 아이디 또는 링크">
     <button class="btn primary full" id="mySave">저장</button>
+    <div style="border-top:1px solid var(--line);margin-top:16px;padding-top:14px">
+      <div style="font-size:12px;color:var(--ink2);font-weight:600;margin-bottom:8px">대타 게시판 댓글 알림을 폰으로 받아요</div>
+      <button class="btn ghost full" id="pushBtn">🔔 알림 켜기</button>
+    </div>
   </div>
 </div>
 
@@ -485,6 +489,7 @@ const CONFIG = {
   SUPABASE_URL:      'https://izpotztbvjazfvcntqyh.supabase.co',
   SUPABASE_ANON_KEY: 'sb_publishable_ToHVeUEnJVmlHCcu_-QcnQ_ofP55Q_N',
 };
+const VAPID_PUBLIC = 'BIGMR24JXMJI0jjsqGLmUfR-IT2ry-BBHf3KoNqijazAHB91X2Gw1Lm_P3Ou7Jd0R1XQgzrZjNmdjQ1vrY7Zwrs';
 
 const WORKPLACES = ['메이드','데빌','마츠리'];
 const DAYS = ['일','월','화','수','목','금','토'];
@@ -522,9 +527,33 @@ async function boot(){
   renderChips();
   renderDateLabel();
   switchTab('schedule');
+  if('serviceWorker' in navigator){ navigator.serviceWorker.register('/sw.js').catch(()=>{}); }
   // 주기적 새로고침
   setInterval(()=>{ if(document.visibilityState==='visible') refreshCurrent(); }, 20000);
 }
+/* ---------- 푸시 알림 ---------- */
+function urlB64ToUint8(base64){
+  const pad='='.repeat((4-base64.length%4)%4);
+  const b=(base64+pad).replace(/-/g,'+').replace(/_/g,'/');
+  const raw=atob(b); const arr=new Uint8Array(raw.length);
+  for(let i=0;i<raw.length;i++) arr[i]=raw.charCodeAt(i);
+  return arr;
+}
+async function enablePush(){
+  if(!session){ openLogin(); return; }
+  if(!('serviceWorker' in navigator)||!('PushManager' in window)){ toast('이 기기는 푸시 알림을 지원하지 않아요', true); return; }
+  try{
+    const perm = await Notification.requestPermission();
+    if(perm!=='granted'){ toast('알림 권한이 꺼져 있어요. 브라우저 설정에서 허용해주세요', true); return; }
+    const reg = await navigator.serviceWorker.ready;
+    let sub = await reg.pushManager.getSubscription();
+    if(!sub) sub = await reg.pushManager.subscribe({ userVisibleOnly:true, applicationServerKey: urlB64ToUint8(VAPID_PUBLIC) });
+    const j = sub.toJSON();
+    const ok = await rpc('save_push_subscription', { p_staff_id:session.id, p_endpoint:j.endpoint, p_p256dh:j.keys.p256dh, p_auth:j.keys.auth }, '알림을 켰어요! 📳');
+    if(ok) updatePushBtn(true);
+  }catch(e){ toast('알림 켜기 실패: '+(e.message||e), true); }
+}
+function updatePushBtn(on){ const b=$('pushBtn'); if(b){ b.textContent = on?'🔔 알림 켜짐':'🔔 알림 켜기'; } }
 
 /* ---------- 데이터 ---------- */
 async function loadDirectory(){
@@ -622,6 +651,7 @@ async function openMyPage(){
   $('myModal').classList.add('show');
   try{ const r=await supa.rpc('my_profile',{p_staff_id:session.id,p_pin:session.pin});
     if(r.data){ $('myIg').value=r.data.instagram||''; } }catch(e){}
+  try{ if('serviceWorker' in navigator){ const reg=await navigator.serviceWorker.ready; const sub=await reg.pushManager.getSubscription(); updatePushBtn(!!sub && Notification.permission==='granted'); } }catch(e){}
 }
 async function saveMyProfile(){
   const ok = await rpc('set_my_instagram', { p_staff_id:session.id, p_insta:$('myIg').value.trim() }, '저장했어요');
@@ -1053,10 +1083,11 @@ async function renderSwaps(){
   });
   list.querySelectorAll('[data-act="cancel"]').forEach(b=>b.onclick=()=>
     rpc('cancel_sub', { p_staff_id:session.id, p_request_id:Number(b.dataset.id) }, '요청을 취소했어요'));
-  list.querySelectorAll('[data-csend]').forEach(b=>b.onclick=()=>{
+  list.querySelectorAll('[data-csend]').forEach(b=>b.onclick=async()=>{
     if(!session){ openLogin(); return; }
-    const inp=$('ci-'+b.dataset.csend); const body=inp.value.trim(); if(!body) return;
-    rpc('add_swap_comment', { p_staff_id:session.id, p_request_id:Number(b.dataset.csend), p_body:body }, '댓글을 남겼어요');
+    const id=Number(b.dataset.csend); const inp=$('ci-'+id); const body=inp.value.trim(); if(!body) return;
+    const ok = await rpc('add_swap_comment', { p_staff_id:session.id, p_request_id:id, p_body:body }, '댓글을 남겼어요');
+    if(ok){ try{ supa.functions.invoke('notify', { body:{ request_id:id, body, author_name:session.name, author_id:session.id } }); }catch(e){} }
   });
   list.querySelectorAll('[data-cdel]').forEach(b=>b.onclick=()=>
     rpc('delete_swap_comment', { p_staff_id:session.id, p_id:Number(b.dataset.cdel) }, '댓글을 지웠어요'));
@@ -1305,6 +1336,7 @@ function wireUI(){
   $('myClose').onclick = ()=> $('myModal').classList.remove('show');
   $('myLogout').onclick = ()=>{ $('myModal').classList.remove('show'); logout(); };
   $('mySave').onclick = saveMyProfile;
+  $('pushBtn').onclick = enablePush;
   setupInstall();
   $('nm-save').onclick = nmSave;
   $('nm-close').onclick = ()=> $('nmModal').classList.remove('show');
