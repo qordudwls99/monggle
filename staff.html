@@ -170,6 +170,15 @@ body{
 .swap-who{font-size:12.5px;color:var(--ink2);margin-bottom:4px}
 .swap-who b{color:var(--ink)}
 .swap-reason{font-size:13px;color:var(--ink);background:var(--paper);border-radius:10px;padding:10px 12px;margin:8px 0;line-height:1.5}
+.cmt-cnt{margin-left:auto;font-size:11px;font-weight:800;color:var(--rose-deep);background:#f7e6e9;padding:3px 9px;border-radius:99px}
+.cmts{margin-top:10px;padding-top:10px;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:7px}
+.cmt{display:flex;align-items:flex-start;gap:6px;font-size:13px;color:var(--ink);line-height:1.45}
+.cmt-b{flex:1}.cmt-b b{color:var(--rose-deep);font-weight:800;margin-right:4px}
+.cmt-x{border:none;background:none;cursor:pointer;color:var(--muted);font-size:14px;font-weight:800;padding:0 2px;flex-shrink:0}
+.cmt-in{display:flex;gap:6px;margin-top:2px}
+.cmt-input{flex:1;background:var(--paper);border:1px solid var(--line);border-radius:9px;padding:8px 11px;font-size:14px;outline:none;font-family:inherit;color:var(--ink)}
+.cmt-input:focus{border-color:var(--rose)}
+.cmt-go{border:none;cursor:pointer;font-family:inherit;font-weight:800;font-size:12.5px;color:#fff;background:var(--rose);padding:0 14px;border-radius:9px}
 
 /* empty / hint */
 .empty-box{text-align:center;padding:46px 20px;color:var(--muted)}
@@ -998,6 +1007,11 @@ async function confirmSub(){
 }
 
 /* ---------- 대타 게시판 ---------- */
+async function fetchSwapComments(ids){
+  if(!ids.length) return {};
+  const { data } = await supa.from('swap_comment_view').select('*').in('request_id', ids);
+  const m={}; (data||[]).forEach(c=>(m[c.request_id]=m[c.request_id]||[]).push(c)); return m;
+}
 async function renderSwaps(){
   const list = $('swapList');
   list.innerHTML = `<div style="text-align:center;padding:30px"><span class="spin"></span></div>`;
@@ -1006,6 +1020,7 @@ async function renderSwaps(){
     list.innerHTML = `<div class="empty-box"><div class="e-ic"></div><div class="e-t">지금은 대타가 필요한 근무가 없어요</div><div class="e-s">모두 제자리에서 잘 돌아가고 있어요</div></div>`;
     return;
   }
+  const cmts = await fetchSwapComments(swaps.map(s=>s.id));
   const days=['일','월','화','수','목','금','토'];
   list.innerHTML = swaps.map(s=>{
     const d = new Date(s.work_date+'T00:00:00');
@@ -1017,11 +1032,19 @@ async function renderSwaps(){
     } else {
       act = `<button class="btn primary full" data-act="accept" data-id="${s.id}" data-when="${when}" data-wp="${esc(s.workplace)}">대타 설게요</button>`;
     }
+    const list2 = cmts[s.id]||[];
+    const clist = list2.map(c=>{
+      const mineC = session && c.author_id===session.id;
+      const canDel = session && (mineC || session.is_admin);
+      return `<div class="cmt"><span class="cmt-b"><b>${esc(c.author_name)}</b> ${esc(c.body)}</span>${canDel?`<button class="cmt-x" data-cdel="${c.id}">×</button>`:''}</div>`;
+    }).join('');
+    const cinput = session ? `<div class="cmt-in"><input class="cmt-input" id="ci-${s.id}" placeholder="댓글 달기…" maxlength="200"><button class="cmt-go" data-csend="${s.id}">등록</button></div>` : '';
     return `<div class="swap">
-      <div class="swap-top"><span class="swap-wp ${s.workplace}">${esc(s.workplace)}</span><span class="swap-when">${when}</span></div>
+      <div class="swap-top"><span class="swap-wp ${s.workplace}">${esc(s.workplace)}</span><span class="swap-when">${when}</span>${list2.length?`<span class="cmt-cnt">댓글 ${list2.length}</span>`:''}</div>
       <div class="swap-who"><b>${esc(s.requester_name)}</b>님이 대타를 구해요${mineReq?' (내 요청)':''}</div>
       ${s.reason?`<div class="swap-reason">💬 ${esc(s.reason)}</div>`:''}
-      ${act}</div>`;
+      ${act}
+      <div class="cmts">${clist}${cinput}</div></div>`;
   }).join('');
   list.querySelectorAll('[data-act="accept"]').forEach(b=>b.onclick=()=>{
     if(!session){ openLogin(); return; }
@@ -1030,6 +1053,14 @@ async function renderSwaps(){
   });
   list.querySelectorAll('[data-act="cancel"]').forEach(b=>b.onclick=()=>
     rpc('cancel_sub', { p_staff_id:session.id, p_request_id:Number(b.dataset.id) }, '요청을 취소했어요'));
+  list.querySelectorAll('[data-csend]').forEach(b=>b.onclick=()=>{
+    if(!session){ openLogin(); return; }
+    const inp=$('ci-'+b.dataset.csend); const body=inp.value.trim(); if(!body) return;
+    rpc('add_swap_comment', { p_staff_id:session.id, p_request_id:Number(b.dataset.csend), p_body:body }, '댓글을 남겼어요');
+  });
+  list.querySelectorAll('[data-cdel]').forEach(b=>b.onclick=()=>
+    rpc('delete_swap_comment', { p_staff_id:session.id, p_id:Number(b.dataset.cdel) }, '댓글을 지웠어요'));
+  list.querySelectorAll('.cmt-input').forEach(inp=>inp.onkeydown=e=>{ if(e.key==='Enter'){ const id=inp.id.slice(3); const b=list.querySelector(`[data-csend="${id}"]`); b&&b.click(); } });
 }
 
 /* ---------- 내 근무 ---------- */
