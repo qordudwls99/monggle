@@ -1102,7 +1102,13 @@ async function renderSwaps(){
     if(!session){ openLogin(); return; }
     const id=Number(b.dataset.csend); const inp=$('ci-'+id); const body=inp.value.trim(); if(!body) return;
     const ok = await rpc('add_swap_comment', { p_staff_id:session.id, p_request_id:id, p_body:body }, '댓글을 남겼어요');
-    if(ok){ try{ supa.functions.invoke('notify', { body:{ request_id:id, body, author_name:session.name, author_id:session.id } }); }catch(e){} }
+    if(ok){
+      try{
+        const { data, error } = await supa.functions.invoke('notify', { body:{ request_id:id, body, author_name:session.name, author_id:session.id } });
+        if(error){ toast('알림 전송 실패: '+(error.message||JSON.stringify(error)), true); }
+        else { toast('알림 전송: '+JSON.stringify(data)); }
+      }catch(e){ toast('알림 호출 예외: '+((e&&e.message)||e), true); }
+    }
   });
   list.querySelectorAll('[data-cdel]').forEach(b=>b.onclick=()=>
     rpc('delete_swap_comment', { p_staff_id:session.id, p_id:Number(b.dataset.cdel) }, '댓글을 지웠어요'));
