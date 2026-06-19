@@ -175,6 +175,8 @@ body{
 .swap-when{font-weight:800;font-size:14px;color:var(--ink)}
 .swap-who{font-size:12.5px;color:var(--ink2);margin-bottom:4px}
 .swap-who b{color:var(--ink)}
+.swap-remain{display:inline-block;font-size:11.5px;font-weight:800;color:var(--rose-deep);background:var(--soft);padding:3px 9px;border-radius:99px;margin-bottom:8px}
+.swap-del{margin-left:auto;border:none;cursor:pointer;font-family:inherit;font-weight:800;font-size:11px;color:#c0455c;background:#fbeef0;padding:4px 10px;border-radius:99px}
 .swap-reason{font-size:13px;color:var(--ink);background:var(--paper);border-radius:10px;padding:10px 12px;margin:8px 0;line-height:1.5}
 .cmt-cnt{margin-left:auto;font-size:11px;font-weight:800;color:var(--rose-deep);background:var(--soft);padding:3px 9px;border-radius:99px}
 .cmts{margin-top:10px;padding-top:10px;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:7px}
@@ -1216,16 +1218,29 @@ async function fetchSwapComments(ids){
   const { data } = await supa.from('swap_comment_view').select('*').in('request_id', ids);
   const m={}; (data||[]).forEach(c=>(m[c.request_id]=m[c.request_id]||[]).push(c)); return m;
 }
+// 대타 마감 = 근무 당일 오후 4시. 남은 시간 라벨.
+function swapDeadline(ds){ return new Date(ds+'T16:00:00'); }
+function swapRemainLabel(ds){
+  const diff = swapDeadline(ds) - new Date();
+  if(diff<=0) return '마감';
+  const mins=Math.floor(diff/60000), d=Math.floor(mins/1440), h=Math.floor((mins%1440)/60), m=mins%60;
+  if(d>0) return `마감 ${d}일 ${h}시간 남음`;
+  if(h>0) return `마감 ${h}시간 ${m}분 남음`;
+  return `마감 ${m}분 남음`;
+}
 async function renderSwaps(){
   const list = $('swapList');
   list.innerHTML = `<div style="text-align:center;padding:30px"><span class="spin"></span></div>`;
-  const swaps = await fetchOpenSwaps();
+  try{ await supa.rpc('expire_old_swaps'); }catch(e){}      // 당일 16시 지난 글 자동 만료
+  let swaps = await fetchOpenSwaps();
+  swaps = swaps.filter(s=> swapDeadline(s.work_date) - new Date() > 0);  // 혹시 남은 만료분 즉시 숨김
   if(swaps.length===0){
     list.innerHTML = `<div class="empty-box"><div class="e-ic"></div><div class="e-t">지금은 대타가 필요한 근무가 없어요</div><div class="e-s">모두 제자리에서 잘 돌아가고 있어요</div></div>`;
     return;
   }
   const cmts = await fetchSwapComments(swaps.map(s=>s.id));
   const days=['일','월','화','수','목','금','토'];
+  const admin = !!(session && session.is_admin);
   list.innerHTML = swaps.map(s=>{
     const d = new Date(s.work_date+'T00:00:00');
     const when = `${d.getMonth()+1}/${d.getDate()}(${days[d.getDay()]})`;
@@ -1243,9 +1258,11 @@ async function renderSwaps(){
       return `<div class="cmt"><span class="cmt-b"><b>${esc(c.author_name)}</b> ${esc(c.body)}</span>${canDel?`<button class="cmt-x" data-cdel="${c.id}">×</button>`:''}</div>`;
     }).join('');
     const cinput = session ? `<div class="cmt-in"><input class="cmt-input" id="ci-${s.id}" placeholder="댓글 달기…" maxlength="200"><button class="cmt-go" data-csend="${s.id}">등록</button></div>` : '';
+    const delBtn = admin ? `<button class="swap-del" data-swapdel="${s.id}" data-info="${esc(s.requester_name+' · '+when)}">삭제</button>` : '';
     return `<div class="swap">
-      <div class="swap-top"><span class="swap-wp ${s.workplace}">${esc(s.workplace)}</span><span class="swap-when">${when}</span>${list2.length?`<span class="cmt-cnt">댓글 ${list2.length}</span>`:''}</div>
+      <div class="swap-top"><span class="swap-wp ${s.workplace}">${esc(s.workplace)}</span><span class="swap-when">${when}</span>${list2.length?`<span class="cmt-cnt">댓글 ${list2.length}</span>`:''}${delBtn}</div>
       <div class="swap-who"><b>${esc(s.requester_name)}</b>님이 대타를 구해요${mineReq?' (내 요청)':''}</div>
+      <div class="swap-remain">⏳ ${swapRemainLabel(s.work_date)}</div>
       ${s.reason?`<div class="swap-reason">💬 ${esc(s.reason)}</div>`:''}
       ${act}
       <div class="cmts">${clist}${cinput}</div></div>`;
@@ -1254,6 +1271,10 @@ async function renderSwaps(){
     if(!session){ openLogin(); return; }
     if(!confirm(`【${b.dataset.wp}】 ${b.dataset.when} 근무\n\n이 날 정말 대타를 서시겠어요?`)) return;
     rpc('accept_sub', { p_staff_id:session.id, p_request_id:Number(b.dataset.id) }, '대타를 맡았어요! 고마워요');
+  });
+  list.querySelectorAll('[data-swapdel]').forEach(b=>b.onclick=()=>{
+    if(!confirm(`이 대타 글을 삭제할까요?\n\n${b.dataset.info}\n\n삭제하면 게시판에서 사라지고, 해당 근무는 원래 근무자에게 남아요.`)) return;
+    rpc('admin_delete_swap', { p_admin_id:session.id, p_request_id:Number(b.dataset.swapdel) }, '대타 글을 삭제했어요');
   });
   list.querySelectorAll('[data-act="cancel"]').forEach(b=>b.onclick=()=>
     rpc('cancel_sub', { p_staff_id:session.id, p_request_id:Number(b.dataset.id) }, '요청을 취소했어요'));
@@ -1279,6 +1300,7 @@ async function renderMine(){
   }
   $('mineSub').textContent = `${session.name}님의 다가오는 근무예요. 카드를 누르면 그날 출근표로 가요.`;
   list.innerHTML = `<div style="text-align:center;padding:30px"><span class="spin"></span></div>`;
+  try{ await supa.rpc('expire_old_swaps'); }catch(e){}
   const shifts = await fetchMyShifts();
   const days=['일','월','화','수','목','금','토'];
   const shiftsHtml = shifts.length===0
