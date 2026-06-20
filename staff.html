@@ -1099,12 +1099,7 @@ function shiftCard(s, admin, apps){
 
   const btns=[];
   if(session && !admin){
-    if(isEmpty){
-      const applied = apps.some(a=>a.applicant_id===session.id);
-      btns.push(applied
-        ? `<button class="btn ghost" data-act="unapply" data-id="${s.id}">신청 취소</button>`
-        : `<button class="btn primary" data-act="apply" data-id="${s.id}">신청하기</button>`);
-    } else if(mine && s.status==='confirmed'){
+    if(mine && s.status==='confirmed'){
       btns.push(`<button class="btn ghost" data-act="seek" data-id="${s.id}" data-info="${esc(s.workplace+' '+ymd(selectedDate))}">대타 구하기</button>`);
     }
   }
