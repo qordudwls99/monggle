@@ -886,13 +886,17 @@ function refreshCurrent(){
   else if(currentTab==='noti') renderNoti();
   if(session && session.is_admin) updateNotiBadge();
 }
+function notiSeen(){ try{ return new Set(JSON.parse(localStorage.getItem('noti_seen_ids')||'[]')); }catch(e){ return new Set(); } }
+function notiSaveSeen(set){ localStorage.setItem('noti_seen_ids', JSON.stringify([...set].slice(-500))); }
 async function updateNotiBadge(){
   if(!(session && session.is_admin)) return;
   const [ap, sw] = await Promise.all([
     supa.from('application_view').select('id'),
     supa.from('swap_view').select('id').eq('status','open')
   ]);
-  const n = ((ap.data||[]).length) + ((sw.data||[]).length);
+  const keys = [ ...(ap.data||[]).map(a=>'ap:'+a.id), ...(sw.data||[]).map(s=>'sw:'+s.id) ];
+  const seen = notiSeen();
+  const n = keys.filter(k=>!seen.has(k)).length;   // 안 읽은 것만 셈
   const b = $('notiBadge');
   if(n>0){ b.textContent=n; b.style.display='inline-flex'; } else { b.style.display='none'; }
 }
@@ -906,6 +910,12 @@ async function renderNoti(){
   const apps = apR.data||[]; const swaps = swR.data||[];
   const open = swaps.filter(s=>s.status==='open');
   const done = swaps.filter(s=>s.status==='completed').slice(0,10);
+  // 이 탭을 열었으니 지금 항목은 "읽음" 처리 → 배지에서 사라짐
+  const seen = notiSeen();
+  apps.forEach(a=>seen.add('ap:'+a.id));
+  open.forEach(s=>seen.add('sw:'+s.id));
+  notiSaveSeen(seen);
+  $('notiBadge').style.display='none';
   const days=['일','월','화','수','목','금','토'];
   const wlabel = ds=>{ const d=new Date(ds+'T00:00:00'); return `${d.getMonth()+1}/${d.getDate()}(${days[d.getDay()]})`; };
   let html='';
