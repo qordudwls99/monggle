@@ -46,7 +46,9 @@ body{
 
 .datebar{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:14px;padding:11px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
 .datebar button{border:none;cursor:pointer;background:none;width:32px;height:32px;font-size:19px;font-weight:700;color:var(--rose);font-family:inherit}
-.datebar .dlabel{flex:1;text-align:center;font-weight:800;font-size:15.5px;color:var(--ink)}
+.datebar{position:relative}
+.datebar .dlabel{flex:1;text-align:center;font-weight:800;font-size:15.5px;color:var(--ink);cursor:pointer}
+.datepick{position:absolute;left:50%;bottom:0;width:1px;height:1px;opacity:0;border:0;padding:0;pointer-events:none}
 .datebar .dlabel small{display:block;font-size:11px;font-weight:700;color:var(--muted)}
 .today-btn{font-size:11px !important;width:auto !important;padding:0 11px;height:32px;color:var(--muted) !important}
 
@@ -191,6 +193,7 @@ body[data-theme="matsuri"] .kicker::after{ content:" ⛩"; letter-spacing:0; }
         <div class="dlabel" id="dateLabel"></div>
         <button id="next">›</button>
         <button class="today-btn" id="todayBtn">오늘</button>
+        <input type="date" id="datePick" class="datepick">
       </div>
       <div class="chips" id="wpChips"></div>
       <div id="list"></div>
@@ -270,6 +273,8 @@ async function boot(){
   $('prev').onclick = ()=>{ navDir=-1; selectedDate.setDate(selectedDate.getDate()-(viewMode==='week'?7:1)); clampSel(); render(); };
   $('next').onclick = ()=>{ navDir=1; selectedDate.setDate(selectedDate.getDate()+(viewMode==='week'?7:1)); clampSel(); render(); };
   $('todayBtn').onclick = ()=>{ navDir=0; selectedDate=new Date(); clampSel(); render(); };
+  $('dateLabel').onclick = ()=>{ const dp=$('datePick'); dp.value=ymd(selectedDate); if(minDate) dp.min=minDate; if(maxDate) dp.max=maxDate; if(dp.showPicker) dp.showPicker(); else dp.click(); };
+  $('datePick').onchange = ()=>{ if(!$('datePick').value) return; navDir=0; selectedDate=new Date($('datePick').value+'T00:00:00'); clampSel(); render(); };
   render();
   setupPTR(document.querySelector('.body'), async()=>{ navDir=0; await loadBounds(); await loadDraftMonths(); render(); });
   setInterval(async()=>{ if(document.visibilityState==='visible'){ navDir=0; await loadBounds(); await loadDraftMonths(); render(); } }, 30000);
