@@ -925,23 +925,46 @@ function openNmAdd(wp){
   $('nmModal').classList.add('show');
   loadNmCands();
 }
+// 야간 문항 라벨의 날짜(예: "8/1-8/2 ...")가 대상 날짜를 포함하는지
+function nightCovers(label, year, targetYmd){
+  const m=String(label).match(/(\d{1,2})\/(\d{1,2})(?:\s*[-~]\s*(\d{1,2})\/(\d{1,2}))?/);
+  if(!m) return false;
+  const pad=(mo,d)=>`${year}-${String(mo).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+  const start=pad(+m[1],+m[2]); const end=m[3]?pad(+m[3],+m[4]):start;
+  return targetYmd>=start && targetYmd<=end;
+}
 async function loadNmCands(){
   const box=$('nm-cands'); const ym=ymOfDate(selectedDate);
-  const [ansR, memR] = await Promise.all([
+  const [nqR, ansR, memR] = await Promise.all([
+    supa.from('submission_night_view').select('*').eq('ym', ym),
     supa.from('submission_answer_view').select('*').eq('ym', ym),
     supa.from('night_member_view').select('*').eq('work_date', ymd(selectedDate))
   ]);
-  const seen=new Set(), cands=[];
-  (ansR.data||[]).forEach(a=>{ if(a.qkey && a.qkey.indexOf('n:')===0 && a.choice==='가능' && a.staff_id && !seen.has(a.staff_id)){ seen.add(a.staff_id); cands.push({id:a.staff_id, name:a.staff_name}); } });
+  const nights=(nqR.data||[]).sort((a,b)=>a.sort-b.sort||a.id-b.id);
+  if(!nights.length){ box.innerHTML=`<div style="font-size:12px;color:var(--muted);font-weight:700">이 달 야간 문항이 없어요</div>`; return; }
+  const byq={}; (ansR.data||[]).forEach(a=>{ if(a.qkey && a.qkey.indexOf('n:')===0){ (byq[a.qkey.slice(2)]=byq[a.qkey.slice(2)]||[]).push(a); } });
   const already=new Set((memR.data||[]).filter(m=>m.workplace===nmWp && m.staff_id).map(m=>m.staff_id));
-  const list=cands.filter(c=>!already.has(c.id)).sort((x,y)=>String(x.name).localeCompare(String(y.name),'ko'));
-  if(!list.length){ box.innerHTML=`<div style="font-size:12px;color:var(--muted);font-weight:700">이 달 야간 '가능' 제출자가 없어요</div>`; return; }
-  box.innerHTML=`<div style="font-size:11.5px;color:var(--ink2);font-weight:800;margin-bottom:6px">야간 가능 제출자 (탭하면 추가)</div><div class="nm-chips">`+
-    list.map(c=>`<button class="nm-chip" data-nmpick="${c.id}" data-nmnm="${esc(c.name)}">${esc(c.name)}</button>`).join('')+`</div>`;
-  box.querySelectorAll('[data-nmpick]').forEach(b=>b.onclick=async()=>{
-    const ok=await rpc('admin_add_night_member',{p_admin_id:session.id, p_date:ymd(selectedDate), p_workplace:nmWp, p_staff_id:Number(b.dataset.nmpick), p_name:null}, `${b.dataset.nmnm}님 야간 추가`);
-    if(ok) loadNmCands();
-  });
+  const yr=Number(ym.split('-')[0]); const tgt=ymd(selectedDate);
+  const covering=nights.find(n=>nightCovers(n.label, yr, tgt));
+  const defId=(covering||nights[0]).id;
+  box.innerHTML=`<label class="fl">야간 문항 (날짜)</label>
+    <select class="fld" id="nm-qsel" style="margin-bottom:8px">${nights.map(n=>`<option value="${n.id}"${n.id===defId?' selected':''}>${esc(n.label)}</option>`).join('')}</select>
+    <div id="nm-chipbox"></div>`;
+  const renderChips=()=>{
+    const qid=$('nm-qsel').value; const seen=new Set(), list=[];
+    (byq[qid]||[]).forEach(r=>{ if(r.choice==='가능' && r.staff_id && !already.has(r.staff_id) && !seen.has(r.staff_id)){ seen.add(r.staff_id); list.push({id:r.staff_id, name:r.staff_name}); } });
+    list.sort((x,y)=>String(x.name).localeCompare(String(y.name),'ko'));
+    const cb=$('nm-chipbox');
+    if(!list.length){ cb.innerHTML=`<div style="font-size:12px;color:var(--muted);font-weight:700">이 날짜에 '가능' 제출자가 없어요</div>`; return; }
+    cb.innerHTML=`<div style="font-size:11.5px;color:var(--ink2);font-weight:800;margin-bottom:6px">가능 제출자 (탭하면 추가)</div><div class="nm-chips">`+
+      list.map(c=>`<button class="nm-chip" data-nmpick="${c.id}" data-nmnm="${esc(c.name)}">${esc(c.name)}</button>`).join('')+`</div>`;
+    cb.querySelectorAll('[data-nmpick]').forEach(b=>b.onclick=async()=>{
+      const ok=await rpc('admin_add_night_member',{p_admin_id:session.id, p_date:ymd(selectedDate), p_workplace:nmWp, p_staff_id:Number(b.dataset.nmpick), p_name:null}, `${b.dataset.nmnm}님 야간 추가`);
+      if(ok){ already.add(Number(b.dataset.nmpick)); loadNmCands(); }
+    });
+  };
+  $('nm-qsel').onchange=renderChips;
+  renderChips();
 }
 async function nmSave(){
   const sid=$('nm-staff').value?Number($('nm-staff').value):null;
