@@ -316,6 +316,10 @@ body[data-theme="matsuri"] .kicker::after{ content:" ⛩"; letter-spacing:0; }
 .cand-none{text-align:center;color:var(--muted);font-weight:600;font-size:13px;padding:20px}
 .draftbar{display:flex;align-items:center;gap:9px;background:#fdf0e6;border:1px solid #f3d9c2;color:#a85e2a;font-weight:800;font-size:12.5px;padding:9px 12px;border-radius:10px;margin-bottom:12px}
 .draftbar .db-btn{margin-left:auto;border:none;cursor:pointer;font-family:inherit;font-weight:800;font-size:11.5px;color:#fff;background:var(--rose);padding:6px 12px;border-radius:8px;flex-shrink:0}
+.nm-chips{display:flex;flex-wrap:wrap;gap:7px}
+.nm-chip{border:1px solid var(--line);cursor:pointer;font-family:inherit;font-weight:700;font-size:13px;padding:7px 13px;border-radius:99px;background:var(--soft);color:var(--rose-deep)}
+.nq-yes{font-size:11.5px;color:var(--ink2);font-weight:700;margin:2px 2px 0;line-height:1.5}
+.nq-yes b{color:#1f8f4e}
 </style>
 </head>
 <body>
@@ -533,6 +537,7 @@ body[data-theme="matsuri"] .kicker::after{ content:" ⛩"; letter-spacing:0; }
   <div class="modal-c">
     <div class="modal-t">야간 멤버 추가</div>
     <div class="modal-s" id="nm-sub"></div>
+    <div id="nm-cands" style="margin-bottom:12px"></div>
     <label class="fl">직원 선택</label>
     <select class="fld" id="nm-staff"></select>
     <label class="fl">또는 게스트 이름</label>
@@ -916,7 +921,27 @@ function openNmAdd(wp){
   $('nm-sub').textContent=`${ymd(selectedDate)} · ${wp} 야간`;
   $('nm-staff').innerHTML=`<option value="">— 직원 선택 —</option>`+staffList.map(s=>`<option value="${s.id}">${esc(s.name)}</option>`).join('');
   $('nm-guest').value='';
+  $('nm-cands').innerHTML='';
   $('nmModal').classList.add('show');
+  loadNmCands();
+}
+async function loadNmCands(){
+  const box=$('nm-cands'); const ym=ymOfDate(selectedDate);
+  const [ansR, memR] = await Promise.all([
+    supa.from('submission_answer_view').select('*').eq('ym', ym),
+    supa.from('night_member_view').select('*').eq('work_date', ymd(selectedDate))
+  ]);
+  const seen=new Set(), cands=[];
+  (ansR.data||[]).forEach(a=>{ if(a.qkey && a.qkey.indexOf('n:')===0 && a.choice==='가능' && a.staff_id && !seen.has(a.staff_id)){ seen.add(a.staff_id); cands.push({id:a.staff_id, name:a.staff_name}); } });
+  const already=new Set((memR.data||[]).filter(m=>m.workplace===nmWp && m.staff_id).map(m=>m.staff_id));
+  const list=cands.filter(c=>!already.has(c.id)).sort((x,y)=>String(x.name).localeCompare(String(y.name),'ko'));
+  if(!list.length){ box.innerHTML=`<div style="font-size:12px;color:var(--muted);font-weight:700">이 달 야간 '가능' 제출자가 없어요</div>`; return; }
+  box.innerHTML=`<div style="font-size:11.5px;color:var(--ink2);font-weight:800;margin-bottom:6px">야간 가능 제출자 (탭하면 추가)</div><div class="nm-chips">`+
+    list.map(c=>`<button class="nm-chip" data-nmpick="${c.id}" data-nmnm="${esc(c.name)}">${esc(c.name)}</button>`).join('')+`</div>`;
+  box.querySelectorAll('[data-nmpick]').forEach(b=>b.onclick=async()=>{
+    const ok=await rpc('admin_add_night_member',{p_admin_id:session.id, p_date:ymd(selectedDate), p_workplace:nmWp, p_staff_id:Number(b.dataset.nmpick), p_name:null}, `${b.dataset.nmnm}님 야간 추가`);
+    if(ok) loadNmCands();
+  });
 }
 async function nmSave(){
   const sid=$('nm-staff').value?Number($('nm-staff').value):null;
@@ -1046,9 +1071,19 @@ async function renderAdminSubmit(){
     if(error){ toast(error.message.replace(/^.*?:\s*/,''), true); return; }
     toast(pub?'이 달을 공개했어요':'비공개로 전환했어요'); await loadDraftMonths(); renderAdminSubmit();
   };
-  const nq=await supa.from('submission_night_view').select('*').eq('ym', admYM);
+  const [nq, ansR]=await Promise.all([
+    supa.from('submission_night_view').select('*').eq('ym', admYM),
+    supa.from('submission_answer_view').select('*').eq('ym', admYM)
+  ]);
   const nights=(nq.data||[]).sort((a,b)=>a.sort-b.sort||a.id-b.id);
-  $('admNightList').innerHTML=nights.length?nights.map(n=>`<div class="nq-item"><span>${esc(n.label)}</span><button class="btn warn nqx" data-nqdel="${n.id}">삭제</button></div>`).join(''):`<div style="font-size:12.5px;color:var(--muted);font-weight:700;padding:4px 2px">야간 문항 없음 (토요일 밤 데빌 등)</div>`;
+  const byq={}; (ansR.data||[]).forEach(a=>{ if(a.qkey&&a.qkey.indexOf('n:')===0){ (byq[a.qkey.slice(2)]=byq[a.qkey.slice(2)]||[]).push(a); } });
+  $('admNightList').innerHTML=nights.length?nights.map(n=>{
+    const rows=byq[String(n.id)]||[];
+    const yes=rows.filter(r=>r.choice==='가능').map(r=>r.staff_name);
+    const no=rows.filter(r=>r.choice==='불가능').length;
+    return `<div class="nq-item"><span>${esc(n.label)}</span><button class="btn warn nqx" data-nqdel="${n.id}">삭제</button></div>
+      <div class="nq-yes">가능 <b>${yes.length}</b>${yes.length?' · '+yes.map(esc).join(', '):''} · 불가능 ${no}</div>`;
+  }).join(''):`<div style="font-size:12.5px;color:var(--muted);font-weight:700;padding:4px 2px">야간 문항 없음 (토요일 밤 데빌 등)</div>`;
   $('admNightList').querySelectorAll('[data-nqdel]').forEach(b=>b.onclick=async()=>{
     if(!confirm('이 야간 문항을 삭제할까요? 관련 답변도 지워져요.')) return;
     const { error } = await supa.rpc('admin_del_night_q',{p_admin_id:session.id, p_pin:session.pin, p_id:Number(b.dataset.nqdel)});
