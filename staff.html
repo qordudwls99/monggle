@@ -433,11 +433,16 @@ body[data-theme="matsuri"] .kicker::after{ content:" ⛩"; letter-spacing:0; }
             <button id="admNextM">›</button>
           </div>
           <div id="admPubRow" style="margin:2px 0 14px"></div>
-          <label class="fl">야간 문항 추가 (이 달)</label>
-          <div class="frow" style="margin-bottom:9px">
-            <input type="text" class="fld" id="admNightLabel" placeholder="예: 7/4-5 데빌야간 11-5:00" style="margin-bottom:0">
+          <label class="fl">야간 문항 추가 (근무지·날짜 선택)</label>
+          <div class="frow" style="margin-bottom:8px">
+            <select class="fld" id="admNightWp" style="margin-bottom:0;flex:0 0 32%"><option>데빌</option><option>메이드</option><option>마츠리</option></select>
+            <input type="date" class="fld" id="admNightDate" style="margin-bottom:0">
+          </div>
+          <div class="frow" style="margin-bottom:8px">
+            <input type="text" class="fld" id="admNightHours" value="23:00-05:00" placeholder="시간 (예: 23:00-05:00)" style="margin-bottom:0">
             <button class="btn primary" id="admNightAdd" style="flex:0 0 auto">추가</button>
           </div>
+          <button class="btn ghost full" id="admNightSat" style="margin-bottom:11px">이 달 토요일 데빌 야간 일괄 추가</button>
           <div id="admNightList" style="margin-bottom:6px"></div>
           <div id="admSubStatus"></div>
         </div>
@@ -940,12 +945,13 @@ async function loadNmCands(){
     supa.from('submission_answer_view').select('*').eq('ym', ym),
     supa.from('night_member_view').select('*').eq('work_date', ymd(selectedDate))
   ]);
-  const nights=(nqR.data||[]).sort((a,b)=>a.sort-b.sort||a.id-b.id);
+  const nights=(nqR.data||[]).sort((a,b)=>String(a.work_date||"").localeCompare(String(b.work_date||""))||a.sort-b.sort||a.id-b.id);
   if(!nights.length){ box.innerHTML=`<div style="font-size:12px;color:var(--muted);font-weight:700">이 달 야간 문항이 없어요</div>`; return; }
   const byq={}; (ansR.data||[]).forEach(a=>{ if(a.qkey && a.qkey.indexOf('n:')===0){ (byq[a.qkey.slice(2)]=byq[a.qkey.slice(2)]||[]).push(a); } });
   const already=new Set((memR.data||[]).filter(m=>m.workplace===nmWp && m.staff_id).map(m=>m.staff_id));
   const yr=Number(ym.split('-')[0]); const tgt=ymd(selectedDate);
-  const covering=nights.find(n=>nightCovers(n.label, yr, tgt));
+  const covering = nights.find(n=> n.work_date===tgt && (!n.workplace || n.workplace===nmWp))
+                || nights.find(n=> nightCovers(n.label, yr, tgt));
   const defId=(covering||nights[0]).id;
   box.innerHTML=`<label class="fl">야간 문항 (날짜)</label>
     <select class="fld" id="nm-qsel" style="margin-bottom:8px">${nights.map(n=>`<option value="${n.id}"${n.id===defId?' selected':''}>${esc(n.label)}</option>`).join('')}</select>
@@ -1042,7 +1048,7 @@ async function renderSubmit(){
     supa.from('submission_night_view').select('*').eq('ym', submitYM),
     supa.rpc('my_submission',{p_staff_id:session.id, p_pin:session.pin, p_ym:submitYM})
   ]);
-  const nights=(nq.data||[]).sort((a,b)=>a.sort-b.sort||a.id-b.id);
+  const nights=(nq.data||[]).sort((a,b)=>String(a.work_date||"").localeCompare(String(b.work_date||""))||a.sort-b.sort||a.id-b.id);
   const ans={}; (mine.data||[]).forEach(a=>ans[a.qkey]=a.choice);
   const [y,m]=submitYM.split('-').map(Number); const N=daysInYM(submitYM);
   let html=`<div class="sub-sech">날짜별 희망 근무지</div>`;
@@ -1070,11 +1076,19 @@ async function submitSave(){
   toast(`제출했어요! (${data||0}개 입력)`);
 }
 
+async function addNightQ(wp, dateStr, hrs){
+  const d=new Date(dateStr+'T00:00:00');
+  const label=`${d.getMonth()+1}/${d.getDate()}(${DAYS[d.getDay()]}) ${wp} 야간${hrs?' '+hrs:''}`;
+  const { error } = await supa.rpc('admin_add_night_q',{p_admin_id:session.id, p_pin:session.pin, p_ym:admYM, p_workplace:wp, p_work_date:dateStr, p_hours:hrs||null, p_label:label});
+  if(error){ toast(error.message.replace(/^.*?:\s*/,''), true); return false; }
+  return true;
+}
 /* 관리자: 제출·편성 관리 카드 */
 async function renderAdminSubmit(){
   if(!admYM) admYM=thisNextYM();
   await loadDraftMonths();
   $('admMonthLabel').textContent=ymLabelText(admYM);
+  const dtEl=$('admNightDate'); if(dtEl && (!dtEl.value || dtEl.value.slice(0,7)!==admYM)) dtEl.value=admYM+'-01';
   const isDraft=draftMonths.has(admYM);
   const isOpen=openMonths.has(admYM);
   $('admPubRow').innerHTML=`
@@ -1098,7 +1112,7 @@ async function renderAdminSubmit(){
     supa.from('submission_night_view').select('*').eq('ym', admYM),
     supa.from('submission_answer_view').select('*').eq('ym', admYM)
   ]);
-  const nights=(nq.data||[]).sort((a,b)=>a.sort-b.sort||a.id-b.id);
+  const nights=(nq.data||[]).sort((a,b)=>String(a.work_date||"").localeCompare(String(b.work_date||""))||a.sort-b.sort||a.id-b.id);
   const byq={}; (ansR.data||[]).forEach(a=>{ if(a.qkey&&a.qkey.indexOf('n:')===0){ (byq[a.qkey.slice(2)]=byq[a.qkey.slice(2)]||[]).push(a); } });
   $('admNightList').innerHTML=nights.length?nights.map(n=>{
     const rows=byq[String(n.id)]||[];
@@ -1865,10 +1879,16 @@ function wireUI(){
   $('admPrevM').onclick = ()=>{ admYM=ymShift(admYM||thisNextYM(),-1); renderAdminSubmit(); };
   $('admNextM').onclick = ()=>{ admYM=ymShift(admYM||thisNextYM(),1); renderAdminSubmit(); };
   $('admNightAdd').onclick = async()=>{
-    const lb=$('admNightLabel').value.trim(); if(!lb){ toast('문항 내용을 입력하세요', true); return; }
-    const { error } = await supa.rpc('admin_add_night_q',{p_admin_id:session.id, p_pin:session.pin, p_ym:admYM, p_label:lb});
-    if(error){ toast(error.message.replace(/^.*?:\s*/,''), true); return; }
-    $('admNightLabel').value=''; toast('추가했어요'); renderAdminSubmit();
+    const wp=$('admNightWp').value, dt=$('admNightDate').value, hrs=$('admNightHours').value.trim();
+    if(!dt){ toast('날짜를 고르세요', true); return; }
+    if(dt.slice(0,7)!==admYM){ toast('이 달 안의 날짜를 골라주세요', true); return; }
+    if(await addNightQ(wp, dt, hrs)){ toast('추가했어요'); renderAdminSubmit(); }
+  };
+  $('admNightSat').onclick = async()=>{
+    const [y,m]=admYM.split('-').map(Number), N=daysInYM(admYM), hrs=$('admNightHours').value.trim()||'23:00-05:00';
+    let cnt=0;
+    for(let day=1; day<=N; day++){ const d=new Date(y,m-1,day); if(d.getDay()===6){ if(await addNightQ('데빌', admYM+'-'+String(day).padStart(2,'0'), hrs)) cnt++; } }
+    toast(`토요일 데빌 야간 ${cnt}개 처리했어요`); renderAdminSubmit();
   };
   // 희망자 배정 모달
   $('cand-save').onclick = candSave;

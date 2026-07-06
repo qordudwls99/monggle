@@ -32,7 +32,7 @@ alter table submission_answers enable row level security;
 
 -- 야간 문항 목록 (제출폼 렌더용)
 create or replace view submission_night_view as
-  select id, ym, label, sort from submission_night_q;
+  select id, ym, label, sort, workplace, work_date, hours from submission_night_q;
 grant select on submission_night_view to anon, authenticated;
 
 -- 제출 현황 (이름 포함, 관리자/배정용)
@@ -72,15 +72,25 @@ begin
 end; $$;
 
 -- 관리자: 야간 문항 추가/삭제
-create or replace function admin_add_night_q(p_admin_id bigint, p_pin text, p_ym text, p_label text)
+-- 야간 문항은 근무지+날짜로 구조화 (라벨은 표시용으로 저장)
+alter table submission_night_q add column if not exists workplace text;
+alter table submission_night_q add column if not exists work_date date;
+alter table submission_night_q add column if not exists hours text;
+
+drop function if exists admin_add_night_q(bigint, text, text, text);
+create or replace function admin_add_night_q(p_admin_id bigint, p_pin text, p_ym text,
+  p_workplace text, p_work_date date, p_hours text, p_label text)
 returns void language plpgsql security definer set search_path = public as $$
 declare v staff;
 begin
   v := _verify(p_admin_id, p_pin);
   if v.id is null or not v.is_admin then raise exception '관리자만 가능합니다'; end if;
-  if coalesce(trim(p_label),'') = '' then raise exception '문항 내용을 입력하세요'; end if;
-  insert into submission_night_q(ym, label, sort)
-    values (p_ym, trim(p_label), coalesce((select max(sort)+1 from submission_night_q where ym = p_ym), 0));
+  if p_work_date is null then raise exception '날짜를 골라주세요'; end if;
+  -- 같은 근무지+날짜가 이미 있으면 건너뜀 (일괄 추가 안전)
+  if not exists (select 1 from submission_night_q where ym = p_ym and workplace = p_workplace and work_date = p_work_date) then
+    insert into submission_night_q(ym, label, sort, workplace, work_date, hours)
+      values (p_ym, p_label, extract(day from p_work_date)::int, p_workplace, p_work_date, nullif(trim(p_hours),''));
+  end if;
 end; $$;
 
 create or replace function admin_del_night_q(p_admin_id bigint, p_pin text, p_id bigint)
