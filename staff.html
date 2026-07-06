@@ -963,22 +963,32 @@ const SUB_OPTS = ['메이드','데빌','마츠리','상관없음','출근불가�
 const NIGHT_OPTS = ['가능','불가능'];
 let submitYM=null, admYM=null, candWp=null, candDate=null;
 let draftMonths=new Set();
+let openMonths=new Set();
 function thisNextYM(){ const t=new Date(); const d=new Date(t.getFullYear(), t.getMonth()+1, 1); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'); }
 function ymOfDate(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'); }
 function ymShift(ym, delta){ const [y,m]=ym.split('-').map(Number); const d=new Date(y, m-1+delta, 1); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'); }
 function ymLabelText(ym){ const [y,m]=ym.split('-').map(Number); return `${y}년 ${m}월`; }
 function daysInYM(ym){ const [y,m]=ym.split('-').map(Number); return new Date(y,m,0).getDate(); }
 async function loadDraftMonths(){
-  try{ const { data } = await supa.from('schedule_status_view').select('*').eq('published', false);
-    draftMonths = new Set((data||[]).map(r=>r.ym)); }catch(e){ draftMonths=new Set(); }
+  try{ const { data } = await supa.from('schedule_status_view').select('*');
+    draftMonths = new Set((data||[]).filter(r=>r.published===false).map(r=>r.ym));
+    openMonths = new Set((data||[]).filter(r=>r.submit_open).map(r=>r.ym));
+  }catch(e){ draftMonths=new Set(); openMonths=new Set(); }
 }
 
 async function renderSubmit(){
   const list=$('submitList'), save=$('submitSaveBtn');
   if(!session){ save.style.display='none'; $('subMonthLabel').textContent='';
     list.innerHTML=`<button class="btn primary full" id="subLogin">로그인하기</button>`; $('subLogin').onclick=openLogin; return; }
-  if(!submitYM) submitYM=thisNextYM();
+  await loadDraftMonths();
+  if(!submitYM) submitYM=[...openMonths].sort()[0] || thisNextYM();
   $('subMonthLabel').textContent=ymLabelText(submitYM);
+  if(!openMonths.has(submitYM)){
+    save.style.display='none';
+    const hint = openMonths.size ? `제출 받는 달: ${[...openMonths].sort().map(ymLabelText).join(', ')}` : '아직 관리자가 제출을 열지 않았어요.';
+    list.innerHTML=`<div class="empty-box"><div class="e-ic">🔒</div><div class="e-t">이 달은 제출 기간이 아니에요</div><div class="e-s">${hint}</div></div>`;
+    return;
+  }
   list.innerHTML=`<div style="text-align:center;padding:30px"><span class="spin"></span></div>`;
   const [nq, mine] = await Promise.all([
     supa.from('submission_night_view').select('*').eq('ym', submitYM),
@@ -1015,10 +1025,21 @@ async function submitSave(){
 /* 관리자: 제출·편성 관리 카드 */
 async function renderAdminSubmit(){
   if(!admYM) admYM=thisNextYM();
+  await loadDraftMonths();
   $('admMonthLabel').textContent=ymLabelText(admYM);
   const isDraft=draftMonths.has(admYM);
-  $('admPubRow').innerHTML=`<div class="pubrow"><span class="pub-badge ${isDraft?'off':'on'}">${isDraft?'작성중 · 직원/손님에게 안 보임':'공개중 · 모두 볼 수 있음'}</span>
-    <button class="btn ${isDraft?'primary':'ghost'}" id="admPubToggle" style="padding:7px 13px;font-size:12px">${isDraft?'이 달 공개하기':'비공개로 전환'}</button></div>`;
+  const isOpen=openMonths.has(admYM);
+  $('admPubRow').innerHTML=`
+    <div class="pubrow" style="margin-bottom:8px"><span class="pub-badge ${isOpen?'on':'off'}">제출 ${isOpen?'받는 중':'닫힘'}</span>
+      <button class="btn ${isOpen?'ghost':'primary'}" id="admOpenToggle" style="padding:7px 13px;font-size:12px">${isOpen?'제출 마감하기':'직원 제출 열기'}</button></div>
+    <div class="pubrow"><span class="pub-badge ${isDraft?'off':'on'}">${isDraft?'스케줄 작성중(비공개)':'스케줄 공개중'}</span>
+      <button class="btn ${isDraft?'primary':'ghost'}" id="admPubToggle" style="padding:7px 13px;font-size:12px">${isDraft?'이 달 공개하기':'비공개로 전환'}</button></div>`;
+  $('admOpenToggle').onclick=async()=>{
+    const open=!isOpen;
+    const { error } = await supa.rpc('admin_set_submit_open',{p_admin_id:session.id, p_pin:session.pin, p_ym:admYM, p_open:open});
+    if(error){ toast(error.message.replace(/^.*?:\s*/,''), true); return; }
+    toast(open?'제출을 열었어요':'제출을 마감했어요'); await loadDraftMonths(); renderAdminSubmit();
+  };
   $('admPubToggle').onclick=async()=>{
     const pub=isDraft;
     const { error } = await supa.rpc('admin_set_published',{p_admin_id:session.id, p_pin:session.pin, p_ym:admYM, p_pub:pub});

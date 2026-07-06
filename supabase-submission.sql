@@ -59,6 +59,9 @@ declare v staff; n int;
 begin
   v := _verify(p_staff_id, p_pin);
   if v.id is null then raise exception 'PIN이 올바르지 않습니다'; end if;
+  if not exists (select 1 from schedule_status where ym = p_ym and submit_open) then
+    raise exception '지금은 제출 기간이 아니에요';
+  end if;
   delete from submission_answers where staff_id = p_staff_id and ym = p_ym;
   insert into submission_answers(staff_id, ym, qkey, choice)
     select p_staff_id, p_ym, e->>'qkey', e->>'choice'
@@ -109,16 +112,21 @@ begin
   return n;
 end; $$;
 
--- 월별 스케줄 공개 상태 (row 없으면 '공개'로 간주 → 기존 데이터 영향 없음)
+-- 월별 상태: published(스케줄 공개) + submit_open(제출 받기)
+--   published: row 없으면 '공개'로 간주 (기존 데이터 영향 없음)
+--   submit_open: row 없으면 '닫힘' → 관리자가 열 때만 직원 제출 가능
 create table if not exists schedule_status (
   ym text primary key,
   published boolean not null default false,
+  submit_open boolean not null default false,
   updated_at timestamptz not null default now()
 );
+alter table schedule_status add column if not exists submit_open boolean not null default false;
 alter table schedule_status enable row level security;
-create or replace view schedule_status_view as select ym, published from schedule_status;
+create or replace view schedule_status_view as select ym, published, submit_open from schedule_status;
 grant select on schedule_status_view to anon, authenticated;
 
+-- 스케줄 공개/비공개 (새 row는 submit_open 기본 닫힘)
 create or replace function admin_set_published(p_admin_id bigint, p_pin text, p_ym text, p_pub boolean)
 returns void language plpgsql security definer set search_path = public as $$
 declare v staff;
@@ -129,5 +137,17 @@ begin
     on conflict (ym) do update set published = excluded.published, updated_at = now();
 end; $$;
 
+-- 제출 받기 열기/닫기 (새 row는 published 기본 공개 → 제출 열어도 스케줄 숨지 않음)
+create or replace function admin_set_submit_open(p_admin_id bigint, p_pin text, p_ym text, p_open boolean)
+returns void language plpgsql security definer set search_path = public as $$
+declare v staff;
+begin
+  v := _verify(p_admin_id, p_pin);
+  if v.id is null or not v.is_admin then raise exception '관리자만 가능합니다'; end if;
+  insert into schedule_status(ym, published, submit_open, updated_at) values (p_ym, true, p_open, now())
+    on conflict (ym) do update set submit_open = excluded.submit_open, updated_at = now();
+end; $$;
+
 grant execute on function my_submission, submit_shift, admin_add_night_q,
-  admin_del_night_q, admin_assign_from_submission, admin_set_published to anon, authenticated;
+  admin_del_night_q, admin_assign_from_submission, admin_set_published,
+  admin_set_submit_open to anon, authenticated;
