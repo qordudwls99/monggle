@@ -217,6 +217,12 @@ const avStyle = url => url?`background-image:url('${String(url).replace(/'/g,'%2
 
 let supa=null, selectedDate=new Date(), wpFilter='메이드', viewMode='day', navDir=0;
 let minDate=null, maxDate=null;   // 손님이 볼 수 있는 범위 (1개월 전 ~ 마지막 등록일)
+let draftMonths=new Set();        // 아직 공개 안 된(작성중) 달 → 손님에게 숨김
+const ymOf = d => ymd(d).slice(0,7);
+async function loadDraftMonths(){
+  try{ const { data } = await supa.from('schedule_status_view').select('*').eq('published', false);
+    draftMonths = new Set((data||[]).map(r=>r.ym)); }catch(e){ draftMonths=new Set(); }
+}
 
 function isConfigured(){
   return CONFIG.SUPABASE_URL && !CONFIG.SUPABASE_URL.startsWith('YOUR_') &&
@@ -253,7 +259,7 @@ async function boot(){
   $('mainApp').style.display='flex';
   applyTheme(wpFilter);
   renderChips();
-  await loadBounds(); clampSel();
+  await loadBounds(); await loadDraftMonths(); clampSel();
   $('viewSeg').querySelectorAll('button').forEach(b=>b.onclick=()=>{
     viewMode=b.dataset.v; navDir=0;
     $('viewSeg').querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b));
@@ -263,7 +269,7 @@ async function boot(){
   $('next').onclick = ()=>{ navDir=1; selectedDate.setDate(selectedDate.getDate()+(viewMode==='week'?7:1)); clampSel(); render(); };
   $('todayBtn').onclick = ()=>{ navDir=0; selectedDate=new Date(); clampSel(); render(); };
   render();
-  setInterval(async()=>{ if(document.visibilityState==='visible'){ navDir=0; await loadBounds(); render(); } }, 30000);
+  setInterval(async()=>{ if(document.visibilityState==='visible'){ navDir=0; await loadBounds(); await loadDraftMonths(); render(); } }, 30000);
 }
 function animList(){
   const l=$('list'); const c = navDir>0?'anim-r':navDir<0?'anim-l':'anim-f';
@@ -305,6 +311,10 @@ function render(){ updateNav(); viewMode==='week' ? renderWeek() : renderDay(); 
 async function renderDay(){
   const d=selectedDate, isToday=ymd(d)===ymd(new Date());
   $('dateLabel').innerHTML = `${d.getMonth()+1}월 ${d.getDate()}일 (${DAYS[d.getDay()]})<small>${isToday?'오늘':''}</small>`;
+  if(draftMonths.has(ymOf(d))){
+    $('list').innerHTML = `<div class="empty-box"><div class="e-ic"></div><div class="e-t">아직 공개되지 않은 달이에요</div><div class="e-s">스케줄이 확정되면 볼 수 있어요</div></div>`;
+    animList(); return;
+  }
   $('list').innerHTML = `<div style="text-align:center;padding:30px"><span class="spin"></span></div>`;
   const shifts = await fetchRange(ymd(d), ymd(d)); if(shifts===null) return;
   const closed = await fetchClosures(ymd(d), ymd(d));
@@ -361,12 +371,13 @@ async function renderWeek(){
   let cols='';
   for(let i=0;i<7;i++){
     const day=new Date(mon); day.setDate(day.getDate()+i); const ds=ymd(day);
-    const dayShifts = shifts.filter(s=>s.work_date===ds);
+    const dayDraft = draftMonths.has(ymOf(day));
+    const dayShifts = dayDraft ? [] : shifts.filter(s=>s.work_date===ds);
     const memo = dayShifts.find(r=>r.workplace===wpFilter && r.memo)?.memo;
-    const isNight = night[ds+'|'+wpFilter];
+    const isNight = dayDraft ? false : night[ds+'|'+wpFilter];
     const isToday = ds===todayStr, weekend = (day.getDay()===0||day.getDay()===6);
     let body=''; const multi=groups.length>1;
-    groups.forEach(wp=>{
+    if(!dayDraft) groups.forEach(wp=>{
       if(closed.has(ds+'|'+wp)){ body += `<div class="dcol-off">휴무</div>`; return; }
       const filled=dayShifts.filter(s=>s.workplace===wp&&(s.display_name||s.staff_name));
       if(filled.length===0) return;
@@ -374,7 +385,7 @@ async function renderWeek(){
       const nm = filled.map(s=>`<div class="nm${s.is_guest?' guest':''}">${esc(s.display_name||s.staff_name)}</div>`).join('');
       body += `<div class="wpgrp">${multi?`<div class="wpgrp-h"><span class="wp-dot ${wp}"></span>${wp}</div>`:''}${nm}</div>`;
     });
-    if(!body) body = `<div class="dcol-off">휴무</div>`;
+    if(!body) body = dayDraft ? `<div class="dcol-off">미공개</div>` : `<div class="dcol-off">휴무</div>`;
     cols += `<div class="daycol${isToday?' today':''}" data-goday="${ds}">
       <div class="dcol-h${weekend?' weekend':''}"><div class="dow">${DAYS[day.getDay()]}</div>${day.getMonth()+1}/${day.getDate()}${isToday?' <span class="tdy">오늘</span>':''}${isNight?'<div class="night-tag">야간</div>':''}${memo?`<div class="dcol-ev">${esc(memo)}</div>`:''}</div>
       <div class="dcol-body">${body}</div></div>`;

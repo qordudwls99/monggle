@@ -289,6 +289,33 @@ body[data-theme="matsuri"] .kicker::after{ content:" ⛩"; letter-spacing:0; }
 .crop-ring{position:absolute;inset:0;border-radius:50%;box-shadow:0 0 0 999px rgba(22,14,20,.5);pointer-events:none}
 .crop-hint{text-align:center;font-size:12px;font-weight:700;color:var(--muted);margin:2px 0 10px}
 .crop-zoom{width:100%;margin:4px 0 14px;accent-color:var(--rose)}
+
+/* ===== 시프트 제출 / 편성 ===== */
+.submonthbar{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px;padding:9px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.submonthbar button{border:none;cursor:pointer;background:none;width:32px;height:32px;font-size:19px;font-weight:700;color:var(--rose);font-family:inherit}
+.submonth-label{flex:1;text-align:center;font-weight:800;font-size:16px;color:var(--ink)}
+.sub-sech{font-size:13px;font-weight:800;color:var(--ink);margin:16px 2px 8px}
+.subrow{display:flex;align-items:center;gap:10px;padding:7px 2px;border-bottom:1px solid var(--line)}
+.subrow .sd{font-weight:800;font-size:14px;color:var(--ink);min-width:80px}
+.subrow .sd.wknd{color:var(--rose-deep)}
+.subrow select{flex:1;margin-bottom:0}
+.subrow.night{background:#f6f5fb;border-radius:10px;padding:9px 10px;border-bottom:none;margin-bottom:6px}
+.subrow.night .sd{min-width:0;flex:1.4;font-size:12.5px;color:#4f4a7a}
+.pubrow{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+.pub-badge{font-size:11px;font-weight:800;padding:5px 11px;border-radius:99px}
+.pub-badge.on{background:#e7f6ec;color:#1f8f4e}
+.pub-badge.off{background:#fdecef;color:#c0455c}
+.nq-item{display:flex;align-items:center;gap:8px;padding:8px 2px;border-bottom:1px solid var(--line);font-size:13px;font-weight:700;color:var(--ink)}
+.nq-item:last-child{border-bottom:none}
+.nq-item .nqx{margin-left:auto;padding:5px 10px;font-size:11px}
+.candrow{display:flex;align-items:center;gap:11px;padding:12px 2px;border-bottom:1px solid var(--line);cursor:pointer}
+.candrow:last-child{border-bottom:none}
+.candrow input{width:20px;height:20px;flex-shrink:0;accent-color:var(--rose)}
+.candrow .cn{flex:1;font-weight:700;font-size:15px;color:var(--ink)}
+.candrow .ct{font-size:10px;font-weight:800;color:var(--gold);background:#f3e7c8;padding:3px 8px;border-radius:99px}
+.cand-none{text-align:center;color:var(--muted);font-weight:600;font-size:13px;padding:20px}
+.draftbar{display:flex;align-items:center;gap:9px;background:#fdf0e6;border:1px solid #f3d9c2;color:#a85e2a;font-weight:800;font-size:12.5px;padding:9px 12px;border-radius:10px;margin-bottom:12px}
+.draftbar .db-btn{margin-left:auto;border:none;cursor:pointer;font-family:inherit;font-weight:800;font-size:11.5px;color:#fff;background:var(--rose);padding:6px 12px;border-radius:8px;flex-shrink:0}
 </style>
 </head>
 <body>
@@ -333,6 +360,7 @@ body[data-theme="matsuri"] .kicker::after{ content:" ⛩"; letter-spacing:0; }
       <button class="tab on" data-tab="schedule">스케줄</button>
       <button class="tab" data-tab="swaps">대타 게시판</button>
       <button class="tab" data-tab="mine">내 근무</button>
+      <button class="tab" data-tab="submit">시프트 제출</button>
       <button class="tab" data-tab="noti" id="notiTab" style="display:none">알림<span id="notiBadge" class="notibadge" style="display:none">0</span></button>
       <button class="tab" data-tab="admin" id="adminTab" style="display:none">관리</button>
     </div>
@@ -375,12 +403,42 @@ body[data-theme="matsuri"] .kicker::after{ content:" ⛩"; letter-spacing:0; }
         <div id="mineList"></div>
       </div>
 
+      <!-- 시프트 제출 -->
+      <div id="screen-submit" class="screen">
+        <div class="sec-title">시프트 제출</div>
+        <div class="sec-sub">희망 근무를 날짜별로 골라 제출해요. 마감 전이면 언제든 수정할 수 있어요.</div>
+        <div class="submonthbar">
+          <button id="subPrevM">‹</button>
+          <div class="submonth-label" id="subMonthLabel"></div>
+          <button id="subNextM">›</button>
+        </div>
+        <div id="submitList"></div>
+        <button class="btn primary full" id="submitSaveBtn" style="margin-top:14px;display:none">제출하기</button>
+      </div>
+
       <!-- 관리 -->
       <div id="screen-admin" class="screen">
         <div class="sec-title">관리자</div>
         <div class="sec-sub">근무와 스태프를 관리해요.</div>
 
         <div class="form-card">
+          <div class="fc-t">시프트 제출 · 편성</div>
+          <div class="submonthbar">
+            <button id="admPrevM">‹</button>
+            <div class="submonth-label" id="admMonthLabel"></div>
+            <button id="admNextM">›</button>
+          </div>
+          <div id="admPubRow" style="margin:2px 0 14px"></div>
+          <label class="fl">야간 문항 추가 (이 달)</label>
+          <div class="frow" style="margin-bottom:9px">
+            <input type="text" class="fld" id="admNightLabel" placeholder="예: 7/4-5 데빌야간 11-5:00" style="margin-bottom:0">
+            <button class="btn primary" id="admNightAdd" style="flex:0 0 auto">추가</button>
+          </div>
+          <div id="admNightList" style="margin-bottom:6px"></div>
+          <div id="admSubStatus"></div>
+        </div>
+
+        <div class="form-card" style="display:none">
           <div class="fc-t">출근 파일 가져오기 (엑셀)</div>
           <div style="font-size:12px;color:var(--ink2);font-weight:600;margin-bottom:11px;line-height:1.5">엑셀에서 <b>한 탭만</b> 저장한 파일을 올리세요. 날짜·이름을 자동으로 읽어 등록해요.</div>
           <input type="file" class="fld" id="imp-file" accept=".xlsx,.xls">
@@ -528,6 +586,17 @@ body[data-theme="matsuri"] .kicker::after{ content:" ⛩"; letter-spacing:0; }
   </div>
 </div>
 
+<!-- 희망자 배정 모달 -->
+<div class="modal" id="candModal">
+  <div class="modal-c">
+    <div class="modal-t">희망자 배정</div>
+    <div class="modal-s" id="cand-sub"></div>
+    <div id="cand-list" style="max-height:52vh;overflow-y:auto"></div>
+    <button class="btn primary full" id="cand-save" style="margin-top:10px">선택한 사람 배정</button>
+    <button class="closex" id="cand-close">닫기</button>
+  </div>
+</div>
+
 <!-- 프로필 사진 크롭 모달 -->
 <div class="modal" id="cropModal">
   <div class="modal-c">
@@ -589,6 +658,7 @@ async function boot(){
   supa = createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
   $('mainApp').style.display='flex';
   await loadDirectory();
+  await loadDraftMonths();
   wireUI();
   renderWho();
   applyTheme(wpFilter);
@@ -882,9 +952,123 @@ function refreshCurrent(){
   if(currentTab==='schedule') renderSchedule();
   else if(currentTab==='swaps') renderSwaps();
   else if(currentTab==='mine') renderMine();
+  else if(currentTab==='submit') renderSubmit();
   else if(currentTab==='admin') renderAdmin();
   else if(currentTab==='noti') renderNoti();
   if(session && session.is_admin) updateNotiBadge();
+}
+
+/* ============ 시프트 제출 / 편성 ============ */
+const SUB_OPTS = ['메이드','데빌','마츠리','상관없음','출근불가능'];
+const NIGHT_OPTS = ['가능','불가능'];
+let submitYM=null, admYM=null, candWp=null, candDate=null;
+let draftMonths=new Set();
+function thisNextYM(){ const t=new Date(); const d=new Date(t.getFullYear(), t.getMonth()+1, 1); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'); }
+function ymOfDate(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'); }
+function ymShift(ym, delta){ const [y,m]=ym.split('-').map(Number); const d=new Date(y, m-1+delta, 1); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'); }
+function ymLabelText(ym){ const [y,m]=ym.split('-').map(Number); return `${y}년 ${m}월`; }
+function daysInYM(ym){ const [y,m]=ym.split('-').map(Number); return new Date(y,m,0).getDate(); }
+async function loadDraftMonths(){
+  try{ const { data } = await supa.from('schedule_status_view').select('*').eq('published', false);
+    draftMonths = new Set((data||[]).map(r=>r.ym)); }catch(e){ draftMonths=new Set(); }
+}
+
+async function renderSubmit(){
+  const list=$('submitList'), save=$('submitSaveBtn');
+  if(!session){ save.style.display='none'; $('subMonthLabel').textContent='';
+    list.innerHTML=`<button class="btn primary full" id="subLogin">로그인하기</button>`; $('subLogin').onclick=openLogin; return; }
+  if(!submitYM) submitYM=thisNextYM();
+  $('subMonthLabel').textContent=ymLabelText(submitYM);
+  list.innerHTML=`<div style="text-align:center;padding:30px"><span class="spin"></span></div>`;
+  const [nq, mine] = await Promise.all([
+    supa.from('submission_night_view').select('*').eq('ym', submitYM),
+    supa.rpc('my_submission',{p_staff_id:session.id, p_pin:session.pin, p_ym:submitYM})
+  ]);
+  const nights=(nq.data||[]).sort((a,b)=>a.sort-b.sort||a.id-b.id);
+  const ans={}; (mine.data||[]).forEach(a=>ans[a.qkey]=a.choice);
+  const [y,m]=submitYM.split('-').map(Number); const N=daysInYM(submitYM);
+  let html=`<div class="sub-sech">날짜별 희망 근무지</div>`;
+  for(let day=1; day<=N; day++){
+    const dt=new Date(y, m-1, day); const dow=DAYS[dt.getDay()]; const wknd=(dt.getDay()===0||dt.getDay()===6);
+    const qkey='d:'+submitYM+'-'+String(day).padStart(2,'0'); const cur=ans[qkey]||'';
+    const opts=`<option value="">선택</option>`+SUB_OPTS.map(o=>`<option${o===cur?' selected':''}>${o}</option>`).join('');
+    html+=`<div class="subrow"><span class="sd${wknd?' wknd':''}">${m}/${day}(${dow})</span><select class="fld" data-qkey="${qkey}">${opts}</select></div>`;
+  }
+  if(nights.length){
+    html+=`<div class="sub-sech">야간 근무 (가능/불가능)</div>`;
+    nights.forEach(n=>{
+      const qkey='n:'+n.id; const cur=ans[qkey]||'';
+      const opts=`<option value="">선택</option>`+NIGHT_OPTS.map(o=>`<option${o===cur?' selected':''}>${o}</option>`).join('');
+      html+=`<div class="subrow night"><span class="sd">${esc(n.label)}</span><select class="fld" data-qkey="${qkey}">${opts}</select></div>`;
+    });
+  }
+  list.innerHTML=html; save.style.display='block';
+}
+async function submitSave(){
+  const answers=[];
+  $('submitList').querySelectorAll('select[data-qkey]').forEach(s=>{ if(s.value) answers.push({qkey:s.dataset.qkey, choice:s.value}); });
+  const { data, error } = await supa.rpc('submit_shift',{p_staff_id:session.id, p_pin:session.pin, p_ym:submitYM, p_answers:answers});
+  if(error){ toast(error.message.replace(/^.*?:\s*/,'')||'제출 실패', true); return; }
+  toast(`제출했어요! (${data||0}개 입력)`);
+}
+
+/* 관리자: 제출·편성 관리 카드 */
+async function renderAdminSubmit(){
+  if(!admYM) admYM=thisNextYM();
+  $('admMonthLabel').textContent=ymLabelText(admYM);
+  const isDraft=draftMonths.has(admYM);
+  $('admPubRow').innerHTML=`<div class="pubrow"><span class="pub-badge ${isDraft?'off':'on'}">${isDraft?'작성중 · 직원/손님에게 안 보임':'공개중 · 모두 볼 수 있음'}</span>
+    <button class="btn ${isDraft?'primary':'ghost'}" id="admPubToggle" style="padding:7px 13px;font-size:12px">${isDraft?'이 달 공개하기':'비공개로 전환'}</button></div>`;
+  $('admPubToggle').onclick=async()=>{
+    const pub=isDraft;
+    const { error } = await supa.rpc('admin_set_published',{p_admin_id:session.id, p_pin:session.pin, p_ym:admYM, p_pub:pub});
+    if(error){ toast(error.message.replace(/^.*?:\s*/,''), true); return; }
+    toast(pub?'이 달을 공개했어요':'비공개로 전환했어요'); await loadDraftMonths(); renderAdminSubmit();
+  };
+  const nq=await supa.from('submission_night_view').select('*').eq('ym', admYM);
+  const nights=(nq.data||[]).sort((a,b)=>a.sort-b.sort||a.id-b.id);
+  $('admNightList').innerHTML=nights.length?nights.map(n=>`<div class="nq-item"><span>${esc(n.label)}</span><button class="btn warn nqx" data-nqdel="${n.id}">삭제</button></div>`).join(''):`<div style="font-size:12.5px;color:var(--muted);font-weight:700;padding:4px 2px">야간 문항 없음 (토요일 밤 데빌 등)</div>`;
+  $('admNightList').querySelectorAll('[data-nqdel]').forEach(b=>b.onclick=async()=>{
+    if(!confirm('이 야간 문항을 삭제할까요? 관련 답변도 지워져요.')) return;
+    const { error } = await supa.rpc('admin_del_night_q',{p_admin_id:session.id, p_pin:session.pin, p_id:Number(b.dataset.nqdel)});
+    if(error){ toast(error.message.replace(/^.*?:\s*/,''), true); return; }
+    toast('삭제했어요'); renderAdminSubmit();
+  });
+  const sa=await supa.from('submission_answer_view').select('staff_id,staff_name').eq('ym', admYM);
+  const submitted=new Set((sa.data||[]).map(r=>r.staff_id));
+  const notYet=staffList.filter(s=>!submitted.has(s.id));
+  $('admSubStatus').innerHTML=`<div class="sub-sech">제출 현황 · ${submitted.size}/${staffList.length}명</div>`+
+    (notYet.length?`<div style="font-size:12.5px;color:var(--ink2);font-weight:700;line-height:1.7">미제출: ${notYet.map(s=>esc(s.name)).join(', ')||'-'}</div>`:`<div style="font-size:12.5px;color:#1f8f4e;font-weight:800">전원 제출 완료!</div>`);
+}
+
+/* 희망자 배정 모달 */
+async function openCandModal(wp){
+  candWp=wp; candDate=ymd(selectedDate); const ym=ymOfDate(selectedDate);
+  $('cand-sub').textContent=`${candDate} · ${wp} 희망자`;
+  $('cand-list').innerHTML=`<div style="text-align:center;padding:24px"><span class="spin"></span></div>`;
+  $('candModal').classList.add('show');
+  const [ansR, shR] = await Promise.all([
+    supa.from('submission_answer_view').select('*').eq('ym', ym).eq('qkey','d:'+candDate),
+    supa.from('shift_view').select('staff_id,workplace').eq('work_date', candDate)
+  ]);
+  const ans=ansR.data||[]; const placed={};
+  (shR.data||[]).forEach(s=>{ if(s.staff_id){ (placed[s.staff_id]=placed[s.staff_id]||new Set()).add(s.workplace); } });
+  const cands=[];
+  ans.forEach(a=>{
+    if(a.choice===wp){ if(!(placed[a.staff_id]&&placed[a.staff_id].has(wp))) cands.push({id:a.staff_id, name:a.staff_name, any:false}); }
+    else if(a.choice==='상관없음'){ if(!placed[a.staff_id]) cands.push({id:a.staff_id, name:a.staff_name, any:true}); }
+  });
+  cands.sort((x,y)=>(x.any?1:0)-(y.any?1:0)||String(x.name).localeCompare(String(y.name),'ko'));
+  $('cand-list').innerHTML = cands.length
+    ? cands.map(c=>`<label class="candrow"><input type="checkbox" value="${c.id}"><span class="cn">${esc(c.name)}</span>${c.any?'<span class="ct">상관없음</span>':''}</label>`).join('')
+    : `<div class="cand-none">이 매장을 희망한 사람이 없어요</div>`;
+}
+async function candSave(){
+  const ids=[...$('cand-list').querySelectorAll('input:checked')].map(i=>Number(i.value));
+  if(!ids.length){ toast('배정할 사람을 선택하세요', true); return; }
+  const { data, error } = await supa.rpc('admin_assign_from_submission',{p_admin_id:session.id, p_pin:session.pin, p_date:candDate, p_workplace:candWp, p_staff_ids:ids});
+  if(error){ toast(error.message.replace(/^.*?:\s*/,''), true); return; }
+  toast(`${data||0}명 배정했어요`); $('candModal').classList.remove('show'); renderSchedule();
 }
 function notiSeen(){ try{ return new Set(JSON.parse(localStorage.getItem('noti_seen_ids')||'[]')); }catch(e){ return new Set(); } }
 function notiSaveSeen(set){ localStorage.setItem('noti_seen_ids', JSON.stringify([...set].slice(-500))); }
@@ -975,6 +1159,8 @@ async function renderWeek(){
   const mon = mondayOf(selectedDate); const sun = new Date(mon); sun.setDate(sun.getDate()+6);
   $('dateLabel').innerHTML = `${mon.getMonth()+1}/${mon.getDate()} ~ ${sun.getMonth()+1}/${sun.getDate()}<small>주간 · 좌우로 넘겨보세요</small>`;
   list.innerHTML = `<div style="text-align:center;padding:30px"><span class="spin"></span></div>`;
+  await loadDraftMonths();
+  const admin = !!(session && session.is_admin);
   const shifts = await fetchRange(ymd(mon), ymd(sun));
   const closed = await fetchClosures(ymd(mon), ymd(sun));
   const night = await fetchNight(ymd(mon), ymd(sun));
@@ -983,12 +1169,14 @@ async function renderWeek(){
   let cols='';
   for(let i=0;i<7;i++){
     const day=new Date(mon); day.setDate(day.getDate()+i); const ds=ymd(day);
-    const dayShifts = shifts.filter(s=>s.work_date===ds);
+    const dayDraft = draftMonths.has(ymOfDate(day)) && !admin;
+    const dayShifts = dayDraft ? [] : shifts.filter(s=>s.work_date===ds);
     const memo = dayShifts.find(r=>r.workplace===wpFilter && r.memo)?.memo;
-    const isNight = night[ds+'|'+wpFilter];
+    const isNight = dayDraft ? false : night[ds+'|'+wpFilter];
     const isToday = ds===todayStr, weekend=(day.getDay()===0||day.getDay()===6);
     let body=''; const multi=groups.length>1;
-    groups.forEach(wp=>{
+    if(dayDraft){ body=''; }
+    else groups.forEach(wp=>{
       if(closed.has(ds+'|'+wp)){ body += `<div class="dcol-off">휴무</div>`; return; }
       const rows=dayShifts.filter(s=>s.workplace===wp); if(rows.length===0) return;
       const filled=rows.filter(s=>s.display_name||s.staff_name);
@@ -997,7 +1185,7 @@ async function renderWeek(){
       const nm=filled.map(s=>`<div class="nm${s.is_guest?' guest':''}">${esc(s.display_name||s.staff_name)}</div>`).join('')+(open>0?`<div class="nm op">모집중 ${open}</div>`:'');
       body += `<div class="wpgrp">${multi?`<div class="wpgrp-h"><span class="wp-dot ${wp}"></span>${wp}</div>`:''}${nm||'<div class="nm op">모집중</div>'}</div>`;
     });
-    if(!body) body = `<div class="dcol-off">휴무</div>`;
+    if(!body) body = dayDraft ? `<div class="dcol-off">미공개</div>` : `<div class="dcol-off">휴무</div>`;
     cols += `<div class="daycol${isToday?' today':''}" data-goday="${ds}">
       <div class="dcol-h${weekend?' weekend':''}"><div class="dow">${DAYS[day.getDay()]}</div>${day.getMonth()+1}/${day.getDate()}${isToday?' <span class="tdy">오늘</span>':''}${isNight?'<div class="night-tag">야간</div>':''}${memo?`<div class="dcol-ev">${esc(memo)}</div>`:''}</div>
       <div class="dcol-body">${body}</div></div>`;
@@ -1017,6 +1205,12 @@ async function renderDay(){
   const list = $('scheduleList');
   const admin = !!(session && session.is_admin);
   list.innerHTML = `<div style="text-align:center;padding:30px"><span class="spin"></span></div>`;
+  await loadDraftMonths();
+  const isDraft = draftMonths.has(ymOfDate(selectedDate));
+  if(isDraft && !admin){
+    list.innerHTML = `<div class="empty-box"><div class="e-ic"></div><div class="e-t">아직 공개되지 않은 달이에요</div><div class="e-s">스케줄이 확정되면 볼 수 있어요</div></div>`;
+    animList(); return;
+  }
   const shifts = await fetchShifts(ymd(selectedDate));
   const closed = await fetchClosures(ymd(selectedDate), ymd(selectedDate));
   const night = await fetchNight(ymd(selectedDate), ymd(selectedDate));
@@ -1025,6 +1219,7 @@ async function renderDay(){
   const groups = (wpFilter==='전체'?WORKPLACES:[wpFilter]);
   let html='';
   let total=0;
+  if(admin && isDraft) html += `<div class="draftbar">작성 중 · 직원·손님에겐 안 보여요<button class="db-btn" data-publish="1">공개하기</button></div>`;
   groups.forEach(wp=>{
     const isClosed = closed.has(ymd(selectedDate)+'|'+wp);
     const nightHrs = night[ymd(selectedDate)+'|'+wp];
@@ -1036,7 +1231,8 @@ async function renderDay(){
     const offBtn = admin ? `<button class="btn ghost" data-off="${wp}" data-on="${isClosed?1:0}" style="padding:4px 9px;font-size:11px">${isClosed?'휴무해제':'휴무'}</button>` : '';
     const nightBtn = (admin && !isClosed && wp==='데빌') ? `<button class="btn ghost" data-night="${wp}" data-on="${nightHrs?1:0}" data-hrs="${esc(nightHrs||'')}" style="padding:4px 9px;font-size:11px">${nightHrs?'야간해제':'야간'}</button>` : '';
     const addBtn = (admin && !isClosed && !nightHrs) ? `<button class="btn primary" data-add="${wp}" style="padding:4px 10px;font-size:11px">추가</button>` : '';
-    html += `<div class="wp-sec"><div class="wp-h"><span class="wp-dot ${wp}"></span><span class="wp-name">${wp}</span><span class="wp-count" style="margin-left:auto">${isClosed?'휴무':rows.length+'명'}</span>${offBtn}${nightBtn}${evBtn}${addBtn}</div>`;
+    const hopeBtn = (admin && !isClosed) ? `<button class="btn ghost" data-hope="${wp}" style="padding:4px 9px;font-size:11px">희망자</button>` : '';
+    html += `<div class="wp-sec"><div class="wp-h"><span class="wp-dot ${wp}"></span><span class="wp-name">${wp}</span><span class="wp-count" style="margin-left:auto">${isClosed?'휴무':rows.length+'명'}</span>${offBtn}${nightBtn}${evBtn}${hopeBtn}${addBtn}</div>`;
     if(isClosed){ html += `<div class="card" style="text-align:center;color:var(--ink2);font-weight:800;font-size:14px">휴무일</div></div>`; return; }
     if(nightHrs) html += `<div class="night-banner">${esc(nightHrs)}</div>`;
     if(ev) html += `<div class="ev-banner">${esc(ev)}</div>`;
@@ -1090,6 +1286,12 @@ async function renderDay(){
     rpc('admin_remove_night_member', { p_admin_id:session.id, p_id:Number(b.dataset.nmdel) }, '야간 멤버를 뺐어요'));
   list.querySelectorAll('[data-add]').forEach(b=>b.onclick=()=>openShiftAdd(b.dataset.add));
   list.querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>openShiftEdit(JSON.parse(b.dataset.edit)));
+  list.querySelectorAll('[data-hope]').forEach(b=>b.onclick=()=>openCandModal(b.dataset.hope));
+  list.querySelectorAll('[data-publish]').forEach(b=>b.onclick=async()=>{
+    if(!confirm('이 달 스케줄을 공개할까요? 공개하면 직원·손님이 볼 수 있어요.')) return;
+    const ok = await rpc('admin_set_published', { p_admin_id:session.id, p_ym:ymOfDate(selectedDate), p_pub:true }, '이 달을 공개했어요');
+    if(ok){ await loadDraftMonths(); renderSchedule(); }
+  });
 }
 function shiftCard(s, admin, apps){
   apps = apps||[];
@@ -1351,6 +1553,7 @@ function fillAdminStaffSelect(){
 function renderAdmin(){
   if(!(session && session.is_admin)) return;
   if(!$('af-date').value) $('af-date').value = ymd(selectedDate);
+  renderAdminSubmit();
   renderStaffList();
 }
 function renderStaffList(){
@@ -1575,6 +1778,23 @@ function wireUI(){
   $('loginPin').onkeydown = e=>{ if(e.key==='Enter') doLogin(); };
   $('subConfirm').onclick = confirmSub;
   $('subClose').onclick = closeSubModal;
+  // 시프트 제출
+  $('subPrevM').onclick = ()=>{ submitYM=ymShift(submitYM||thisNextYM(),-1); renderSubmit(); };
+  $('subNextM').onclick = ()=>{ submitYM=ymShift(submitYM||thisNextYM(),1); renderSubmit(); };
+  $('submitSaveBtn').onclick = submitSave;
+  // 관리자 제출·편성
+  $('admPrevM').onclick = ()=>{ admYM=ymShift(admYM||thisNextYM(),-1); renderAdminSubmit(); };
+  $('admNextM').onclick = ()=>{ admYM=ymShift(admYM||thisNextYM(),1); renderAdminSubmit(); };
+  $('admNightAdd').onclick = async()=>{
+    const lb=$('admNightLabel').value.trim(); if(!lb){ toast('문항 내용을 입력하세요', true); return; }
+    const { error } = await supa.rpc('admin_add_night_q',{p_admin_id:session.id, p_pin:session.pin, p_ym:admYM, p_label:lb});
+    if(error){ toast(error.message.replace(/^.*?:\s*/,''), true); return; }
+    $('admNightLabel').value=''; toast('추가했어요'); renderAdminSubmit();
+  };
+  // 희망자 배정 모달
+  $('cand-save').onclick = candSave;
+  $('cand-close').onclick = ()=> $('candModal').classList.remove('show');
+  $('candModal').onclick = e=>{ if(e.target.id==='candModal') $('candModal').classList.remove('show'); };
   $('addShiftBtn').onclick = addShift;
   $('addStaffBtn').onclick = addStaff;
   $('staffSearch').oninput = renderStaffList;
