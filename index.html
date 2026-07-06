@@ -48,7 +48,27 @@ body{
 .datebar button{border:none;cursor:pointer;background:none;width:32px;height:32px;font-size:19px;font-weight:700;color:var(--rose);font-family:inherit}
 .datebar{position:relative}
 .datebar .dlabel{flex:1;text-align:center;font-weight:800;font-size:15.5px;color:var(--ink);cursor:pointer}
-.datepick{position:absolute;left:50%;bottom:0;width:1px;height:1px;opacity:0;border:0;padding:0;pointer-events:none}
+/* 커스텀 달력 */
+.modal{position:fixed;inset:0;z-index:80;display:none;align-items:flex-end;justify-content:center;background:rgba(60,40,42,.45);backdrop-filter:blur(3px)}
+.modal.show{display:flex}
+.modal-c{width:100%;max-width:480px;background:#fff;border-radius:24px 24px 0 0;padding:22px 22px max(22px,env(safe-area-inset-bottom));animation:up .28s ease-out}
+@keyframes up{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+.closex{width:100%;text-align:center;margin-top:8px;color:var(--muted);font-weight:700;font-size:13px;background:none;border:none;cursor:pointer;padding:8px}
+.cal{padding-top:2px}
+.cal-h{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.cal-h .cal-t{font-weight:800;font-size:16.5px;color:var(--ink)}
+.cal-h button{border:none;background:none;cursor:pointer;font-family:inherit;font-size:22px;font-weight:700;color:var(--rose);width:40px;height:40px;border-radius:10px}
+.cal-dow{display:grid;grid-template-columns:repeat(7,1fr);margin-bottom:6px}
+.cal-dow span{text-align:center;font-size:11px;font-weight:800;color:var(--muted);padding:4px 0}
+.cal-dow span.sun{color:#d0596b}.cal-dow span.sat{color:#5b7fd0}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.cal-cell{aspect-ratio:1;border:none;background:none;cursor:pointer;font-family:inherit;font-size:14.5px;font-weight:700;color:var(--ink);border-radius:11px;display:flex;align-items:center;justify-content:center;transition:transform .1s}
+.cal-cell:active{transform:scale(.9)}
+.cal-cell.dim{pointer-events:none}
+.cal-cell.sun{color:#d0596b}.cal-cell.sat{color:#5b7fd0}
+.cal-cell.today{outline:1.5px solid var(--rose);outline-offset:-1.5px}
+.cal-cell.sel{background:var(--rose)!important;color:#fff!important}
+.cal-cell:disabled{color:#e2d4d7;pointer-events:none}
 .datebar .dlabel small{display:block;font-size:11px;font-weight:700;color:var(--muted)}
 .today-btn{font-size:11px !important;width:auto !important;padding:0 11px;height:32px;color:var(--muted) !important}
 
@@ -193,12 +213,23 @@ body[data-theme="matsuri"] .kicker::after{ content:" ⛩"; letter-spacing:0; }
         <div class="dlabel" id="dateLabel"></div>
         <button id="next">›</button>
         <button class="today-btn" id="todayBtn">오늘</button>
-        <input type="date" id="datePick" class="datepick">
       </div>
       <div class="chips" id="wpChips"></div>
       <div id="list"></div>
     </div>
 
+  </div>
+</div>
+
+<!-- 달력 모달 -->
+<div class="modal" id="calModal">
+  <div class="modal-c">
+    <div class="cal">
+      <div class="cal-h"><button id="calPrev">‹</button><div class="cal-t" id="calTitle"></div><button id="calNext">›</button></div>
+      <div class="cal-dow"><span class="sun">일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span class="sat">토</span></div>
+      <div class="cal-grid" id="calGrid"></div>
+    </div>
+    <button class="closex" id="calClose">닫기</button>
   </div>
 </div>
 
@@ -273,11 +304,35 @@ async function boot(){
   $('prev').onclick = ()=>{ navDir=-1; selectedDate.setDate(selectedDate.getDate()-(viewMode==='week'?7:1)); clampSel(); render(); };
   $('next').onclick = ()=>{ navDir=1; selectedDate.setDate(selectedDate.getDate()+(viewMode==='week'?7:1)); clampSel(); render(); };
   $('todayBtn').onclick = ()=>{ navDir=0; selectedDate=new Date(); clampSel(); render(); };
-  $('dateLabel').onclick = ()=>{ const dp=$('datePick'); dp.value=ymd(selectedDate); if(minDate) dp.min=minDate; if(maxDate) dp.max=maxDate; if(dp.showPicker) dp.showPicker(); else dp.click(); };
-  $('datePick').onchange = ()=>{ if(!$('datePick').value) return; navDir=0; selectedDate=new Date($('datePick').value+'T00:00:00'); clampSel(); render(); };
+  $('dateLabel').onclick = openCalendar;
+  $('calPrev').onclick = ()=>{ calM--; if(calM<0){ calM=11; calY--; } renderCal(); };
+  $('calNext').onclick = ()=>{ calM++; if(calM>11){ calM=0; calY++; } renderCal(); };
+  $('calClose').onclick = ()=> $('calModal').classList.remove('show');
+  $('calModal').onclick = e=>{ if(e.target.id==='calModal') $('calModal').classList.remove('show'); };
   render();
   setupPTR(document.querySelector('.body'), async()=>{ navDir=0; await loadBounds(); await loadDraftMonths(); render(); });
   setInterval(async()=>{ if(document.visibilityState==='visible'){ navDir=0; await loadBounds(); await loadDraftMonths(); render(); } }, 30000);
+}
+let calY, calM;
+function openCalendar(){ calY=selectedDate.getFullYear(); calM=selectedDate.getMonth(); renderCal(); $('calModal').classList.add('show'); }
+function renderCal(){
+  $('calTitle').textContent = `${calY}년 ${calM+1}월`;
+  const startDow=new Date(calY,calM,1).getDay(), days=new Date(calY,calM+1,0).getDate();
+  const selStr=ymd(selectedDate), todayStr=ymd(new Date());
+  let html='';
+  for(let i=0;i<startDow;i++) html+=`<span class="cal-cell dim"></span>`;
+  for(let d=1; d<=days; d++){
+    const dt=new Date(calY,calM,d), ds=ymd(dt), dow=dt.getDay();
+    const cls=['cal-cell']; if(dow===0)cls.push('sun'); if(dow===6)cls.push('sat');
+    if(ds===todayStr)cls.push('today'); if(ds===selStr)cls.push('sel');
+    const dis=(minDate&&ds<minDate)||(maxDate&&ds>maxDate);
+    html+=`<button class="${cls.join(' ')}" data-d="${ds}"${dis?' disabled':''}>${d}</button>`;
+  }
+  $('calGrid').innerHTML=html;
+  $('calGrid').querySelectorAll('[data-d]').forEach(b=>b.onclick=()=>{
+    selectedDate=new Date(b.dataset.d+'T00:00:00'); navDir=0;
+    $('calModal').classList.remove('show'); clampSel(); render();
+  });
 }
 function setupPTR(container, onRefresh){
   let startY=0, pulling=false, applied=0, refreshing=false;
