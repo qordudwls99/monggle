@@ -1370,7 +1370,7 @@ async function renderDay(){
   });
   list.querySelectorAll('[data-night]').forEach(b=>b.onclick=async()=>{
     const turnOn = b.dataset.on!=='1';
-    let hrs='주간 16:00~22:00 · 야간 22:00~익일 05:00';
+    let hrs='주간 16:00~23:00 · 야간 23:00~익일 05:00';
     if(turnOn){ const r=prompt('영업시간 표시 (시작한 날 기준):', b.dataset.hrs||hrs); if(r===null) return; hrs=r.trim()||hrs; }
     await rpc('admin_set_night', { p_admin_id:session.id, p_date:ymd(selectedDate), p_workplace:b.dataset.night, p_on:turnOn, p_hours:hrs }, turnOn?'야간영업으로 표시했어요':'야간영업을 해제했어요');
   });
