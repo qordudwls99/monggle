@@ -335,27 +335,32 @@ function renderCal(){
   });
 }
 function setupPTR(container, onRefresh){
-  let startY=0, pulling=false, applied=0, refreshing=false;
-  const THRESH=56, MAX=90, txt=$('ptrTxt'), spin=$('ptrSpin');
+  // mode: 0 미정, 1 당기는중, -1 일반스크롤
+  let startY=0, mode=0, applied=0, refreshing=false;
+  const THRESH=60, MAX=90, DEAD=12, txt=$('ptrTxt'), spin=$('ptrSpin');
   container.addEventListener('touchstart', e=>{
-    if(refreshing || e.touches.length!==1){ pulling=false; return; }
-    if(container.scrollTop<=0){ startY=e.touches[0].clientY; pulling=true; applied=0; }
-    else pulling=false;
+    if(refreshing || e.touches.length!==1){ mode=-1; return; }
+    mode=0; applied=0; startY=e.touches[0].clientY;
   }, {passive:true});
   container.addEventListener('touchmove', e=>{
-    if(!pulling || refreshing) return;
+    if(refreshing || mode===-1) return;
     const dy=e.touches[0].clientY - startY;
-    if(dy<=0 || container.scrollTop>0){ pulling=false; container.style.transform=''; return; }
-    applied=Math.min(dy*0.5, MAX);
+    if(mode===0){
+      if(container.scrollTop>0 || dy<0){ mode=-1; return; }
+      if(dy<DEAD) return;
+      mode=1;
+    }
+    if(container.scrollTop>0){ mode=-1; container.style.transform=''; return; }
+    applied=Math.min((dy-DEAD)*0.5, MAX); if(applied<0) applied=0;
     container.style.transform=`translateY(${applied}px)`;
     if(txt) txt.textContent = applied>=THRESH ? '놓으면 새로고침' : '↓ 당겨서 새로고침';
     if(e.cancelable) e.preventDefault();
   }, {passive:false});
   const finish=async()=>{
-    if(!pulling) return;
-    pulling=false;
+    if(mode!==1){ mode=0; return; }
+    const go=applied>=THRESH; mode=0;
     container.style.transition='transform .22s';
-    if(applied>=THRESH){
+    if(go){
       refreshing=true;
       container.style.transform='translateY(44px)';
       if(spin) spin.style.display='inline-block';
