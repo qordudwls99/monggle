@@ -1164,9 +1164,11 @@ async function renderAdminSubmit(){
   });
   const sa=await supa.from('submission_answer_view').select('staff_id,staff_name').eq('ym', admYM);
   const submitted=new Set((sa.data||[]).map(r=>r.staff_id));
+  const doneNames=staffList.filter(s=>submitted.has(s.id)).map(s=>s.name);
   const notYet=staffList.filter(s=>!submitted.has(s.id));
   $('admSubStatus').innerHTML=`<div class="sub-sech">제출 현황 · ${submitted.size}/${staffList.length}명</div>`+
-    (notYet.length?`<div style="font-size:12.5px;color:var(--ink2);font-weight:700;line-height:1.7">미제출: ${notYet.map(s=>esc(s.name)).join(', ')||'-'}</div>`:`<div style="font-size:12.5px;color:#1f8f4e;font-weight:800">전원 제출 완료!</div>`);
+    `<div style="font-size:12.5px;color:#1f8f4e;font-weight:800;line-height:1.7;margin-bottom:4px">✅ 제출 완료 (${doneNames.length}): ${doneNames.map(esc).join(', ')||'-'}</div>`+
+    (notYet.length?`<div style="font-size:12.5px;color:#c0455c;font-weight:800;line-height:1.7">⏳ 미제출 (${notYet.length}): ${notYet.map(s=>esc(s.name)).join(', ')}</div>`:`<div style="font-size:12.5px;color:#1f8f4e;font-weight:800">전원 제출 완료!</div>`);
 }
 
 /* 희망자 배정 모달 */
