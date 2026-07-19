@@ -711,7 +711,7 @@ async function boot(){
   if('serviceWorker' in navigator){ navigator.serviceWorker.register('/sw.js').catch(()=>{}); }
   if(session) setTimeout(maybeAskPush, 1200);
   // 주기적 새로고침
-  setInterval(()=>{ if(document.visibilityState==='visible') refreshCurrent(); }, 20000);
+  setInterval(()=>{ if(document.visibilityState==='visible' && currentTab!=='submit') refreshCurrent(); }, 20000);
 }
 /* ---------- 푸시 알림 ---------- */
 function urlB64ToUint8(base64){
@@ -1065,6 +1065,8 @@ async function loadDraftMonths(){
 
 async function renderSubmit(){
   const list=$('submitList'), save=$('submitSaveBtn');
+  // 화면에 이미 골라둔 값 보존 (자동 새로고침 등으로 지워지지 않게)
+  const keep={}; document.querySelectorAll('#submitList select[data-qkey]').forEach(s=>{ keep[s.dataset.qkey]=s.value; });
   if(!session){ save.style.display='none'; $('subMonthLabel').textContent='';
     list.innerHTML=`<button class="btn primary full" id="subLogin">로그인하기</button>`; $('subLogin').onclick=openLogin; return; }
   await loadDraftMonths();
@@ -1087,14 +1089,14 @@ async function renderSubmit(){
   let html=`<div class="sub-sech">날짜별 희망 근무지</div>`;
   for(let day=1; day<=N; day++){
     const dt=new Date(y, m-1, day); const dow=DAYS[dt.getDay()]; const wknd=(dt.getDay()===0||dt.getDay()===6);
-    const qkey='d:'+submitYM+'-'+String(day).padStart(2,'0'); const cur=ans[qkey]||'';
+    const qkey='d:'+submitYM+'-'+String(day).padStart(2,'0'); const cur=(qkey in keep)?keep[qkey]:(ans[qkey]||'');
     const opts=`<option value="">선택</option>`+SUB_OPTS.map(o=>`<option${o===cur?' selected':''}>${o}</option>`).join('');
     html+=`<div class="subrow"><span class="sd${wknd?' wknd':''}">${m}/${day}(${dow})</span><select class="fld" data-qkey="${qkey}">${opts}</select></div>`;
   }
   if(nights.length){
     html+=`<div class="sub-sech">야간 근무 (가능/불가능)</div>`;
     nights.forEach(n=>{
-      const qkey='n:'+n.id; const cur=ans[qkey]||'';
+      const qkey='n:'+n.id; const cur=(qkey in keep)?keep[qkey]:(ans[qkey]||'');
       const opts=`<option value="">선택</option>`+NIGHT_OPTS.map(o=>`<option${o===cur?' selected':''}>${o}</option>`).join('');
       html+=`<div class="subrow night"><span class="sd">${esc(n.label)}</span><select class="fld" data-qkey="${qkey}">${opts}</select></div>`;
     });
