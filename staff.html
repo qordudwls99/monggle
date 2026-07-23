@@ -360,8 +360,8 @@ body[data-theme="matsuri"] .kicker::after{ content:" ⛩"; letter-spacing:0; }
 .mx-legend span{font-size:10.5px;font-weight:800;padding:3px 9px;border-radius:6px}
 .mx-legend .mx-note{background:none;color:var(--muted);padding:0 2px}
 .mx-wrap{overflow:auto;max-height:66vh;border:1px solid var(--line);border-radius:12px;-webkit-overflow-scrolling:touch}
-.mx{border-collapse:collapse;font-size:11.5px}
-.mx th,.mx td{min-width:28px;height:29px;text-align:center;font-weight:800;border-right:1px solid #f2eaec}
+.mx{border-collapse:collapse;font-size:11px}
+.mx th,.mx td{min-width:54px;height:30px;text-align:center;font-weight:800;border-right:1px solid #f2eaec;white-space:nowrap;padding:0 5px}
 .mx thead th{position:sticky;top:0;background:#faf4f3;z-index:2;font-size:11px;color:var(--muted);border-bottom:1px solid var(--line)}
 .mx th.sun{color:#d0596b}.mx th.sat{color:#5b7fd0}
 .mx tbody td{color:var(--ink)}
@@ -1261,7 +1261,7 @@ async function openMatrix(){
     for(let d=1; d<=N; d++){
       const c=map[s.id]['d:'+admYM+'-'+String(d).padStart(2,'0')]||'';
       const show = c && c!=='출근불가능';   // 출근불가/미제출은 빈칸
-      tds+=`<td class="mx-cell${show?' mx-'+c:''}">${show?(MX_ABBR[c]||c):''}</td>`;
+      tds+=`<td class="mx-cell${show?' mx-'+c:''}">${show?esc(c):''}</td>`;
     }
     body+=`<tr>${tds}</tr>`;
   });
