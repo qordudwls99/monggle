@@ -356,6 +356,20 @@ body[data-theme="matsuri"] .kicker::after{ content:" ⛩"; letter-spacing:0; }
 .wh-dn.sun{color:#d0596b}.wh-dn.sat{color:#5b7fd0}
 .wh-nm{font-size:9.5px;font-weight:700;color:var(--rose-deep);background:var(--soft2);border-radius:4px;padding:1px 2px;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center}
 .wh-nm.any{background:#f3e7c8;color:var(--gold)}
+.mx-legend{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+.mx-legend span{font-size:10.5px;font-weight:800;padding:3px 8px;border-radius:6px}
+.mx-wrap{overflow:auto;max-height:64vh;border:1px solid var(--line);border-radius:10px}
+.mx{border-collapse:collapse;font-size:11px}
+.mx th,.mx td{border:1px solid var(--line);min-width:26px;height:27px;text-align:center;font-weight:800;color:var(--ink);padding:0}
+.mx thead th{position:sticky;top:0;background:var(--seg-bg);z-index:2}
+.mx th.sun{color:#d0596b}.mx th.sat{color:#5b7fd0}
+.mx .mx-name{position:sticky;left:0;background:#fff;z-index:1;min-width:52px;max-width:52px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 5px;text-align:left}
+.mx thead th.mx-name{z-index:3;background:var(--seg-bg)}
+.mx-메이드{background:#f6dbe1;color:#a85565}
+.mx-데빌{background:#e0dcf1;color:#5b4a86}
+.mx-마츠리{background:#e6efda;color:#5c7a2e}
+.mx-상관없음{background:#f5e7c6;color:#8a6a1e}
+.mx-출근불가능{background:#efe9ea;color:#a08d90}
 </style>
 </head>
 <body>
@@ -482,7 +496,8 @@ body[data-theme="matsuri"] .kicker::after{ content:" ⛩"; letter-spacing:0; }
           <button class="btn ghost full" id="admNightSat" style="margin-bottom:11px">이 달 토요일 데빌 야간 일괄 추가</button>
           <div id="admNightList" style="margin-bottom:6px"></div>
           <div id="admSubStatus"></div>
-          <button class="btn ghost full" id="admWpHope" style="margin-top:12px">근무지별 희망자 보기</button>
+          <button class="btn ghost full" id="admMatrix" style="margin-top:12px">제출 표로 보기 (이름×날짜)</button>
+          <button class="btn ghost full" id="admWpHope" style="margin-top:8px">근무지별 희망 달력</button>
         </div>
 
         <div class="form-card" style="display:none">
@@ -642,6 +657,19 @@ body[data-theme="matsuri"] .kicker::after{ content:" ⛩"; letter-spacing:0; }
     <div id="cand-list" style="max-height:52vh;overflow-y:auto"></div>
     <button class="btn primary full" id="cand-save" style="margin-top:10px">선택한 사람 배정</button>
     <button class="closex" id="cand-close">닫기</button>
+  </div>
+</div>
+
+<!-- 제출 표(이름×날짜) -->
+<div class="modal" id="mxModal">
+  <div class="modal-c" style="max-width:96vw">
+    <div class="modal-t">제출 표</div>
+    <div class="modal-s" id="mx-sub"></div>
+    <div class="mx-legend">
+      <span class="mx-메이드">메이드</span><span class="mx-데빌">데빌</span><span class="mx-마츠리">마츠리</span><span class="mx-상관없음">상관없음</span><span class="mx-출근불가능">출근불가</span>
+    </div>
+    <div id="mx-list"></div>
+    <button class="closex" id="mx-close">닫기</button>
   </div>
 </div>
 
@@ -1209,6 +1237,26 @@ async function renderAdminSubmit(){
     `<div style="font-size:12.5px;color:#1f8f4e;font-weight:800;line-height:1.9;margin-bottom:4px">✅ 제출 완료 (${doneList.length}) · 이름을 누르면 내용 보기<br>${doneList.map(s=>`<button class="sv-name-btn" data-viewsub="${s.id}" data-nm="${esc(s.name)}">${esc(s.name)}</button>`).join(' · ')||'-'}</div>`+
     (notYet.length?`<div style="font-size:12.5px;color:#c0455c;font-weight:800;line-height:1.7">⏳ 미제출 (${notYet.length}): ${notYet.map(s=>esc(s.name)).join(', ')}</div>`:`<div style="font-size:12.5px;color:#1f8f4e;font-weight:800">전원 제출 완료!</div>`);
   $('admSubStatus').querySelectorAll('[data-viewsub]').forEach(b=>b.onclick=()=>openSubView(Number(b.dataset.viewsub), b.dataset.nm));
+}
+const MX_ABBR={'메이드':'메','데빌':'데','마츠리':'마','상관없음':'상','출근불가능':'✕'};
+async function openMatrix(){
+  $('mx-sub').textContent=`${ymLabelText(admYM)} · 이름×날짜 (가로로 넘겨보세요)`;
+  $('mx-list').innerHTML=`<div style="text-align:center;padding:24px"><span class="spin"></span></div>`;
+  $('mxModal').classList.add('show');
+  const ansR=await supa.from('submission_answer_view').select('*').eq('ym', admYM);
+  const map={}; (ansR.data||[]).forEach(a=>{ (map[a.staff_id]=map[a.staff_id]||{})[a.qkey]=a.choice; });
+  const [y,m]=admYM.split('-').map(Number); const N=daysInYM(admYM);
+  const rows=staffList.filter(s=>map[s.id]);
+  if(!rows.length){ $('mx-list').innerHTML=`<div class="cand-none">제출한 사람이 없어요</div>`; return; }
+  let head='<th class="mx-name">이름</th>';
+  for(let d=1; d<=N; d++){ const dow=new Date(y,m-1,d).getDay(); head+=`<th class="${dow===0?'sun':dow===6?'sat':''}">${d}</th>`; }
+  let body='';
+  rows.forEach(s=>{
+    let tds=`<td class="mx-name">${esc(s.name)}</td>`;
+    for(let d=1; d<=N; d++){ const c=map[s.id]['d:'+admYM+'-'+String(d).padStart(2,'0')]||''; tds+=`<td class="mx-cell${c?' mx-'+c:''}">${c?(MX_ABBR[c]||c):''}</td>`; }
+    body+=`<tr>${tds}</tr>`;
+  });
+  $('mx-list').innerHTML=`<div class="mx-wrap"><table class="mx"><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table></div>`;
 }
 let whWp='메이드', whAns=[];
 async function openWpHope(){
@@ -2081,6 +2129,9 @@ function wireUI(){
   $('admWpHope').onclick = openWpHope;
   $('wh-close').onclick = ()=> $('wpHopeModal').classList.remove('show');
   $('wpHopeModal').onclick = e=>{ if(e.target.id==='wpHopeModal') $('wpHopeModal').classList.remove('show'); };
+  $('admMatrix').onclick = openMatrix;
+  $('mx-close').onclick = ()=> $('mxModal').classList.remove('show');
+  $('mxModal').onclick = e=>{ if(e.target.id==='mxModal') $('mxModal').classList.remove('show'); };
   $('loginBtn').onclick = doLogin;
   $('loginClose').onclick = closeLogin;
   $('loginPin').onkeydown = e=>{ if(e.key==='Enter') doLogin(); };
