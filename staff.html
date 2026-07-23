@@ -472,6 +472,7 @@ body[data-theme="matsuri"] .kicker::after{ content:" ⛩"; letter-spacing:0; }
           <button class="btn ghost full" id="admNightSat" style="margin-bottom:11px">이 달 토요일 데빌 야간 일괄 추가</button>
           <div id="admNightList" style="margin-bottom:6px"></div>
           <div id="admSubStatus"></div>
+          <button class="btn ghost full" id="admWpHope" style="margin-top:12px">근무지별 희망자 보기</button>
         </div>
 
         <div class="form-card" style="display:none">
@@ -631,6 +632,16 @@ body[data-theme="matsuri"] .kicker::after{ content:" ⛩"; letter-spacing:0; }
     <div id="cand-list" style="max-height:52vh;overflow-y:auto"></div>
     <button class="btn primary full" id="cand-save" style="margin-top:10px">선택한 사람 배정</button>
     <button class="closex" id="cand-close">닫기</button>
+  </div>
+</div>
+
+<!-- 근무지별 희망자 -->
+<div class="modal" id="wpHopeModal">
+  <div class="modal-c">
+    <div class="modal-t">근무지별 희망자</div>
+    <div class="modal-s" id="wh-sub"></div>
+    <div id="wh-list" style="max-height:60vh;overflow-y:auto"></div>
+    <button class="closex" id="wh-close">닫기</button>
   </div>
 </div>
 
@@ -1187,6 +1198,24 @@ async function renderAdminSubmit(){
     `<div style="font-size:12.5px;color:#1f8f4e;font-weight:800;line-height:1.9;margin-bottom:4px">✅ 제출 완료 (${doneList.length}) · 이름을 누르면 내용 보기<br>${doneList.map(s=>`<button class="sv-name-btn" data-viewsub="${s.id}" data-nm="${esc(s.name)}">${esc(s.name)}</button>`).join(' · ')||'-'}</div>`+
     (notYet.length?`<div style="font-size:12.5px;color:#c0455c;font-weight:800;line-height:1.7">⏳ 미제출 (${notYet.length}): ${notYet.map(s=>esc(s.name)).join(', ')}</div>`:`<div style="font-size:12.5px;color:#1f8f4e;font-weight:800">전원 제출 완료!</div>`);
   $('admSubStatus').querySelectorAll('[data-viewsub]').forEach(b=>b.onclick=()=>openSubView(Number(b.dataset.viewsub), b.dataset.nm));
+}
+async function openWpHope(){
+  $('wh-sub').textContent=`${ymLabelText(admYM)} · 근무지별 희망 (며칠 희망했는지)`;
+  $('wh-list').innerHTML=`<div style="text-align:center;padding:24px"><span class="spin"></span></div>`;
+  $('wpHopeModal').classList.add('show');
+  const ansR=await supa.from('submission_answer_view').select('*').eq('ym', admYM);
+  const days=(ansR.data||[]).filter(a=>a.qkey && a.qkey.indexOf('d:')===0);
+  const groups={}; SUB_OPTS.forEach(o=>groups[o]={});
+  days.forEach(a=>{ if(groups[a.choice]) groups[a.choice][a.staff_name]=(groups[a.choice][a.staff_name]||0)+1; });
+  let html='';
+  SUB_OPTS.forEach(o=>{
+    const entries=Object.entries(groups[o]).sort((x,y)=>y[1]-x[1]||String(x[0]).localeCompare(String(y[0]),'ko'));
+    html+=`<div class="sub-sech">${o} · ${entries.length}명</div>`;
+    html+= entries.length
+      ? entries.map(([nm,c])=>`<div class="sv-row"><span class="sv-d">${esc(nm)}</span><span class="sv-c">${c}일</span></div>`).join('')
+      : `<div style="font-size:12.5px;color:var(--muted);font-weight:700;padding:4px 2px">없음</div>`;
+  });
+  $('wh-list').innerHTML=html;
 }
 async function openSubView(id, name){
   $('sv-name').textContent=`${name} 제출 내용`;
@@ -2022,6 +2051,9 @@ function wireUI(){
   $('calModal').onclick = e=>{ if(e.target.id==='calModal') $('calModal').classList.remove('show'); };
   $('sv-close').onclick = ()=> $('subViewModal').classList.remove('show');
   $('subViewModal').onclick = e=>{ if(e.target.id==='subViewModal') $('subViewModal').classList.remove('show'); };
+  $('admWpHope').onclick = openWpHope;
+  $('wh-close').onclick = ()=> $('wpHopeModal').classList.remove('show');
+  $('wpHopeModal').onclick = e=>{ if(e.target.id==='wpHopeModal') $('wpHopeModal').classList.remove('show'); };
   $('loginBtn').onclick = doLogin;
   $('loginClose').onclick = closeLogin;
   $('loginPin').onkeydown = e=>{ if(e.key==='Enter') doLogin(); };
