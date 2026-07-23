@@ -346,6 +346,16 @@ body[data-theme="matsuri"] .kicker::after{ content:" ⛩"; letter-spacing:0; }
 .sv-row .sv-c{font-weight:800;color:var(--rose-deep);white-space:nowrap}
 .sv-row .sv-c.off{color:#c0455c}
 .sv-row .sv-c.none{color:var(--muted);font-weight:600}
+.wh-dow{display:grid;grid-template-columns:repeat(7,1fr);margin-bottom:4px}
+.wh-dow span{text-align:center;font-size:10px;font-weight:800;color:var(--muted)}
+.wh-dow span.sun{color:#d0596b}.wh-dow span.sat{color:#5b7fd0}
+.wh-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
+.wh-cell{min-height:58px;background:#fff;border:1px solid var(--line);border-radius:8px;padding:3px;min-width:0}
+.wh-cell.dim{background:none;border:none}
+.wh-dn{font-size:10.5px;font-weight:800;color:var(--ink);text-align:center;margin-bottom:2px}
+.wh-dn.sun{color:#d0596b}.wh-dn.sat{color:#5b7fd0}
+.wh-nm{font-size:9.5px;font-weight:700;color:var(--rose-deep);background:var(--soft2);border-radius:4px;padding:1px 2px;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center}
+.wh-nm.any{background:#f3e7c8;color:var(--gold)}
 </style>
 </head>
 <body>
@@ -638,9 +648,10 @@ body[data-theme="matsuri"] .kicker::after{ content:" ⛩"; letter-spacing:0; }
 <!-- 근무지별 희망자 -->
 <div class="modal" id="wpHopeModal">
   <div class="modal-c">
-    <div class="modal-t">근무지별 희망자</div>
+    <div class="modal-t">근무지별 희망 달력</div>
     <div class="modal-s" id="wh-sub"></div>
-    <div id="wh-list" style="max-height:60vh;overflow-y:auto"></div>
+    <div class="chips" id="wh-chips" style="margin-bottom:10px"></div>
+    <div id="wh-list" style="max-height:62vh;overflow-y:auto"></div>
     <button class="closex" id="wh-close">닫기</button>
   </div>
 </div>
@@ -1199,23 +1210,39 @@ async function renderAdminSubmit(){
     (notYet.length?`<div style="font-size:12.5px;color:#c0455c;font-weight:800;line-height:1.7">⏳ 미제출 (${notYet.length}): ${notYet.map(s=>esc(s.name)).join(', ')}</div>`:`<div style="font-size:12.5px;color:#1f8f4e;font-weight:800">전원 제출 완료!</div>`);
   $('admSubStatus').querySelectorAll('[data-viewsub]').forEach(b=>b.onclick=()=>openSubView(Number(b.dataset.viewsub), b.dataset.nm));
 }
+let whWp='메이드', whAns=[];
 async function openWpHope(){
-  $('wh-sub').textContent=`${ymLabelText(admYM)} · 근무지별 희망 (며칠 희망했는지)`;
-  $('wh-list').innerHTML=`<div style="text-align:center;padding:24px"><span class="spin"></span></div>`;
+  whWp=WORKPLACES.includes(wpFilter)?wpFilter:'메이드';
+  $('wh-sub').textContent=ymLabelText(admYM);
+  $('wh-chips').innerHTML=''; $('wh-list').innerHTML=`<div style="text-align:center;padding:24px"><span class="spin"></span></div>`;
   $('wpHopeModal').classList.add('show');
   const ansR=await supa.from('submission_answer_view').select('*').eq('ym', admYM);
-  const days=(ansR.data||[]).filter(a=>a.qkey && a.qkey.indexOf('d:')===0);
-  const groups={}; SUB_OPTS.forEach(o=>groups[o]={});
-  days.forEach(a=>{ if(groups[a.choice]) groups[a.choice][a.staff_name]=(groups[a.choice][a.staff_name]||0)+1; });
-  let html='';
-  SUB_OPTS.forEach(o=>{
-    const entries=Object.entries(groups[o]).sort((x,y)=>y[1]-x[1]||String(x[0]).localeCompare(String(y[0]),'ko'));
-    html+=`<div class="sub-sech">${o} · ${entries.length}명</div>`;
-    html+= entries.length
-      ? entries.map(([nm,c])=>`<div class="sv-row"><span class="sv-d">${esc(nm)}</span><span class="sv-c">${c}일</span></div>`).join('')
-      : `<div style="font-size:12.5px;color:var(--muted);font-weight:700;padding:4px 2px">없음</div>`;
+  whAns=ansR.data||[];
+  renderWhChips(); renderWhCal();
+}
+function renderWhChips(){
+  $('wh-chips').innerHTML=WORKPLACES.map(w=>`<button class="chip${w===whWp?' on':''}" data-w="${w}">${w}</button>`).join('');
+  $('wh-chips').querySelectorAll('.chip').forEach(b=>b.onclick=()=>{ whWp=b.dataset.w; renderWhChips(); renderWhCal(); });
+}
+function renderWhCal(){
+  $('wh-sub').textContent=`${ymLabelText(admYM)} · ${whWp} 희망자 (노랑=상관없음)`;
+  const [y,m]=admYM.split('-').map(Number); const N=daysInYM(admYM); const first=new Date(y,m-1,1).getDay();
+  const byDay={};
+  whAns.forEach(a=>{
+    if(!a.qkey || a.qkey.indexOf('d:')!==0) return;
+    const ds=a.qkey.slice(2); const rec=byDay[ds]||(byDay[ds]={p:[],any:[]});
+    if(a.choice===whWp) rec.p.push(a.staff_name);
+    else if(a.choice==='상관없음') rec.any.push(a.staff_name);
   });
-  $('wh-list').innerHTML=html;
+  let cells='';
+  for(let i=0;i<first;i++) cells+=`<div class="wh-cell dim"></div>`;
+  for(let d=1; d<=N; d++){
+    const ds=admYM+'-'+String(d).padStart(2,'0'); const dow=new Date(y,m-1,d).getDay();
+    const rec=byDay[ds]||{p:[],any:[]};
+    const names=rec.p.map(n=>`<div class="wh-nm">${esc(n)}</div>`).join('')+rec.any.map(n=>`<div class="wh-nm any">${esc(n)}</div>`).join('');
+    cells+=`<div class="wh-cell"><div class="wh-dn${dow===0?' sun':dow===6?' sat':''}">${d}</div>${names}</div>`;
+  }
+  $('wh-list').innerHTML=`<div class="wh-dow"><span class="sun">일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span class="sat">토</span></div><div class="wh-grid">${cells}</div>`;
 }
 async function openSubView(id, name){
   $('sv-name').textContent=`${name} 제출 내용`;
