@@ -339,6 +339,13 @@ body[data-theme="matsuri"] .kicker::after{ content:" ⛩"; letter-spacing:0; }
 .nm-chip{border:1px solid var(--line);cursor:pointer;font-family:inherit;font-weight:700;font-size:13px;padding:7px 13px;border-radius:99px;background:var(--soft);color:var(--rose-deep)}
 .nq-yes{font-size:11.5px;color:var(--ink2);font-weight:700;margin:2px 2px 0;line-height:1.5}
 .nq-yes b{color:#1f8f4e}
+.sv-name-btn{border:none;background:none;cursor:pointer;font-family:inherit;font-size:12.5px;font-weight:800;color:#1f8f4e;text-decoration:underline;padding:0}
+.sv-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:7px 2px;border-bottom:1px solid var(--line);font-size:13.5px}
+.sv-row .sv-d{font-weight:700;color:var(--ink)}
+.sv-row .sv-d.wknd{color:var(--rose-deep)}
+.sv-row .sv-c{font-weight:800;color:var(--rose-deep);white-space:nowrap}
+.sv-row .sv-c.off{color:#c0455c}
+.sv-row .sv-c.none{color:var(--muted);font-weight:600}
 </style>
 </head>
 <body>
@@ -624,6 +631,16 @@ body[data-theme="matsuri"] .kicker::after{ content:" ⛩"; letter-spacing:0; }
     <div id="cand-list" style="max-height:52vh;overflow-y:auto"></div>
     <button class="btn primary full" id="cand-save" style="margin-top:10px">선택한 사람 배정</button>
     <button class="closex" id="cand-close">닫기</button>
+  </div>
+</div>
+
+<!-- 개인 제출 내용 보기 -->
+<div class="modal" id="subViewModal">
+  <div class="modal-c">
+    <div class="modal-t" id="sv-name"></div>
+    <div class="modal-s" id="sv-sub"></div>
+    <div id="sv-list" style="max-height:60vh;overflow-y:auto"></div>
+    <button class="closex" id="sv-close">닫기</button>
   </div>
 </div>
 
@@ -1164,11 +1181,37 @@ async function renderAdminSubmit(){
   });
   const sa=await supa.from('submission_answer_view').select('staff_id,staff_name').eq('ym', admYM);
   const submitted=new Set((sa.data||[]).map(r=>r.staff_id));
-  const doneNames=staffList.filter(s=>submitted.has(s.id)).map(s=>s.name);
+  const doneList=staffList.filter(s=>submitted.has(s.id));
   const notYet=staffList.filter(s=>!submitted.has(s.id));
   $('admSubStatus').innerHTML=`<div class="sub-sech">제출 현황 · ${submitted.size}/${staffList.length}명</div>`+
-    `<div style="font-size:12.5px;color:#1f8f4e;font-weight:800;line-height:1.7;margin-bottom:4px">✅ 제출 완료 (${doneNames.length}): ${doneNames.map(esc).join(', ')||'-'}</div>`+
+    `<div style="font-size:12.5px;color:#1f8f4e;font-weight:800;line-height:1.9;margin-bottom:4px">✅ 제출 완료 (${doneList.length}) · 이름을 누르면 내용 보기<br>${doneList.map(s=>`<button class="sv-name-btn" data-viewsub="${s.id}" data-nm="${esc(s.name)}">${esc(s.name)}</button>`).join(' · ')||'-'}</div>`+
     (notYet.length?`<div style="font-size:12.5px;color:#c0455c;font-weight:800;line-height:1.7">⏳ 미제출 (${notYet.length}): ${notYet.map(s=>esc(s.name)).join(', ')}</div>`:`<div style="font-size:12.5px;color:#1f8f4e;font-weight:800">전원 제출 완료!</div>`);
+  $('admSubStatus').querySelectorAll('[data-viewsub]').forEach(b=>b.onclick=()=>openSubView(Number(b.dataset.viewsub), b.dataset.nm));
+}
+async function openSubView(id, name){
+  $('sv-name').textContent=`${name} 제출 내용`;
+  $('sv-sub').textContent=ymLabelText(admYM);
+  $('sv-list').innerHTML=`<div style="text-align:center;padding:24px"><span class="spin"></span></div>`;
+  $('subViewModal').classList.add('show');
+  const [ansR, nqR]=await Promise.all([
+    supa.from('submission_answer_view').select('*').eq('ym', admYM).eq('staff_id', id),
+    supa.from('submission_night_view').select('*').eq('ym', admYM)
+  ]);
+  const ans={}; (ansR.data||[]).forEach(a=>ans[a.qkey]=a.choice);
+  const nights=(nqR.data||[]).sort((a,b)=>String(a.work_date||"").localeCompare(String(b.work_date||""))||a.sort-b.sort||a.id-b.id);
+  const cClass=c=> c==='출근불가능'?'off' : (c?'':'none');
+  const [y,m]=admYM.split('-').map(Number); const N=daysInYM(admYM);
+  let html='<div class="sub-sech">날짜별 희망</div>';
+  for(let day=1; day<=N; day++){
+    const dt=new Date(y,m-1,day); const wknd=(dt.getDay()===0||dt.getDay()===6);
+    const c=ans['d:'+admYM+'-'+String(day).padStart(2,'0')]||'';
+    html+=`<div class="sv-row"><span class="sv-d${wknd?' wknd':''}">${m}/${day}(${DAYS[dt.getDay()]})</span><span class="sv-c ${cClass(c)}">${esc(c||'-')}</span></div>`;
+  }
+  if(nights.length){
+    html+='<div class="sub-sech">야간</div>';
+    nights.forEach(n=>{ const c=ans['n:'+n.id]||''; html+=`<div class="sv-row"><span class="sv-d" style="flex:1;min-width:0">${esc(n.label)}</span><span class="sv-c ${cClass(c)}">${esc(c||'-')}</span></div>`; });
+  }
+  $('sv-list').innerHTML=html;
 }
 
 /* 희망자 배정 모달 */
@@ -1977,6 +2020,8 @@ function wireUI(){
   $('calNext').onclick = ()=>{ calM++; if(calM>11){ calM=0; calY++; } renderCal(); };
   $('calClose').onclick = ()=> $('calModal').classList.remove('show');
   $('calModal').onclick = e=>{ if(e.target.id==='calModal') $('calModal').classList.remove('show'); };
+  $('sv-close').onclick = ()=> $('subViewModal').classList.remove('show');
+  $('subViewModal').onclick = e=>{ if(e.target.id==='subViewModal') $('subViewModal').classList.remove('show'); };
   $('loginBtn').onclick = doLogin;
   $('loginClose').onclick = closeLogin;
   $('loginPin').onkeydown = e=>{ if(e.key==='Enter') doLogin(); };
