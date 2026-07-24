@@ -146,6 +146,28 @@ body{
 .drag-trash.show{display:flex}
 .drag-trash.over{background:#fbeef0;transform:translateX(-50%) scale(1.07)}
 .drag-trash span{font-size:20px}
+/* 캡쳐용 스케줄 */
+#capModal{align-items:flex-start;overflow-y:auto;padding:14px 0}
+.cap-c{width:100%;max-width:560px;margin:0 auto;padding:0 12px}
+.cap-bar{display:flex;align-items:center;gap:8px;margin-bottom:10px;position:sticky;top:0;z-index:2}
+.cap-chips{display:flex;gap:6px;flex-wrap:wrap;flex:1}
+.cap-close{border:none;background:#fff;cursor:pointer;font-size:15px;font-weight:800;color:var(--ink);width:38px;height:38px;flex-shrink:0;border-radius:50%;box-shadow:0 4px 12px -6px rgba(0,0,0,.35)}
+.cap-sheet{background:#fff;padding:22px 16px 26px;border-radius:18px;box-shadow:0 12px 40px -18px rgba(0,0,0,.4)}
+.cap-title{text-align:center;font-weight:900;font-size:23px;letter-spacing:-.5px}
+.cap-title small{display:block;font-size:14px;font-weight:800;color:var(--muted);margin-top:4px}
+.cap-dow{display:grid;grid-template-columns:repeat(7,1fr);margin:16px 0 7px}
+.cap-dow span{text-align:center;font-size:12px;font-weight:800;color:var(--muted)}
+.cap-dow .sun{color:#d0596b}.cap-dow .sat{color:#5b7fd0}
+.cap-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:5px}
+.cap-cell{min-height:84px;border-radius:11px;padding:6px 4px;background:#faf7f8}
+.cap-cell.dim{background:none}
+.cap-dn{font-weight:800;font-size:13.5px;text-align:center;margin-bottom:5px}
+.cap-nm{font-size:12.5px;font-weight:800;text-align:center;padding:3px 3px;border-radius:6px;margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.25}
+.cap-ev{font-size:10px;font-weight:800;text-align:center;border-radius:5px;padding:2px 3px;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cap-off{font-size:11.5px;color:var(--muted);text-align:center;font-weight:800;padding-top:12px}
+.cap-short{font-size:11px;font-weight:800;color:#fff;background:#ee1111;border-radius:6px;text-align:center;padding:3px;margin-bottom:3px}
+.cap-night{font-size:10px;font-weight:800;color:#4f4a7a;background:#ece9f4;border-radius:6px;text-align:center;padding:3px;margin-top:2px;line-height:1.3;white-space:normal}
+.cap-hint{text-align:center;font-size:12px;font-weight:700;color:#fff;opacity:.85;margin:12px 0 6px}
 .s-row .ig{display:flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:8px;color:#fff;flex-shrink:0;text-decoration:none;background:linear-gradient(45deg,#f09433,#e6683c 25%,#dc2743 50%,#cc2366 75%,#bc1888)}
 .night-row .ig.sm{display:flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:7px;color:#fff;flex-shrink:0;text-decoration:none;background:linear-gradient(45deg,#f09433,#e6683c 25%,#dc2743 50%,#cc2366 75%,#bc1888)}
 .s-row .av.none{background:#f2eaeb;color:#c8aeb2}
@@ -852,6 +874,18 @@ body[data-theme="matsuri"] .kicker::after{ content:" ⛩"; letter-spacing:0; }
     <input type="range" id="cropZoom" class="crop-zoom" min="1" max="3" step="0.01" value="1">
     <button class="btn primary full" id="cropApply">이 사진으로</button>
     <button class="closex" id="cropCancel">취소</button>
+  </div>
+</div>
+
+<!-- 캡쳐용 예쁜 스케줄 -->
+<div class="modal" id="capModal">
+  <div class="cap-c">
+    <div class="cap-bar">
+      <div class="cap-chips" id="cap-chips"></div>
+      <button class="cap-close" id="cap-close">✕</button>
+    </div>
+    <div class="cap-sheet" id="cap-sheet"></div>
+    <div class="cap-hint">이 화면을 캡쳐(스크린샷)해서 공유하세요 · 매장 탭을 바꿔가며 각각</div>
   </div>
 </div>
 
@@ -1707,6 +1741,59 @@ function renderSchedule(){
   $('wpChips').style.display = viewMode==='night' ? 'none' : '';   // 야간은 데빌 고정
   return viewMode==='week' ? renderWeek() : viewMode==='month' ? renderMonth() : viewMode==='night' ? renderNight() : renderDay();
 }
+/* ---------- 캡쳐용 예쁜 스케줄 ---------- */
+const CAP_COLOR={'메이드':{main:'#a85565',tint:'#fadfe5',t2:'#8f3d52'},'데빌':{main:'#5b4a86',tint:'#e6e0f5',t2:'#4f3f7a'},'마츠리':{main:'#5c7a2e',tint:'#e3f0d8',t2:'#4f6b28'}};
+let capYM=null, capWp='메이드', capData=null;
+async function openCapture(ym){
+  capYM=ym; capWp=(WORKPLACES.includes(wpFilter)?wpFilter:'메이드');
+  $('cap-sheet').innerHTML=`<div style="text-align:center;padding:40px"><span class="spin"></span></div>`;
+  $('cap-chips').innerHTML='';
+  $('capModal').classList.add('show');
+  const N=daysInYM(ym), first=ym+'-01', last=ym+'-'+String(N).padStart(2,'0');
+  const [sh,cl,ni,ev,nm]=await Promise.all([
+    supa.from('shift_view').select('*').gte('work_date',first).lte('work_date',last),
+    supa.from('closure_view').select('*').gte('work_date',first).lte('work_date',last),
+    supa.from('night_view').select('*').gte('work_date',first).lte('work_date',last),
+    supa.from('day_event_view').select('*').gte('work_date',first).lte('work_date',last),
+    supa.from('night_member_view').select('*').gte('work_date',first).lte('work_date',last)
+  ]);
+  capData={shifts:sh.data||[], closed:new Set((cl.data||[]).map(c=>c.work_date+'|'+c.workplace)),
+    night:new Set((ni.data||[]).map(n=>n.work_date+'|'+n.workplace)), events:{}, nmem:nm.data||[]};
+  (ev.data||[]).forEach(e=>capData.events[e.work_date+'|'+e.workplace]=e.event);
+  renderCapChips(); renderCapSheet();
+}
+function renderCapChips(){
+  $('cap-chips').innerHTML=WORKPLACES.map(w=>`<button class="chip${w===capWp?' on':''}" data-w="${w}">${w}</button>`).join('');
+  $('cap-chips').querySelectorAll('.chip').forEach(b=>b.onclick=()=>{ capWp=b.dataset.w; renderCapChips(); renderCapSheet(); });
+}
+function renderCapSheet(){
+  const wp=capWp; const [y,m]=capYM.split('-').map(Number); const N=daysInYM(capYM); const first=new Date(y,m-1,1).getDay();
+  const c=CAP_COLOR[wp]; const days=['일','월','화','수','목','금','토'];
+  let cells='';
+  for(let i=0;i<first;i++) cells+=`<div class="cap-cell dim"></div>`;
+  for(let d=1; d<=N; d++){
+    const ds=`${capYM}-${String(d).padStart(2,'0')}`; const dow=new Date(y,m-1,d).getDay();
+    const isClosed=capData.closed.has(ds+'|'+wp); const ev=capData.events[ds+'|'+wp]; const isNight=capData.night.has(ds+'|'+wp);
+    let body;
+    if(isClosed) body=`<div class="cap-off">휴무</div>`;
+    else{
+      const rows=capData.shifts.filter(s=>s.work_date===ds && s.workplace===wp);
+      const filled=rows.filter(s=>s.display_name||s.staff_name).sort((a,b)=>((b.is_guest?1:0)-(a.is_guest?1:0)));
+      const parts=filled.map(s=>`<div class="cap-nm" style="background:${c.tint};color:${c.t2}">${esc(s.display_name||s.staff_name)}</div>`);
+      rows.filter(s=>!s.staff_id && !s.guest_name).forEach(()=>parts.push(`<div class="cap-short">부족</div>`));
+      if(wp==='데빌' && isNight){
+        const mm=capData.nmem.filter(x=>x.work_date===ds && x.workplace===wp && !(x.member_name==='부족'&&!x.staff_id));
+        if(mm.length) parts.push(`<div class="cap-night">🌙 ${mm.map(x=>esc(x.member_name)).join(', ')}</div>`);
+      }
+      body=parts.join('');
+    }
+    const evHtml=ev?`<div class="cap-ev" style="background:${c.tint};color:${c.t2}">${esc(ev)}</div>`:'';
+    cells+=`<div class="cap-cell"><div class="cap-dn" style="${dow===0?'color:#d0596b':dow===6?'color:#5b7fd0':''}">${d}</div>${evHtml}${body}</div>`;
+  }
+  $('cap-sheet').innerHTML=`<div class="cap-title" style="color:${c.main}">${wp} 스케줄<small>${y}년 ${m}월</small></div>
+    <div class="cap-dow"><span class="sun">일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span class="sat">토</span></div>
+    <div class="cap-grid">${cells}</div>`;
+}
 async function renderNight(){
   const list=$('scheduleList'); list.classList.remove('day-grid'); const admin=!!(session&&session.is_admin);
   const y=selectedDate.getFullYear(), m=selectedDate.getMonth();
@@ -1815,7 +1902,7 @@ async function renderMonth(){
     return dowHead+`<div class="mc-grid">${cells}</div>`;
   }
   const banner = (admin&&isDraft)?`<div class="draftbar">작성 중 · 직원·손님에겐 안 보여요<button class="db-btn" data-publish="1">공개하기</button></div>`:'';
-  let html=banner;
+  let html=banner+`<button class="btn ghost full" data-capture style="margin-bottom:12px">📷 캡쳐용 예쁜 스케줄 보기</button>`;
   if(all){
     html+=`<div class="mc-multi">`+WORKPLACES.map(wp=>
       `<div class="mc-cal"${admin?` data-dropwp="${wp}"`:''}><div class="mc-cal-t"><span class="wp-dot ${wp}"></span>${wp}</div>${calFor(wp)}</div>`).join('')+`</div>`;
@@ -1832,6 +1919,7 @@ async function renderMonth(){
   list.querySelectorAll('[data-candadd]').forEach(b=>b.addEventListener('click', e=>{
     e.stopPropagation(); openCandModal(b.dataset.candadd, b.dataset.cd);
   }));
+  const capB=list.querySelector('[data-capture]'); if(capB) capB.onclick=()=>openCapture(ymOfDate(selectedDate));
   list.querySelectorAll('[data-evwp]').forEach(el=>el.addEventListener('click', async e=>{
     e.stopPropagation();
     const wp=el.dataset.evwp, ds=el.dataset.evd;
@@ -2573,6 +2661,8 @@ function wireUI(){
   $('mxModal').onclick = e=>{ if(e.target.id==='mxModal') $('mxModal').classList.remove('show'); };
   $('admBuild').onclick = openBuild;
   $('bx-close').onclick = ()=> $('buildModal').classList.remove('show');
+  $('cap-close').onclick = ()=> $('capModal').classList.remove('show');
+  $('capModal').onclick = e=>{ if(e.target.id==='capModal') $('capModal').classList.remove('show'); };
   (()=>{ const tr=$('dragTrash'); if(!tr) return;
     tr.addEventListener('dragover', e=>{ e.preventDefault(); e.dataTransfer.dropEffect='move'; tr.classList.add('over'); });
     tr.addEventListener('dragleave', ()=>tr.classList.remove('over'));
