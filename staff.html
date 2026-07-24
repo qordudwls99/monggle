@@ -138,6 +138,10 @@ body{
 .s-row{display:flex;align-items:center;gap:11px}
 .s-row .av{width:34px;height:34px;border-radius:50%;background:var(--avbg);color:var(--rose-deep);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;flex-shrink:0;background-size:cover;background-position:center}
 .s-row .av.guest{background:#f3e7c8;color:var(--gold)}
+.card[data-drag]{cursor:grab}
+.card[data-drag]:active{cursor:grabbing}
+.card.dragging{opacity:.45}
+.wp-sec.dragover{outline:2px dashed var(--rose);outline-offset:3px;border-radius:12px}
 .s-row .ig{display:flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:8px;color:#fff;flex-shrink:0;text-decoration:none;background:linear-gradient(45deg,#f09433,#e6683c 25%,#dc2743 50%,#cc2366 75%,#bc1888)}
 .night-row .ig.sm{display:flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:7px;color:#fff;flex-shrink:0;text-decoration:none;background:linear-gradient(45deg,#f09433,#e6683c 25%,#dc2743 50%,#cc2366 75%,#bc1888)}
 .s-row .av.none{background:#f2eaeb;color:#c8aeb2}
@@ -1691,7 +1695,8 @@ async function renderDay(){
     const nightBtn = (admin && !isClosed && wp==='데빌') ? `<button class="btn ghost" data-night="${wp}" data-on="${nightHrs?1:0}" data-hrs="${esc(nightHrs||'')}" style="padding:4px 9px;font-size:11px">${nightHrs?'야간해제':'야간'}</button>` : '';
     const addBtn = (admin && !isClosed && !nightHrs) ? `<button class="btn primary" data-add="${wp}" style="padding:4px 10px;font-size:11px">추가</button>` : '';
     const hopeBtn = (admin && !isClosed) ? `<button class="btn ghost" data-hope="${wp}" style="padding:4px 9px;font-size:11px">희망자</button>` : '';
-    html += `<div class="wp-sec"><div class="wp-h"><span class="wp-dot ${wp}"></span><span class="wp-name">${wp}</span><span class="wp-count" style="margin-left:auto">${isClosed?'휴무':rows.length+'명'}</span>${offBtn}${nightBtn}${evBtn}${hopeBtn}${addBtn}</div>`;
+    const dropAttr=(admin && wpFilter==='전체')?` data-dropwp="${wp}"`:'';
+    html += `<div class="wp-sec"${dropAttr}><div class="wp-h"><span class="wp-dot ${wp}"></span><span class="wp-name">${wp}</span><span class="wp-count" style="margin-left:auto">${isClosed?'휴무':rows.length+'명'}</span>${offBtn}${nightBtn}${evBtn}${hopeBtn}${addBtn}</div>`;
     if(isClosed){ html += `<div class="card" style="text-align:center;color:var(--ink2);font-weight:800;font-size:14px">휴무일</div></div>`; return; }
     if(nightHrs) html += `<div class="night-banner">${esc(nightHrs)}</div>`;
     if(ev) html += `<div class="ev-banner">${esc(ev)}</div>`;
@@ -1751,6 +1756,28 @@ async function renderDay(){
     const ok = await rpc('admin_set_published', { p_admin_id:session.id, p_ym:ymOfDate(selectedDate), p_pub:true }, '이 달을 공개했어요');
     if(ok){ await loadDraftMonths(); renderSchedule(); }
   });
+  bindMoveDrag(list);
+}
+function bindMoveDrag(list){
+  list.querySelectorAll('[data-drag]').forEach(c=>{
+    c.addEventListener('dragstart', e=>{
+      e.dataTransfer.setData('text/plain', JSON.stringify({id:c.dataset.drag, wp:c.dataset.dwp, nm:c.dataset.dnm}));
+      e.dataTransfer.effectAllowed='move'; c.classList.add('dragging');
+    });
+    c.addEventListener('dragend', ()=>c.classList.remove('dragging'));
+  });
+  list.querySelectorAll('[data-dropwp]').forEach(z=>{
+    z.addEventListener('dragover', e=>{ e.preventDefault(); e.dataTransfer.dropEffect='move'; z.classList.add('dragover'); });
+    z.addEventListener('dragleave', e=>{ if(e.target===z) z.classList.remove('dragover'); });
+    z.addEventListener('drop', async e=>{
+      e.preventDefault(); z.classList.remove('dragover');
+      let d; try{ d=JSON.parse(e.dataTransfer.getData('text/plain')); }catch(_){ return; }
+      const target=z.dataset.dropwp;
+      if(!d || !d.id || d.wp===target) return;
+      if(!confirm(`${d.nm}님을 ${d.wp} → ${target} 근무로 옮길까요?`)) return;
+      await rpc('admin_move_shift', { p_admin_id:session.id, p_shift_id:Number(d.id), p_workplace:target }, `${d.nm}님을 ${target}로 옮겼어요`);
+    });
+  });
 }
 function shiftCard(s, admin, apps){
   apps = apps||[];
@@ -1786,7 +1813,8 @@ function shiftCard(s, admin, apps){
   const av = `<span class="av${(!s.staff_id&&s.guest_name)?' guest':''}${who?'':' none'}" style="${avImg?avStyle(s.staff_avatar):''}">${avImg?'':esc(who.charAt(0)||'·')}</span>`;
   const ig = s.staff_id ? igUrl(s.staff_instagram) : null;
   const igHtml = ig ? `<a class="ig" href="${esc(ig)}" target="_blank" rel="noopener">${IG_SVG}</a>` : '';
-  return `<div class="card"><div class="s-row">${av}${nameHtml}${badge}${igHtml}</div>${appHtml}${acts}</div>`;
+  const drag = (admin && wpFilter==='전체' && s.staff_id) ? ` draggable="true" data-drag="${s.id}" data-dwp="${esc(s.workplace)}" data-dnm="${esc(s.staff_name)}"` : '';
+  return `<div class="card"${drag}><div class="s-row">${av}${nameHtml}${badge}${igHtml}</div>${appHtml}${acts}</div>`;
 }
 function bindShiftCards(root){
   root.querySelectorAll('[data-act="apply"]').forEach(b=>b.onclick=async()=>{

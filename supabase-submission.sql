@@ -122,6 +122,17 @@ begin
   return n;
 end; $$;
 
+-- 드래그로 근무지 이동: 한 근무의 근무지를 바꿈
+create or replace function admin_move_shift(p_admin_id bigint, p_pin text, p_shift_id bigint, p_workplace text)
+returns void language plpgsql security definer set search_path = public as $$
+declare v staff;
+begin
+  v := _verify(p_admin_id, p_pin);
+  if v.id is null or not v.is_admin then raise exception '관리자만 가능합니다'; end if;
+  update shifts set workplace = p_workplace where id = p_shift_id;
+end; $$;
+grant execute on function admin_move_shift to anon, authenticated;
+
 -- 편성 표: 한 사람의 하루 배정을 지정 (근무지 비우면 그날 그 사람 근무 삭제)
 create or replace function admin_set_assignment(p_admin_id bigint, p_pin text,
   p_date date, p_staff_id bigint, p_workplace text)
