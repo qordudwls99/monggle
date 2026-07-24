@@ -192,6 +192,7 @@ body{
 .btn.primary{background:var(--rose);color:#fff}
 .btn.ghost{background:var(--soft2);color:var(--rose-deep)}
 .btn.warn{background:#fbeef0;color:#c0455c}
+.btn.shortbtn{background:#e8663f;color:#fff;box-shadow:0 4px 12px -6px rgba(232,102,63,.6)}
 .btn.full{width:100%;text-align:center;justify-content:center}
 .btn:disabled{opacity:.5;cursor:default;transform:none}
 
@@ -699,7 +700,7 @@ body[data-theme="matsuri"] .kicker::after{ content:" ⛩"; letter-spacing:0; }
     <label class="fl">또는 게스트 이름</label>
     <input class="fld" id="nm-guest" placeholder="게스트 이름 (계정 없는 사람)">
     <button class="btn primary full" id="nm-save">추가</button>
-    <button class="btn warn full" id="nm-short" style="margin-top:9px">＋ 부족(빈자리) 추가</button>
+    <button class="btn shortbtn full" id="nm-short" style="margin-top:9px">＋ 부족(빈자리) 추가</button>
     <button class="closex" id="nm-close">취소</button>
   </div>
 </div>
@@ -758,7 +759,7 @@ body[data-theme="matsuri"] .kicker::after{ content:" ⛩"; letter-spacing:0; }
     <label class="fl" style="margin-top:14px">희망 안 한 사람도 이름 검색해서 추가</label>
     <input class="fld" id="cand-search" placeholder="이름 검색" autocomplete="off" style="margin-bottom:8px">
     <div id="cand-sresult"></div>
-    <button class="btn warn full" id="cand-short" style="margin-top:12px">＋ 부족(빈자리) 슬롯 추가</button>
+    <button class="btn shortbtn full" id="cand-short" style="margin-top:12px">＋ 부족(빈자리) 슬롯 추가</button>
     <button class="closex" id="cand-close">닫기</button>
   </div>
 </div>
