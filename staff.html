@@ -142,6 +142,10 @@ body{
 [data-drag]:active{cursor:grabbing}
 .dragging{opacity:.4}
 [data-dropwp].dragover{outline:2px dashed var(--rose);outline-offset:3px;border-radius:12px}
+.drag-trash{position:fixed;left:50%;bottom:26px;transform:translateX(-50%);z-index:130;display:none;align-items:center;gap:8px;background:#fff;border:2px dashed #c0455c;color:#c0455c;font-weight:800;font-size:14px;padding:14px 22px;border-radius:14px;box-shadow:0 10px 26px -12px rgba(0,0,0,.35)}
+.drag-trash.show{display:flex}
+.drag-trash.over{background:#fbeef0;transform:translateX(-50%) scale(1.07)}
+.drag-trash span{font-size:20px}
 .s-row .ig{display:flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:8px;color:#fff;flex-shrink:0;text-decoration:none;background:linear-gradient(45deg,#f09433,#e6683c 25%,#dc2743 50%,#cc2366 75%,#bc1888)}
 .night-row .ig.sm{display:flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:7px;color:#fff;flex-shrink:0;text-decoration:none;background:linear-gradient(45deg,#f09433,#e6683c 25%,#dc2743 50%,#cc2366 75%,#bc1888)}
 .s-row .av.none{background:#f2eaeb;color:#c8aeb2}
@@ -816,6 +820,7 @@ body[data-theme="matsuri"] .kicker::after{ content:" ⛩"; letter-spacing:0; }
   </div>
 </div>
 
+<div class="drag-trash" id="dragTrash"><span>🗑️</span>여기로 끌어 삭제</div>
 <div class="toast" id="toast"></div>
 
 <script type="module">
@@ -1841,8 +1846,9 @@ function bindMoveDrag(list){
     c.addEventListener('dragstart', e=>{
       e.dataTransfer.setData('text/plain', JSON.stringify({id:c.dataset.drag, wp:c.dataset.dwp, nm:c.dataset.dnm}));
       e.dataTransfer.effectAllowed='move'; c.classList.add('dragging');
+      const tr=$('dragTrash'); if(tr) tr.classList.add('show');
     });
-    c.addEventListener('dragend', ()=>c.classList.remove('dragging'));
+    c.addEventListener('dragend', ()=>{ c.classList.remove('dragging'); const tr=$('dragTrash'); if(tr) tr.classList.remove('show','over'); });
   });
   list.querySelectorAll('[data-dropwp]').forEach(z=>{
     z.addEventListener('dragover', e=>{ e.preventDefault(); e.dataTransfer.dropEffect='move'; z.classList.add('dragover'); });
@@ -2402,6 +2408,17 @@ function wireUI(){
   $('mxModal').onclick = e=>{ if(e.target.id==='mxModal') $('mxModal').classList.remove('show'); };
   $('admBuild').onclick = openBuild;
   $('bx-close').onclick = ()=> $('buildModal').classList.remove('show');
+  (()=>{ const tr=$('dragTrash'); if(!tr) return;
+    tr.addEventListener('dragover', e=>{ e.preventDefault(); e.dataTransfer.dropEffect='move'; tr.classList.add('over'); });
+    tr.addEventListener('dragleave', ()=>tr.classList.remove('over'));
+    tr.addEventListener('drop', async e=>{
+      e.preventDefault(); tr.classList.remove('over','show');
+      let d; try{ d=JSON.parse(e.dataTransfer.getData('text/plain')); }catch(_){ return; }
+      if(!d || !d.id) return;
+      if(!confirm(`${d.nm}님 ${d.wp} 근무를 삭제할까요?`)) return;
+      await rpc('admin_delete_shift', { p_admin_id:session.id, p_shift_id:Number(d.id) }, `${d.nm}님 근무를 삭제했어요`);
+    });
+  })();
   $('bx-list').addEventListener('change', async e=>{
     const sel=e.target; if(!sel.classList || !sel.classList.contains('bx-sel')) return;
     const sid=Number(sel.dataset.sid), ds=sel.dataset.d, wp=sel.value;
