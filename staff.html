@@ -379,6 +379,8 @@ body[data-theme="matsuri"] .kicker::after{ content:" ⛩"; letter-spacing:0; }
 .mc-cell{position:relative;min-height:78px;background:#fff;border:1px solid var(--line);border-radius:10px;padding:5px;min-width:0;cursor:pointer}
 .mc-add{position:absolute;top:3px;right:3px;width:19px;height:19px;border:none;border-radius:6px;background:var(--rose);color:#fff;font-weight:800;font-size:13px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;opacity:.85;z-index:1}
 .mc-add:hover{opacity:1;transform:scale(1.08)}
+.mc-ev{font-size:9px;font-weight:800;color:var(--gold);background:#f7edd6;border-radius:4px;padding:1px 4px;margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center;cursor:pointer}
+.mc-ev.empty{color:#d8c6a3;background:none;border:1px dashed #e6dcc4;font-weight:700}
 .mc-cell.dim{background:none;border:none;cursor:default}
 .mc-cell.today{border-color:var(--rose);box-shadow:0 0 0 1px var(--rose)}
 .mc-dn{font-size:13.5px;font-weight:800;color:var(--ink);text-align:center;margin-bottom:4px;display:flex;align-items:center;justify-content:center;gap:4px}
@@ -938,6 +940,10 @@ async function fetchClosures(from,to){
 async function fetchNight(from,to){
   const { data } = await supa.from('night_view').select('*').gte('work_date',from).lte('work_date',to);
   const m={}; (data||[]).forEach(n=>m[n.work_date+'|'+n.workplace]=n.hours); return m;
+}
+async function fetchDayEvents(from,to){
+  const { data } = await supa.from('day_event_view').select('*').gte('work_date',from).lte('work_date',to);
+  const m={}; (data||[]).forEach(e=>m[e.work_date+'|'+e.workplace]=e.event); return m;
 }
 async function fetchNightMembers(dateStr){
   const { data } = await supa.from('night_member_view').select('*').eq('work_date',dateStr);
@@ -1644,6 +1650,7 @@ async function renderMonth(){
   const shifts=await fetchRange(ymd(first), ymd(last));
   const closed=await fetchClosures(ymd(first), ymd(last));
   const night=await fetchNight(ymd(first), ymd(last));
+  const events=await fetchDayEvents(ymd(first), ymd(last));
   const todayStr=ymd(new Date()); const N=last.getDate(); const startDow=first.getDay();
   const all=wpFilter==='전체';
   const dowHead=`<div class="mc-dow"><span class="sun">일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span class="sat">토</span></div>`;
@@ -1663,7 +1670,11 @@ async function renderMonth(){
         return `<div class="mc-nm ${wp}${s.is_guest?' guest':''}"${dragA}>${esc(s.display_name||s.staff_name)}</div>`;
       }).join('');
       const addBtn=(admin && !isClosed)?`<button class="mc-add" data-candadd="${wp}" data-cd="${ds}" title="희망자 배정">＋</button>`:'';
-      cells+=`<div class="mc-cell${ds===todayStr?' today':''}" data-goday="${ds}">${addBtn}<div class="mc-dn${dow===0?' sun':dow===6?' sat':''}">${d}${isNight?'<span class="mc-nt">야</span>':''}</div>${inner}</div>`;
+      const evName=events[ds+'|'+wp]||'';
+      const evStrip = evName
+        ? `<div class="mc-ev"${admin?` data-evwp="${wp}" data-evd="${ds}"`:''}>${esc(evName)}</div>`
+        : (admin?`<div class="mc-ev empty" data-evwp="${wp}" data-evd="${ds}">＋데이</div>`:'');
+      cells+=`<div class="mc-cell${ds===todayStr?' today':''}" data-goday="${ds}">${addBtn}${evStrip}<div class="mc-dn${dow===0?' sun':dow===6?' sat':''}">${d}${isNight?'<span class="mc-nt">야</span>':''}</div>${inner}</div>`;
     }
     return dowHead+`<div class="mc-grid">${cells}</div>`;
   }
@@ -1684,6 +1695,14 @@ async function renderMonth(){
   });
   list.querySelectorAll('[data-candadd]').forEach(b=>b.addEventListener('click', e=>{
     e.stopPropagation(); openCandModal(b.dataset.candadd, b.dataset.cd);
+  }));
+  list.querySelectorAll('[data-evwp]').forEach(el=>el.addEventListener('click', async e=>{
+    e.stopPropagation();
+    const wp=el.dataset.evwp, ds=el.dataset.evd;
+    const cur=(events[ds+'|'+wp]||'');
+    const ev=prompt(`${ds} · ${wp} 이벤트 이름 (지우려면 비워두기):`, cur);
+    if(ev===null) return;
+    await rpc('admin_set_day_event', { p_admin_id:session.id, p_date:ds, p_workplace:wp, p_event:ev.trim() }, ev.trim()?'이벤트를 저장했어요':'이벤트를 지웠어요');
   }));
   list.querySelectorAll('[data-publish]').forEach(b=>b.onclick=async()=>{
     if(!confirm('이 달 스케줄을 공개할까요? 공개하면 직원·손님이 볼 수 있어요.')) return;
