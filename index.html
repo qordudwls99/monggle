@@ -311,12 +311,7 @@ async function boot(){
   $('calModal').onclick = e=>{ if(e.target.id==='calModal') $('calModal').classList.remove('show'); };
   render();
   setupPTR(document.querySelector('.body'), async()=>{ navDir=0; await loadBounds(); await loadDraftMonths(); render(); });
-  setInterval(async()=>{
-    if(document.visibilityState!=='visible') return;
-    navDir=0; const b=document.querySelector('.body'); const sc=b?b.scrollTop:0;
-    await loadBounds(); await loadDraftMonths(); await render();
-    if(b && sc) b.scrollTop=sc;   // 자동 새로고침 후 스크롤 위치 복원
-  }, 30000);
+  // 자동 새로고침 제거: 당겨서 새로고침으로 갱신
 }
 let calY, calM;
 function openCalendar(){ calY=selectedDate.getFullYear(); calM=selectedDate.getMonth(); renderCal(); $('calModal').classList.add('show'); }

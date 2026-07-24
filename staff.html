@@ -870,12 +870,7 @@ async function boot(){
   if('serviceWorker' in navigator){ navigator.serviceWorker.register('/sw.js').catch(()=>{}); }
   if(session) setTimeout(maybeAskPush, 1200);
   // 주기적 새로고침
-  setInterval(async ()=>{
-    if(document.visibilityState!=='visible' || currentTab==='submit') return;
-    const b=document.querySelector('.body'); const sc=b?b.scrollTop:0;
-    try{ await refreshCurrent(); }catch(e){}
-    if(b && sc) b.scrollTop=sc;   // 자동 새로고침 후 스크롤 위치 복원
-  }, 20000);
+  // 자동 새로고침 제거: 당겨서 새로고침 / 탭 전환으로 갱신
 }
 /* ---------- 푸시 알림 ---------- */
 function urlB64ToUint8(base64){
