@@ -120,6 +120,7 @@ body{
 .chips{display:flex;gap:7px;margin-bottom:16px;flex-wrap:wrap}
 .chip{border:1px solid var(--line);cursor:pointer;font-family:inherit;font-weight:700;font-size:12.5px;padding:7px 15px;border-radius:99px;background:#fff;color:var(--muted)}
 .chip.on{color:#fff;border-color:transparent}
+.chip.on[data-w="전체"]{background:var(--rose)}
 .chip.on[data-w="메이드"]{background:var(--maid)}
 .chip.on[data-w="데빌"]{background:var(--devil)}
 .chip.on[data-w="마츠리"]{background:var(--matsuri)}
@@ -367,6 +368,13 @@ body[data-theme="matsuri"] .kicker::after{ content:" ⛩"; letter-spacing:0; }
 .mc-dn.sun{color:#d0596b}.mc-dn.sat{color:#5b7fd0}
 .mc-nt{font-size:8px;font-weight:800;color:#4f4a7a;background:#ece9f4;padding:0 3px;border-radius:4px}
 .mc-nm{font-size:9.5px;font-weight:700;color:var(--rose-deep);background:var(--soft2);border-radius:4px;padding:1px 2px;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center}
+.mc-nm.메이드{background:#fadfe5;color:#8f3d52}
+.mc-nm.데빌{background:#e6e0f5;color:#4f3f7a}
+.mc-nm.마츠리{background:#e3f0d8;color:#4f6b28}
+.mc-lg{font-size:10.5px;font-weight:800;padding:3px 9px;border-radius:6px}
+.mc-lg.메이드{background:#fadfe5;color:#8f3d52}
+.mc-lg.데빌{background:#e6e0f5;color:#4f3f7a}
+.mc-lg.마츠리{background:#e3f0d8;color:#4f6b28}
 .mc-nm.guest{background:#f3e7c8;color:var(--gold)}
 .mc-off{font-size:9.5px;color:var(--muted);font-weight:700;text-align:center;padding-top:8px}
 .mc-empty{font-size:9px;color:#cdb9bd;font-weight:700;text-align:center;padding-top:8px}
@@ -1528,7 +1536,7 @@ function applyTheme(wp){
 /* ---------- 근무지 칩 ---------- */
 function renderChips(){
   const c = $('wpChips');
-  c.innerHTML = WORKPLACES.map(w=>
+  c.innerHTML = ['전체',...WORKPLACES].map(w=>
     `<button class="chip${w===wpFilter?' on':''}" data-w="${w}">${w}</button>`).join('');
   c.querySelectorAll('.chip').forEach(b=>b.onclick=()=>{ wpFilter=b.dataset.w; applyTheme(wpFilter); renderChips(); renderSchedule(); });
 }
@@ -1550,23 +1558,35 @@ async function renderMonth(){
   const shifts=await fetchRange(ymd(first), ymd(last));
   const closed=await fetchClosures(ymd(first), ymd(last));
   const night=await fetchNight(ymd(first), ymd(last));
-  const todayStr=ymd(new Date()); const wp=wpFilter; const N=last.getDate(); const startDow=first.getDay();
+  const todayStr=ymd(new Date()); const N=last.getDate(); const startDow=first.getDay();
+  const all=wpFilter==='전체'; const groups=all?WORKPLACES:[wpFilter];
   let cells='';
   for(let i=0;i<startDow;i++) cells+=`<div class="mc-cell dim"></div>`;
   for(let d=1; d<=N; d++){
     const ds=`${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`; const dow=new Date(y,m,d).getDay();
-    const isClosed=closed.has(ds+'|'+wp); const isNight=night[ds+'|'+wp];
-    const rows=shifts.filter(s=>s.work_date===ds && s.workplace===wp);
-    const filled=rows.filter(s=>s.display_name||s.staff_name)
-      .sort((a,b)=>((b.is_guest?1:0)-(a.is_guest?1:0))||String(a.start_time).localeCompare(String(b.start_time)));
+    const isNight=groups.some(wp=>night[ds+'|'+wp]);
     let inner;
-    if(isClosed) inner=`<div class="mc-off">휴무</div>`;
-    else if(filled.length===0) inner=`<div class="mc-empty">${admin?'비어있음':''}</div>`;
-    else inner=filled.map(s=>`<div class="mc-nm${s.is_guest?' guest':''}">${esc(s.display_name||s.staff_name)}</div>`).join('');
+    if(all){
+      const items=[];
+      groups.forEach(wp=>{
+        if(closed.has(ds+'|'+wp)) return;
+        shifts.filter(s=>s.work_date===ds && s.workplace===wp && (s.display_name||s.staff_name))
+          .forEach(s=>items.push({wp, nm:s.display_name||s.staff_name, guest:s.is_guest}));
+      });
+      inner = items.length ? items.map(it=>`<div class="mc-nm ${it.wp}${it.guest?' guest':''}">${esc(it.nm)}</div>`).join('') : `<div class="mc-empty">${admin?'비어있음':''}</div>`;
+    } else {
+      const wp=wpFilter; const isClosed=closed.has(ds+'|'+wp);
+      const filled=shifts.filter(s=>s.work_date===ds && s.workplace===wp && (s.display_name||s.staff_name))
+        .sort((a,b)=>((b.is_guest?1:0)-(a.is_guest?1:0))||String(a.start_time).localeCompare(String(b.start_time)));
+      if(isClosed) inner=`<div class="mc-off">휴무</div>`;
+      else if(filled.length===0) inner=`<div class="mc-empty">${admin?'비어있음':''}</div>`;
+      else inner=filled.map(s=>`<div class="mc-nm${s.is_guest?' guest':''}">${esc(s.display_name||s.staff_name)}</div>`).join('');
+    }
     cells+=`<div class="mc-cell${ds===todayStr?' today':''}" data-goday="${ds}"><div class="mc-dn${dow===0?' sun':dow===6?' sat':''}">${d}${isNight?'<span class="mc-nt">야</span>':''}</div>${inner}</div>`;
   }
   const banner = (admin&&isDraft)?`<div class="draftbar">작성 중 · 직원·손님에겐 안 보여요<button class="db-btn" data-publish="1">공개하기</button></div>`:'';
-  list.innerHTML=banner+`<div class="mc-dow"><span class="sun">일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span class="sat">토</span></div><div class="mc-grid">${cells}</div>`;
+  const legend = all?`<div class="mx-legend"><span class="mc-lg 메이드">메이드</span><span class="mc-lg 데빌">데빌</span><span class="mc-lg 마츠리">마츠리</span></div>`:'';
+  list.innerHTML=banner+legend+`<div class="mc-dow"><span class="sun">일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span class="sat">토</span></div><div class="mc-grid">${cells}</div>`;
   animList();
   list.querySelectorAll('[data-goday]').forEach(c=>c.onclick=()=>{
     selectedDate=new Date(c.dataset.goday+'T00:00:00'); viewMode='day'; navDir=0;
