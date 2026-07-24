@@ -338,6 +338,8 @@ body[data-theme="matsuri"] .kicker::after{ content:" ⛩"; letter-spacing:0; }
 .candrow .cn{flex:1;font-weight:700;font-size:15px;color:var(--ink)}
 .candrow .ct{font-size:10px;font-weight:800;color:var(--gold);background:#f3e7c8;padding:3px 8px;border-radius:99px}
 .cand-none{text-align:center;color:var(--muted);font-weight:600;font-size:13px;padding:20px}
+.cand-add-btn{display:inline-block;border:1px solid var(--line);cursor:pointer;font-family:inherit;font-weight:700;font-size:13px;padding:7px 12px;border-radius:99px;background:var(--soft2);color:var(--rose-deep);margin:0 6px 6px 0}
+.cand-add-btn:active{transform:scale(.96)}
 .draftbar{display:flex;align-items:center;gap:9px;background:#fdf0e6;border:1px solid #f3d9c2;color:#a85e2a;font-weight:800;font-size:12.5px;padding:9px 12px;border-radius:10px;margin-bottom:12px}
 .draftbar .db-btn{margin-left:auto;border:none;cursor:pointer;font-family:inherit;font-weight:800;font-size:11.5px;color:#fff;background:var(--rose);padding:6px 12px;border-radius:8px;flex-shrink:0}
 .nm-chips{display:flex;flex-wrap:wrap;gap:7px}
@@ -724,8 +726,11 @@ body[data-theme="matsuri"] .kicker::after{ content:" ⛩"; letter-spacing:0; }
   <div class="modal-c">
     <div class="modal-t">희망자 배정</div>
     <div class="modal-s" id="cand-sub"></div>
-    <div id="cand-list" style="max-height:52vh;overflow-y:auto"></div>
+    <div id="cand-list" style="max-height:40vh;overflow-y:auto"></div>
     <button class="btn primary full" id="cand-save" style="margin-top:10px">선택한 사람 배정</button>
+    <label class="fl" style="margin-top:14px">희망 안 한 사람도 이름 검색해서 추가</label>
+    <input class="fld" id="cand-search" placeholder="이름 검색" autocomplete="off" style="margin-bottom:8px">
+    <div id="cand-sresult"></div>
     <button class="closex" id="cand-close">닫기</button>
   </div>
 </div>
@@ -1487,6 +1492,24 @@ async function openCandModal(wp, dateStr){
   $('cand-list').innerHTML = cands.length
     ? cands.map(c=>`<label class="candrow"><input type="checkbox" value="${c.id}"><span class="cn">${esc(c.name)}</span>${c.any?'<span class="ct">상관없음</span>':''}</label>`).join('')
     : `<div class="cand-none">이 매장을 희망한 사람이 없어요</div>`;
+  // 이름 검색해서 직접 추가 (희망 안 한 사람도)
+  $('cand-search').value=''; $('cand-sresult').innerHTML='';
+  $('cand-search').oninput=()=>{
+    const q=$('cand-search').value.trim().toLowerCase();
+    if(!q){ $('cand-sresult').innerHTML=''; return; }
+    const hits=staffList.filter(s=> s.name.toLowerCase().includes(q) && !(placed[s.id]&&placed[s.id].has(candWp))).slice(0,10);
+    $('cand-sresult').innerHTML = hits.length
+      ? hits.map(s=>`<button class="cand-add-btn" data-addid="${s.id}" data-addnm="${esc(s.name)}">＋ ${esc(s.name)}</button>`).join('')
+      : `<div style="font-size:12px;color:var(--muted);font-weight:700;padding:4px 2px">검색 결과 없음</div>`;
+    $('cand-sresult').querySelectorAll('[data-addid]').forEach(b=>b.onclick=()=>candAddOne(Number(b.dataset.addid), b.dataset.addnm));
+  };
+}
+async function candAddOne(id, name){
+  const { error }=await supa.rpc('admin_assign_from_submission',{p_admin_id:session.id, p_pin:session.pin, p_date:candDate, p_workplace:candWp, p_staff_ids:[id]});
+  if(error){ toast(error.message.replace(/^.*?:\s*/,''), true); return; }
+  toast(`${name}님 배정했어요`);
+  renderSchedule();
+  openCandModal(candWp, candDate);
 }
 async function candSave(){
   const ids=[...$('cand-list').querySelectorAll('input:checked')].map(i=>Number(i.value));
