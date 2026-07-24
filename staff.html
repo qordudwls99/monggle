@@ -370,7 +370,9 @@ body[data-theme="matsuri"] .kicker::after{ content:" ⛩"; letter-spacing:0; }
 .mc-dow span{text-align:center;font-size:12px;font-weight:800;color:var(--muted)}
 .mc-dow span.sun{color:#d0596b}.mc-dow span.sat{color:#5b7fd0}
 .mc-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
-.mc-cell{min-height:78px;background:#fff;border:1px solid var(--line);border-radius:10px;padding:5px;min-width:0;cursor:pointer}
+.mc-cell{position:relative;min-height:78px;background:#fff;border:1px solid var(--line);border-radius:10px;padding:5px;min-width:0;cursor:pointer}
+.mc-add{position:absolute;top:3px;right:3px;width:19px;height:19px;border:none;border-radius:6px;background:var(--rose);color:#fff;font-weight:800;font-size:13px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;opacity:.85;z-index:1}
+.mc-add:hover{opacity:1;transform:scale(1.08)}
 .mc-cell.dim{background:none;border:none;cursor:default}
 .mc-cell.today{border-color:var(--rose);box-shadow:0 0 0 1px var(--rose)}
 .mc-dn{font-size:13.5px;font-weight:800;color:var(--ink);text-align:center;margin-bottom:4px;display:flex;align-items:center;justify-content:center;gap:4px}
@@ -1465,8 +1467,8 @@ async function openSubView(id, name){
 }
 
 /* 희망자 배정 모달 */
-async function openCandModal(wp){
-  candWp=wp; candDate=ymd(selectedDate); const ym=ymOfDate(selectedDate);
+async function openCandModal(wp, dateStr){
+  candWp=wp; candDate=dateStr||ymd(selectedDate); const ym=candDate.slice(0,7);
   $('cand-sub').textContent=`${candDate} · ${wp} 희망자`;
   $('cand-list').innerHTML=`<div style="text-align:center;padding:24px"><span class="spin"></span></div>`;
   $('candModal').classList.add('show');
@@ -1632,7 +1634,8 @@ async function renderMonth(){
         const dragA=(admin && all && s.staff_id && isWideScreen())?` draggable="true" data-drag="${s.id}" data-dwp="${wp}" data-dnm="${esc(s.staff_name)}"`:'';
         return `<div class="mc-nm ${wp}${s.is_guest?' guest':''}"${dragA}>${esc(s.display_name||s.staff_name)}</div>`;
       }).join('');
-      cells+=`<div class="mc-cell${ds===todayStr?' today':''}" data-goday="${ds}"><div class="mc-dn${dow===0?' sun':dow===6?' sat':''}">${d}${isNight?'<span class="mc-nt">야</span>':''}</div>${inner}</div>`;
+      const addBtn=(admin && !isClosed)?`<button class="mc-add" data-candadd="${wp}" data-cd="${ds}" title="희망자 배정">＋</button>`:'';
+      cells+=`<div class="mc-cell${ds===todayStr?' today':''}" data-goday="${ds}">${addBtn}<div class="mc-dn${dow===0?' sun':dow===6?' sat':''}">${d}${isNight?'<span class="mc-nt">야</span>':''}</div>${inner}</div>`;
     }
     return dowHead+`<div class="mc-grid">${cells}</div>`;
   }
@@ -1651,6 +1654,9 @@ async function renderMonth(){
     $('viewSeg').querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.v==='day'));
     renderSchedule();
   });
+  list.querySelectorAll('[data-candadd]').forEach(b=>b.addEventListener('click', e=>{
+    e.stopPropagation(); openCandModal(b.dataset.candadd, b.dataset.cd);
+  }));
   list.querySelectorAll('[data-publish]').forEach(b=>b.onclick=async()=>{
     if(!confirm('이 달 스케줄을 공개할까요? 공개하면 직원·손님이 볼 수 있어요.')) return;
     const ok=await rpc('admin_set_published', { p_admin_id:session.id, p_ym:ymOfDate(selectedDate), p_pub:true }, '이 달을 공개했어요');
