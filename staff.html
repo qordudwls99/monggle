@@ -375,6 +375,8 @@ body[data-theme="matsuri"] .kicker::after{ content:" ⛩"; letter-spacing:0; }
 .mc-lg.메이드{background:#fadfe5;color:#8f3d52}
 .mc-lg.데빌{background:#e6e0f5;color:#4f3f7a}
 .mc-lg.마츠리{background:#e3f0d8;color:#4f6b28}
+.mc-multi{display:flex;flex-direction:column;gap:22px}
+.mc-cal-t{font-weight:800;font-size:14.5px;color:var(--ink);margin:0 2px 9px;display:flex;align-items:center;gap:7px}
 .mc-nm.guest{background:#f3e7c8;color:var(--gold)}
 .mc-off{font-size:9.5px;color:var(--muted);font-weight:700;text-align:center;padding-top:8px}
 .mc-empty{font-size:9px;color:#cdb9bd;font-weight:700;text-align:center;padding-top:8px}
@@ -421,6 +423,8 @@ body[data-theme="matsuri"] .kicker::after{ content:" ⛩"; letter-spacing:0; }
   #screen-swaps,#screen-mine,#screen-submit,#screen-admin,#screen-noti{max-width:680px;margin:0 auto;width:100%}
   /* 일별: 세 매장을 가로로 펼쳐 3단 (화면 넓으면 자동으로 나뉨) */
   #scheduleList.day-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(330px,1fr));gap:16px;align-items:start}
+  /* 월별 전체: 세 매장 달력을 가로 3개로 나란히 */
+  .mc-multi{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;align-items:start}
 }
 </style>
 </head>
@@ -1567,34 +1571,33 @@ async function renderMonth(){
   const closed=await fetchClosures(ymd(first), ymd(last));
   const night=await fetchNight(ymd(first), ymd(last));
   const todayStr=ymd(new Date()); const N=last.getDate(); const startDow=first.getDay();
-  const all=wpFilter==='전체'; const groups=all?WORKPLACES:[wpFilter];
-  let cells='';
-  for(let i=0;i<startDow;i++) cells+=`<div class="mc-cell dim"></div>`;
-  for(let d=1; d<=N; d++){
-    const ds=`${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`; const dow=new Date(y,m,d).getDay();
-    const isNight=groups.some(wp=>night[ds+'|'+wp]);
-    let inner;
-    if(all){
-      const items=[];
-      groups.forEach(wp=>{
-        if(closed.has(ds+'|'+wp)) return;
-        shifts.filter(s=>s.work_date===ds && s.workplace===wp && (s.display_name||s.staff_name))
-          .forEach(s=>items.push({wp, nm:s.display_name||s.staff_name, guest:s.is_guest}));
-      });
-      inner = items.length ? items.map(it=>`<div class="mc-nm ${it.wp}${it.guest?' guest':''}">${esc(it.nm)}</div>`).join('') : `<div class="mc-empty">${admin?'비어있음':''}</div>`;
-    } else {
-      const wp=wpFilter; const isClosed=closed.has(ds+'|'+wp);
+  const all=wpFilter==='전체';
+  const dowHead=`<div class="mc-dow"><span class="sun">일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span class="sat">토</span></div>`;
+  function calFor(wp){
+    let cells='';
+    for(let i=0;i<startDow;i++) cells+=`<div class="mc-cell dim"></div>`;
+    for(let d=1; d<=N; d++){
+      const ds=`${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`; const dow=new Date(y,m,d).getDay();
+      const isClosed=closed.has(ds+'|'+wp); const isNight=night[ds+'|'+wp];
       const filled=shifts.filter(s=>s.work_date===ds && s.workplace===wp && (s.display_name||s.staff_name))
         .sort((a,b)=>((b.is_guest?1:0)-(a.is_guest?1:0))||String(a.start_time).localeCompare(String(b.start_time)));
+      let inner;
       if(isClosed) inner=`<div class="mc-off">휴무</div>`;
       else if(filled.length===0) inner=`<div class="mc-empty">${admin?'비어있음':''}</div>`;
-      else inner=filled.map(s=>`<div class="mc-nm${s.is_guest?' guest':''}">${esc(s.display_name||s.staff_name)}</div>`).join('');
+      else inner=filled.map(s=>`<div class="mc-nm ${wp}${s.is_guest?' guest':''}">${esc(s.display_name||s.staff_name)}</div>`).join('');
+      cells+=`<div class="mc-cell${ds===todayStr?' today':''}" data-goday="${ds}"><div class="mc-dn${dow===0?' sun':dow===6?' sat':''}">${d}${isNight?'<span class="mc-nt">야</span>':''}</div>${inner}</div>`;
     }
-    cells+=`<div class="mc-cell${ds===todayStr?' today':''}" data-goday="${ds}"><div class="mc-dn${dow===0?' sun':dow===6?' sat':''}">${d}${isNight?'<span class="mc-nt">야</span>':''}</div>${inner}</div>`;
+    return dowHead+`<div class="mc-grid">${cells}</div>`;
   }
   const banner = (admin&&isDraft)?`<div class="draftbar">작성 중 · 직원·손님에겐 안 보여요<button class="db-btn" data-publish="1">공개하기</button></div>`:'';
-  const legend = all?`<div class="mx-legend"><span class="mc-lg 메이드">메이드</span><span class="mc-lg 데빌">데빌</span><span class="mc-lg 마츠리">마츠리</span></div>`:'';
-  list.innerHTML=banner+legend+`<div class="mc-dow"><span class="sun">일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span class="sat">토</span></div><div class="mc-grid">${cells}</div>`;
+  let html=banner;
+  if(all){
+    html+=`<div class="mc-multi">`+WORKPLACES.map(wp=>
+      `<div class="mc-cal"><div class="mc-cal-t"><span class="wp-dot ${wp}"></span>${wp}</div>${calFor(wp)}</div>`).join('')+`</div>`;
+  } else {
+    html+=calFor(wpFilter);
+  }
+  list.innerHTML=html;
   animList();
   list.querySelectorAll('[data-goday]').forEach(c=>c.onclick=()=>{
     selectedDate=new Date(c.dataset.goday+'T00:00:00'); viewMode='day'; navDir=0;
