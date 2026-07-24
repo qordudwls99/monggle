@@ -885,8 +885,8 @@ body[data-theme="matsuri"] .kicker::after{ content:" ⛩"; letter-spacing:0; }
       <button class="cap-close" id="cap-close">✕</button>
     </div>
     <div class="cap-sheet" id="cap-sheet"></div>
-    <button class="btn primary full" id="cap-save" style="margin-top:12px">💾 이미지 저장</button>
-    <div class="cap-hint">매장 탭을 바꿔가며 각각 저장하세요</div>
+    <button class="btn primary full" id="cap-save" style="margin-top:12px">📤 이미지 저장 / 공유</button>
+    <div class="cap-hint">저장 누르면 사진앱 저장·단톡방 공유를 고를 수 있어요 (매장 탭별로 각각)</div>
   </div>
 </div>
 
@@ -1768,14 +1768,25 @@ function renderCapChips(){
   $('cap-chips').querySelectorAll('.chip').forEach(b=>b.onclick=()=>{ capWp=b.dataset.w; renderCapChips(); renderCapSheet(); });
 }
 async function saveCapImage(){
-  const btn=$('cap-save'); const old=btn.textContent; btn.disabled=true; btn.textContent='저장 중…';
+  const btn=$('cap-save'); const old=btn.textContent; btn.disabled=true; btn.textContent='만드는 중…';
   try{
     const mod=await import('https://esm.sh/html2canvas@1.4.1');
     const html2canvas=mod.default||mod;
     const canvas=await html2canvas($('cap-sheet'), { scale:2, backgroundColor:'#ffffff', useCORS:true, logging:false });
-    const url=canvas.toDataURL('image/png');
-    const a=document.createElement('a'); a.href=url; a.download=`${capWp}_${capYM.split('-')[1]}월_스케줄.png`;
+    const name=`${capWp}_${capYM.split('-')[1]}월_스케줄.png`;
+    const blob=await new Promise(res=>canvas.toBlob(res,'image/png'));
+    if(!blob) throw new Error('이미지 생성 실패');
+    const file=new File([blob], name, {type:'image/png'});
+    // 아이폰/안드: 공유 시트 → "이미지 저장" 또는 단톡방 공유
+    if(navigator.canShare && navigator.canShare({files:[file]})){
+      try{ await navigator.share({ files:[file], title:name }); btn.disabled=false; btn.textContent=old; return; }
+      catch(e){ if(e && e.name==='AbortError'){ btn.disabled=false; btn.textContent=old; return; } }
+    }
+    // 컴퓨터 등: 바로 다운로드
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a'); a.href=url; a.download=name;
     document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url), 4000);
     toast('이미지를 저장했어요');
   }catch(e){ toast('저장 실패: '+((e&&e.message)||e), true); }
   btn.disabled=false; btn.textContent=old;
