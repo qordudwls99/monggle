@@ -122,6 +122,32 @@ begin
   return n;
 end; $$;
 
+-- 날짜별 이벤트('○○데이') 저장 (근무가 없는 날도 저장 가능)
+create table if not exists day_events (
+  work_date date not null,
+  workplace text not null,
+  event text not null,
+  primary key (work_date, workplace)
+);
+alter table day_events enable row level security;
+create or replace view day_event_view as select work_date, workplace, event from day_events;
+grant select on day_event_view to anon, authenticated;
+
+-- 이벤트 설정(비우면 삭제) — 표시 호환 위해 그날 근무 메모도 같이 맞춤
+create or replace function admin_set_day_event(p_admin_id bigint, p_pin text, p_date date, p_workplace text, p_event text)
+returns void language plpgsql security definer set search_path = public as $$
+declare v staff; e text;
+begin
+  v := _verify(p_admin_id, p_pin);
+  if v.id is null or not v.is_admin then raise exception '관리자만 가능합니다'; end if;
+  e := nullif(trim(p_event), '');
+  if e is null then delete from day_events where work_date=p_date and workplace=p_workplace;
+  else insert into day_events(work_date, workplace, event) values (p_date, p_workplace, e)
+    on conflict (work_date, workplace) do update set event=excluded.event; end if;
+  update shifts set memo = e where work_date=p_date and workplace=p_workplace;
+end; $$;
+grant execute on function admin_set_day_event to anon, authenticated;
+
 -- 드래그로 근무지 이동: 한 근무의 근무지를 바꿈
 create or replace function admin_move_shift(p_admin_id bigint, p_pin text, p_shift_id bigint, p_workplace text)
 returns void language plpgsql security definer set search_path = public as $$
