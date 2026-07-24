@@ -391,16 +391,21 @@ body[data-theme="matsuri"] .kicker::after{ content:" ⛩"; letter-spacing:0; }
 .mx-출근불가능{background:#efe9ea;color:#a08d90}
 /* 편성 표(클릭 배정) */
 .mx td.bx-cell{padding:0}
+/* 편성 표에선 줄무늬 끄기 (희망 배경색이 보이도록) */
+.mx.bx tbody tr:nth-child(2n) td{background:none}
+.mx.bx tbody tr:nth-child(2n) .mx-name{background:#fff}
 .bx-sel{border:none;background:transparent;font-family:inherit;font-size:11px;font-weight:800;color:var(--ink);width:100%;height:29px;text-align:center;text-align-last:center;cursor:pointer;-webkit-appearance:none;appearance:none;padding:0 2px}
 .bx-sel:focus{outline:2px solid var(--rose);outline-offset:-2px}
-.bx-sel.asn-메이드{background:#f3c9d3;color:#8f3d52}
-.bx-sel.asn-데빌{background:#d8d2ef;color:#4f3f7a}
-.bx-sel.asn-마츠리{background:#d7e9cd;color:#4f6b28}
-.pref-메이드{background:#fceef1}
-.pref-데빌{background:#f0edfa}
-.pref-마츠리{background:#eff7e9}
-.pref-상관없음{background:#fcf4e3}
-.pref-출근불가능{background:#f4eff1}
+/* 신청(희망) = 연한 배경 */
+.mx.bx td.pref-메이드{background:#fadfe5}
+.mx.bx td.pref-데빌{background:#e6e0f5}
+.mx.bx td.pref-마츠리{background:#e3f0d8}
+.mx.bx td.pref-상관없음{background:#f8ecca}
+.mx.bx td.pref-출근불가능{background:#eee7e9}
+/* 확정(배정) = 진한 칸 */
+.bx-sel.asn-메이드{background:#e39cae!important;color:#5e1f30}
+.bx-sel.asn-데빌{background:#b3a8e0!important;color:#2f2559}
+.bx-sel.asn-마츠리{background:#a9d18c!important;color:#33501a}
 </style>
 </head>
 <body>
