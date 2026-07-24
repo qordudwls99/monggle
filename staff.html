@@ -885,7 +885,8 @@ body[data-theme="matsuri"] .kicker::after{ content:" ⛩"; letter-spacing:0; }
       <button class="cap-close" id="cap-close">✕</button>
     </div>
     <div class="cap-sheet" id="cap-sheet"></div>
-    <div class="cap-hint">매장 탭을 바꿔가며 스크린샷 하세요</div>
+    <button class="btn primary full" id="cap-save" style="margin-top:12px">💾 이미지 저장</button>
+    <div class="cap-hint">매장 탭을 바꿔가며 각각 저장하세요</div>
   </div>
 </div>
 
@@ -1765,6 +1766,19 @@ async function openCapture(ym){
 function renderCapChips(){
   $('cap-chips').innerHTML=WORKPLACES.map(w=>`<button class="chip${w===capWp?' on':''}" data-w="${w}">${w}</button>`).join('');
   $('cap-chips').querySelectorAll('.chip').forEach(b=>b.onclick=()=>{ capWp=b.dataset.w; renderCapChips(); renderCapSheet(); });
+}
+async function saveCapImage(){
+  const btn=$('cap-save'); const old=btn.textContent; btn.disabled=true; btn.textContent='저장 중…';
+  try{
+    const mod=await import('https://esm.sh/html2canvas@1.4.1');
+    const html2canvas=mod.default||mod;
+    const canvas=await html2canvas($('cap-sheet'), { scale:2, backgroundColor:'#ffffff', useCORS:true, logging:false });
+    const url=canvas.toDataURL('image/png');
+    const a=document.createElement('a'); a.href=url; a.download=`${capWp}_${capYM.split('-')[1]}월_스케줄.png`;
+    document.body.appendChild(a); a.click(); a.remove();
+    toast('이미지를 저장했어요');
+  }catch(e){ toast('저장 실패: '+((e&&e.message)||e), true); }
+  btn.disabled=false; btn.textContent=old;
 }
 function renderCapSheet(){
   const wp=capWp; const [y,m]=capYM.split('-').map(Number); const N=daysInYM(capYM); const first=new Date(y,m-1,1).getDay();
@@ -2662,6 +2676,7 @@ function wireUI(){
   $('admBuild').onclick = openBuild;
   $('bx-close').onclick = ()=> $('buildModal').classList.remove('show');
   $('cap-close').onclick = ()=> $('capModal').classList.remove('show');
+  $('cap-save').onclick = saveCapImage;
   $('capModal').onclick = e=>{ if(e.target.id==='capModal') $('capModal').classList.remove('show'); };
   (()=>{ const tr=$('dragTrash'); if(!tr) return;
     tr.addEventListener('dragover', e=>{ e.preventDefault(); e.dataTransfer.dropEffect='move'; tr.classList.add('over'); });
