@@ -511,6 +511,7 @@ body[data-theme="matsuri"] .kicker::after{ content:" ⛩"; letter-spacing:0; }
           <button data-v="day" class="on">일별</button>
           <button data-v="week">주간</button>
           <button data-v="month">월별</button>
+          <button data-v="night">야간</button>
         </div>
         <div class="datebar">
           <button id="prevDay">‹</button>
@@ -689,6 +690,7 @@ body[data-theme="matsuri"] .kicker::after{ content:" ⛩"; letter-spacing:0; }
     <label class="fl">또는 게스트 이름</label>
     <input class="fld" id="nm-guest" placeholder="게스트 이름 (계정 없는 사람)">
     <button class="btn primary full" id="nm-save">추가</button>
+    <button class="btn warn full" id="nm-short" style="margin-top:9px">＋ 부족(빈자리) 추가</button>
     <button class="closex" id="nm-close">취소</button>
   </div>
 </div>
@@ -1151,15 +1153,24 @@ async function doUploadAvatar(blob){
 function avStyle(url){ return url?`background-image:url('${url.replace(/'/g,"%27")}')`:''; }
 
 /* 야간 멤버 추가 모달 */
-let nmWp=null;
-function openNmAdd(wp){
-  nmWp=wp;
-  $('nm-sub').textContent=`${ymd(selectedDate)} · ${wp} 야간`;
+let nmWp=null, nmDate=null, nmNightOn=true;
+function openNmAdd(wp, dateStr, nightOn){
+  nmWp=wp; nmDate=dateStr||ymd(selectedDate); nmNightOn=(nightOn!==false);
+  $('nm-sub').textContent=`${nmDate} · ${wp} 야간`;
   $('nm-staff').innerHTML=`<option value="">— 직원 선택 —</option>`+staffList.map(s=>`<option value="${s.id}">${esc(s.name)}</option>`).join('');
   $('nm-guest').value='';
   $('nm-cands').innerHTML='';
   $('nmModal').classList.add('show');
   loadNmCands();
+}
+async function ensureNightOn(){   // 야간 멤버 넣을 때 그날 야간영업 자동 켜기
+  if(nmNightOn) return;
+  await supa.rpc('admin_set_night',{p_admin_id:session.id, p_pin:session.pin, p_date:nmDate, p_workplace:nmWp, p_on:true, p_hours:'주간 16:00~23:00 · 야간 23:00~익일 05:00'});
+  nmNightOn=true;
+}
+async function nmAddShort(){
+  await ensureNightOn();
+  await rpc('admin_add_night_member', { p_admin_id:session.id, p_date:nmDate, p_workplace:nmWp, p_staff_id:null, p_name:'부족' }, '부족(빈자리) 추가');
 }
 // 야간 문항 라벨의 날짜(예: "8/1-8/2 ...")가 대상 날짜를 포함하는지
 function nightCovers(label, year, targetYmd){
@@ -1170,17 +1181,17 @@ function nightCovers(label, year, targetYmd){
   return targetYmd>=start && targetYmd<=end;
 }
 async function loadNmCands(){
-  const box=$('nm-cands'); const ym=ymOfDate(selectedDate);
+  const box=$('nm-cands'); const ym=nmDate.slice(0,7);
   const [nqR, ansR, memR] = await Promise.all([
     supa.from('submission_night_view').select('*').eq('ym', ym),
     supa.from('submission_answer_view').select('*').eq('ym', ym),
-    supa.from('night_member_view').select('*').eq('work_date', ymd(selectedDate))
+    supa.from('night_member_view').select('*').eq('work_date', nmDate)
   ]);
   const nights=(nqR.data||[]).sort((a,b)=>String(a.work_date||"").localeCompare(String(b.work_date||""))||a.sort-b.sort||a.id-b.id);
-  if(!nights.length){ box.innerHTML=`<div style="font-size:12px;color:var(--muted);font-weight:700">이 달 야간 문항이 없어요</div>`; return; }
+  if(!nights.length){ box.innerHTML=`<div style="font-size:12px;color:var(--muted);font-weight:700">이 달 야간 문항이 없어요 (이름 검색/직원 선택으로 추가 가능)</div>`; return; }
   const byq={}; (ansR.data||[]).forEach(a=>{ if(a.qkey && a.qkey.indexOf('n:')===0){ (byq[a.qkey.slice(2)]=byq[a.qkey.slice(2)]||[]).push(a); } });
   const already=new Set((memR.data||[]).filter(m=>m.workplace===nmWp && m.staff_id).map(m=>m.staff_id));
-  const yr=Number(ym.split('-')[0]); const tgt=ymd(selectedDate);
+  const yr=Number(ym.split('-')[0]); const tgt=nmDate;
   const covering = nights.find(n=> n.work_date===tgt && (!n.workplace || n.workplace===nmWp))
                 || nights.find(n=> nightCovers(n.label, yr, tgt));
   const defId=(covering||nights[0]).id;
@@ -1196,7 +1207,8 @@ async function loadNmCands(){
     cb.innerHTML=`<div style="font-size:11.5px;color:var(--ink2);font-weight:800;margin-bottom:6px">가능 제출자 (탭하면 추가)</div><div class="nm-chips">`+
       list.map(c=>`<button class="nm-chip" data-nmpick="${c.id}" data-nmnm="${esc(c.name)}">${esc(c.name)}</button>`).join('')+`</div>`;
     cb.querySelectorAll('[data-nmpick]').forEach(b=>b.onclick=async()=>{
-      const ok=await rpc('admin_add_night_member',{p_admin_id:session.id, p_date:ymd(selectedDate), p_workplace:nmWp, p_staff_id:Number(b.dataset.nmpick), p_name:null}, `${b.dataset.nmnm}님 야간 추가`);
+      await ensureNightOn();
+      const ok=await rpc('admin_add_night_member',{p_admin_id:session.id, p_date:nmDate, p_workplace:nmWp, p_staff_id:Number(b.dataset.nmpick), p_name:null}, `${b.dataset.nmnm}님 야간 추가`);
       if(ok){ already.add(Number(b.dataset.nmpick)); loadNmCands(); }
     });
   };
@@ -1207,7 +1219,8 @@ async function nmSave(){
   const sid=$('nm-staff').value?Number($('nm-staff').value):null;
   const guest=$('nm-guest').value.trim();
   if(!sid && !guest){ toast('직원을 고르거나 게스트 이름을 입력하세요', true); return; }
-  const ok = await rpc('admin_add_night_member', { p_admin_id:session.id, p_date:ymd(selectedDate), p_workplace:nmWp, p_staff_id:sid, p_name:guest||null }, '야간 멤버를 추가했어요');
+  await ensureNightOn();
+  const ok = await rpc('admin_add_night_member', { p_admin_id:session.id, p_date:nmDate, p_workplace:nmWp, p_staff_id:sid, p_name:guest||null }, '야간 멤버를 추가했어요');
   if(ok) $('nmModal').classList.remove('show');
 }
 function renderWho(){
@@ -1680,7 +1693,71 @@ function renderChips(){
 }
 
 /* ---------- 스케줄 렌더 ---------- */
-function renderSchedule(){ return viewMode==='week' ? renderWeek() : viewMode==='month' ? renderMonth() : renderDay(); }
+function renderSchedule(){
+  $('wpChips').style.display = viewMode==='night' ? 'none' : '';   // 야간은 데빌 고정
+  return viewMode==='week' ? renderWeek() : viewMode==='month' ? renderMonth() : viewMode==='night' ? renderNight() : renderDay();
+}
+async function renderNight(){
+  const list=$('scheduleList'); list.classList.remove('day-grid'); const admin=!!(session&&session.is_admin);
+  const y=selectedDate.getFullYear(), m=selectedDate.getMonth();
+  const first=new Date(y,m,1), last=new Date(y,m+1,0); const wp='데빌';
+  $('dateLabel').innerHTML=`${y}년 ${m+1}월<small>데빌 야간 · 날짜 ＋로 멤버 추가</small>`;
+  list.innerHTML=`<div style="text-align:center;padding:30px"><span class="spin"></span></div>`;
+  await loadDraftMonths();
+  const isDraft=draftMonths.has(ymOfDate(selectedDate));
+  if(isDraft && !admin){
+    list.innerHTML=`<div class="empty-box"><div class="e-ic"></div><div class="e-t">아직 공개되지 않은 달이에요</div><div class="e-s">스케줄이 확정되면 볼 수 있어요</div></div>`;
+    animList(); return;
+  }
+  const [nmR, nvR]=await Promise.all([
+    supa.from('night_member_view').select('*').gte('work_date',ymd(first)).lte('work_date',ymd(last)),
+    supa.from('night_view').select('*').gte('work_date',ymd(first)).lte('work_date',ymd(last))
+  ]);
+  const mem=(nmR.data||[]).filter(x=>x.workplace===wp);
+  const nightOn=new Set((nvR.data||[]).filter(x=>x.workplace===wp).map(x=>x.work_date));
+  const todayStr=ymd(new Date()); const N=last.getDate(); const startDow=first.getDay();
+  let cells='';
+  for(let i=0;i<startDow;i++) cells+=`<div class="mc-cell dim"></div>`;
+  for(let d=1; d<=N; d++){
+    const ds=`${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`; const dow=new Date(y,m,d).getDay();
+    const list2=mem.filter(x=>x.work_date===ds);
+    const parts=list2.map(x=>{
+      if(!x.staff_id && x.member_name==='부족') return `<div class="mc-nm short"${admin?` data-nmshort="${x.id}" title="누르면 빼기"`:''}>부족</div>`;
+      return `<div class="mc-nm 데빌${x.is_guest?' guest':''}"${admin?` data-nmdel="${x.id}" data-nmnm="${esc(x.member_name)}" title="누르면 빼기"`:''}>${esc(x.member_name)}</div>`;
+    });
+    const inner = parts.length ? parts.join('') : `<div class="mc-empty">${admin?(nightOn.has(ds)?'멤버 미정':''):''}</div>`;
+    const addBtn=admin?`<button class="mc-add" data-nightadd="${ds}" data-non="${nightOn.has(ds)?1:0}" title="야간 멤버 추가">＋</button>`:'';
+    const onTag = nightOn.has(ds)?'<span class="mc-nt">야</span>':'';
+    cells+=`<div class="mc-cell${ds===todayStr?' today':''}" data-goday="${ds}">${addBtn}<div class="mc-dn${dow===0?' sun':dow===6?' sat':''}">${d}${onTag}</div>${inner}</div>`;
+  }
+  const banner=(admin&&isDraft)?`<div class="draftbar">작성 중 · 직원·손님에겐 안 보여요<button class="db-btn" data-publish="1">공개하기</button></div>`:'';
+  const dowHead=`<div class="mc-dow"><span class="sun">일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span class="sat">토</span></div>`;
+  list.innerHTML=banner+`<div class="mc-cal-t"><span class="wp-dot 데빌"></span>데빌 야간</div>`+dowHead+`<div class="mc-grid">${cells}</div>`;
+  animList();
+  list.querySelectorAll('[data-goday]').forEach(c=>c.onclick=()=>{
+    selectedDate=new Date(c.dataset.goday+'T00:00:00'); viewMode='day'; navDir=0;
+    $('viewSeg').querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.v==='day'));
+    $('wpChips').style.display=''; renderSchedule();
+  });
+  list.querySelectorAll('[data-nightadd]').forEach(b=>b.addEventListener('click', e=>{
+    e.stopPropagation(); openNmAdd('데빌', b.dataset.nightadd, b.dataset.non==='1');
+  }));
+  list.querySelectorAll('[data-nmdel]').forEach(el=>el.addEventListener('click', async e=>{
+    e.stopPropagation();
+    if(!confirm(`${el.dataset.nmnm}님을 야간에서 뺄까요?`)) return;
+    await rpc('admin_remove_night_member', { p_admin_id:session.id, p_id:Number(el.dataset.nmdel) }, '야간 멤버를 뺐어요');
+  }));
+  list.querySelectorAll('[data-nmshort]').forEach(el=>el.addEventListener('click', async e=>{
+    e.stopPropagation();
+    if(!confirm('이 부족(빈자리) 자리를 뺄까요?')) return;
+    await rpc('admin_remove_night_member', { p_admin_id:session.id, p_id:Number(el.dataset.nmshort) }, '부족 자리를 뺐어요');
+  }));
+  list.querySelectorAll('[data-publish]').forEach(b=>b.onclick=async()=>{
+    if(!confirm('이 달 스케줄을 공개할까요? 공개하면 직원·손님이 볼 수 있어요.')) return;
+    const ok=await rpc('admin_set_published', { p_admin_id:session.id, p_ym:ymOfDate(selectedDate), p_pub:true }, '이 달을 공개했어요');
+    if(ok){ await loadDraftMonths(); renderSchedule(); }
+  });
+}
 async function renderMonth(){
   const list=$('scheduleList'); list.classList.remove('day-grid'); const admin=!!(session&&session.is_admin);
   const y=selectedDate.getFullYear(), m=selectedDate.getMonth();
@@ -2446,6 +2523,7 @@ function wireUI(){
   $('pushAskX').onclick = ()=>{ $('pushBar').style.display='none'; localStorage.setItem('push_ask_dismiss','1'); };
   setupInstall();
   $('nm-save').onclick = nmSave;
+  $('nm-short').onclick = nmAddShort;
   $('nm-close').onclick = ()=> $('nmModal').classList.remove('show');
   $('nmModal').onclick = e=>{ if(e.target.id==='nmModal') $('nmModal').classList.remove('show'); };
   $('myPicBtn').onclick = ()=> $('myPicFile').click();
@@ -2461,8 +2539,9 @@ function wireUI(){
     $('viewSeg').querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b));
     renderSchedule();
   });
-  $('prevDay').onclick = ()=>{ navDir=-1; if(viewMode==='month') selectedDate.setMonth(selectedDate.getMonth()-1); else selectedDate.setDate(selectedDate.getDate()-(viewMode==='week'?7:1)); renderSchedule(); };
-  $('nextDay').onclick = ()=>{ navDir=1; if(viewMode==='month') selectedDate.setMonth(selectedDate.getMonth()+1); else selectedDate.setDate(selectedDate.getDate()+(viewMode==='week'?7:1)); renderSchedule(); };
+  const monthy = ()=> viewMode==='month'||viewMode==='night';
+  $('prevDay').onclick = ()=>{ navDir=-1; if(monthy()) selectedDate.setMonth(selectedDate.getMonth()-1); else selectedDate.setDate(selectedDate.getDate()-(viewMode==='week'?7:1)); renderSchedule(); };
+  $('nextDay').onclick = ()=>{ navDir=1; if(monthy()) selectedDate.setMonth(selectedDate.getMonth()+1); else selectedDate.setDate(selectedDate.getDate()+(viewMode==='week'?7:1)); renderSchedule(); };
   $('todayBtn').onclick = ()=>{ navDir=0; selectedDate=new Date(); renderSchedule(); };
   $('dateLabel').onclick = openCalendar;
   $('calPrev').onclick = ()=>{ calM--; if(calM<0){ calM=11; calY--; } renderCal(); };
