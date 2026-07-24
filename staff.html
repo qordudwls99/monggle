@@ -351,6 +351,11 @@ body[data-theme="matsuri"] .kicker::after{ content:" ⛩"; letter-spacing:0; }
 .sv-row .sv-c{font-weight:800;color:var(--rose-deep);white-space:nowrap}
 .sv-row .sv-c.off{color:#c0455c}
 .sv-row .sv-c.none{color:var(--muted);font-weight:600}
+.dy-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 2px;border-bottom:1px solid var(--line)}
+.dy-row:last-child{border-bottom:none}
+.dy-row .dn{font-weight:800;font-size:14.5px;color:var(--ink)}
+.dy-row .dc{font-weight:800;font-size:15px;color:var(--rose-deep);white-space:nowrap}
+.dy-row .db{font-size:11.5px;color:var(--muted);font-weight:700;margin-left:4px}
 .wh-dow{display:grid;grid-template-columns:repeat(7,1fr);margin-bottom:4px}
 .wh-dow span{text-align:center;font-size:10px;font-weight:800;color:var(--muted)}
 .wh-dow span.sun{color:#d0596b}.wh-dow span.sat{color:#5b7fd0}
@@ -560,6 +565,7 @@ body[data-theme="matsuri"] .kicker::after{ content:" ⛩"; letter-spacing:0; }
           <button class="btn primary full" id="admBuild" style="margin-top:12px">표로 시프트 짜기 (컴퓨터 추천)</button>
           <button class="btn ghost full" id="admMatrix" style="margin-top:8px">제출 표로 보기 (이름×날짜)</button>
           <button class="btn ghost full" id="admWpHope" style="margin-top:8px">근무지별 희망 달력</button>
+          <button class="btn ghost full" id="admDays" style="margin-top:8px">근무일수 보기 (누가 며칠)</button>
         </div>
 
         <div class="form-card" style="display:none">
@@ -745,6 +751,16 @@ body[data-theme="matsuri"] .kicker::after{ content:" ⛩"; letter-spacing:0; }
     </div>
     <div id="mx-list"></div>
     <button class="closex" id="mx-close">닫기</button>
+  </div>
+</div>
+
+<!-- 근무일수 -->
+<div class="modal" id="daysModal">
+  <div class="modal-c">
+    <div class="modal-t">근무일수</div>
+    <div class="modal-s" id="dy-sub"></div>
+    <div id="dy-list" style="max-height:62vh;overflow-y:auto"></div>
+    <button class="closex" id="dy-close">닫기</button>
   </div>
 </div>
 
@@ -1314,6 +1330,27 @@ async function renderAdminSubmit(){
   $('admSubStatus').querySelectorAll('[data-viewsub]').forEach(b=>b.onclick=()=>openSubView(Number(b.dataset.viewsub), b.dataset.nm));
 }
 const MX_ABBR={'메이드':'메','데빌':'데','마츠리':'마','상관없음':'상','출근불가능':'✕'};
+async function openDays(){
+  $('dy-sub').textContent=`${ymLabelText(admYM)} · 한 달 근무일수 (야간 포함)`;
+  $('dy-list').innerHTML=`<div style="text-align:center;padding:24px"><span class="spin"></span></div>`;
+  $('daysModal').classList.add('show');
+  const N=daysInYM(admYM), first=admYM+'-01', last=admYM+'-'+String(N).padStart(2,'0');
+  const [shR, nmR]=await Promise.all([
+    supa.from('shift_view').select('staff_id,staff_name,work_date,workplace').gte('work_date',first).lte('work_date',last),
+    supa.from('night_member_view').select('staff_id,member_name,work_date,is_guest').gte('work_date',first).lte('work_date',last)
+  ]);
+  const per={};
+  const add=(id,name,ds,wp)=>{ if(!id) return; const p=per[id]||(per[id]={name, dates:new Set(), wp:{}}); p.dates.add(ds); (p.wp[wp]=p.wp[wp]||new Set()).add(ds); };
+  (shR.data||[]).forEach(s=>add(s.staff_id, s.staff_name, s.work_date, s.workplace));
+  (nmR.data||[]).forEach(m=>{ if(!m.is_guest) add(m.staff_id, m.member_name, m.work_date, '야간'); });
+  const rows=Object.values(per).sort((a,b)=>b.dates.size-a.dates.size||String(a.name).localeCompare(String(b.name),'ko'));
+  if(!rows.length){ $('dy-list').innerHTML=`<div class="cand-none">배정된 근무가 없어요</div>`; return; }
+  const order=[...WORKPLACES,'야간'];
+  $('dy-list').innerHTML=rows.map(r=>{
+    const bd=order.filter(w=>r.wp[w]).map(w=>`${w==='야간'?'야':w[0]} ${r.wp[w].size}`).join(' · ');
+    return `<div class="dy-row"><span class="dn">${esc(r.name)}</span><span class="dc">${r.dates.size}일${bd?` <span class="db">${bd}</span>`:''}</span></div>`;
+  }).join('');
+}
 async function openBuild(){
   $('bx-sub').textContent=`${ymLabelText(admYM)} · 칸에서 근무지 고르면 즉시 저장`;
   $('bx-list').innerHTML=`<div style="text-align:center;padding:24px"><span class="spin"></span></div>`;
@@ -2325,6 +2362,9 @@ function wireUI(){
   $('admWpHope').onclick = openWpHope;
   $('wh-close').onclick = ()=> $('wpHopeModal').classList.remove('show');
   $('wpHopeModal').onclick = e=>{ if(e.target.id==='wpHopeModal') $('wpHopeModal').classList.remove('show'); };
+  $('admDays').onclick = openDays;
+  $('dy-close').onclick = ()=> $('daysModal').classList.remove('show');
+  $('daysModal').onclick = e=>{ if(e.target.id==='daysModal') $('daysModal').classList.remove('show'); };
   $('admMatrix').onclick = openMatrix;
   $('mx-close').onclick = ()=> $('mxModal').classList.remove('show');
   $('mxModal').onclick = e=>{ if(e.target.id==='mxModal') $('mxModal').classList.remove('show'); };
