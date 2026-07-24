@@ -311,7 +311,12 @@ async function boot(){
   $('calModal').onclick = e=>{ if(e.target.id==='calModal') $('calModal').classList.remove('show'); };
   render();
   setupPTR(document.querySelector('.body'), async()=>{ navDir=0; await loadBounds(); await loadDraftMonths(); render(); });
-  setInterval(async()=>{ if(document.visibilityState==='visible'){ navDir=0; await loadBounds(); await loadDraftMonths(); render(); } }, 30000);
+  setInterval(async()=>{
+    if(document.visibilityState!=='visible') return;
+    navDir=0; const b=document.querySelector('.body'); const sc=b?b.scrollTop:0;
+    await loadBounds(); await loadDraftMonths(); await render();
+    if(b && sc) b.scrollTop=sc;   // 자동 새로고침 후 스크롤 위치 복원
+  }, 30000);
 }
 let calY, calM;
 function openCalendar(){ calY=selectedDate.getFullYear(); calM=selectedDate.getMonth(); renderCal(); $('calModal').classList.add('show'); }
@@ -412,7 +417,7 @@ async function fetchNightMembers(dateStr){
   const m={}; (data||[]).forEach(r=>(m[r.work_date+'|'+r.workplace]=m[r.work_date+'|'+r.workplace]||[]).push(r)); return m;
 }
 
-function render(){ updateNav(); viewMode==='week' ? renderWeek() : renderDay(); }
+function render(){ updateNav(); return viewMode==='week' ? renderWeek() : renderDay(); }
 
 async function renderDay(){
   const d=selectedDate, isToday=ymd(d)===ymd(new Date());

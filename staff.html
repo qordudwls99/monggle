@@ -870,7 +870,12 @@ async function boot(){
   if('serviceWorker' in navigator){ navigator.serviceWorker.register('/sw.js').catch(()=>{}); }
   if(session) setTimeout(maybeAskPush, 1200);
   // 주기적 새로고침
-  setInterval(()=>{ if(document.visibilityState==='visible' && currentTab!=='submit') refreshCurrent(); }, 20000);
+  setInterval(async ()=>{
+    if(document.visibilityState!=='visible' || currentTab==='submit') return;
+    const b=document.querySelector('.body'); const sc=b?b.scrollTop:0;
+    try{ await refreshCurrent(); }catch(e){}
+    if(b && sc) b.scrollTop=sc;   // 자동 새로고침 후 스크롤 위치 복원
+  }, 20000);
 }
 /* ---------- 푸시 알림 ---------- */
 function urlB64ToUint8(base64){
@@ -1195,13 +1200,15 @@ function switchTab(tab){
   refreshCurrent();
 }
 function refreshCurrent(){
-  if(currentTab==='schedule') renderSchedule();
-  else if(currentTab==='swaps') renderSwaps();
-  else if(currentTab==='mine') renderMine();
-  else if(currentTab==='submit') renderSubmit();
-  else if(currentTab==='admin') renderAdmin();
-  else if(currentTab==='noti') renderNoti();
+  let p;
+  if(currentTab==='schedule') p=renderSchedule();
+  else if(currentTab==='swaps') p=renderSwaps();
+  else if(currentTab==='mine') p=renderMine();
+  else if(currentTab==='submit') p=renderSubmit();
+  else if(currentTab==='admin') p=renderAdmin();
+  else if(currentTab==='noti') p=renderNoti();
   if(session && session.is_admin) updateNotiBadge();
+  return p;
 }
 
 /* ============ 시프트 제출 / 편성 ============ */
@@ -1596,7 +1603,7 @@ function renderChips(){
 }
 
 /* ---------- 스케줄 렌더 ---------- */
-function renderSchedule(){ viewMode==='week' ? renderWeek() : viewMode==='month' ? renderMonth() : renderDay(); }
+function renderSchedule(){ return viewMode==='week' ? renderWeek() : viewMode==='month' ? renderMonth() : renderDay(); }
 async function renderMonth(){
   const list=$('scheduleList'); list.classList.remove('day-grid'); const admin=!!(session&&session.is_admin);
   const y=selectedDate.getFullYear(), m=selectedDate.getMonth();
