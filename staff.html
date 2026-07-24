@@ -356,6 +356,20 @@ body[data-theme="matsuri"] .kicker::after{ content:" ⛩"; letter-spacing:0; }
 .wh-dn.sun{color:#d0596b}.wh-dn.sat{color:#5b7fd0}
 .wh-nm{font-size:9.5px;font-weight:700;color:var(--rose-deep);background:var(--soft2);border-radius:4px;padding:1px 2px;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center}
 .wh-nm.any{background:#f3e7c8;color:var(--gold)}
+.mc-dow{display:grid;grid-template-columns:repeat(7,1fr);margin-bottom:5px}
+.mc-dow span{text-align:center;font-size:10.5px;font-weight:800;color:var(--muted)}
+.mc-dow span.sun{color:#d0596b}.mc-dow span.sat{color:#5b7fd0}
+.mc-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
+.mc-cell{min-height:64px;background:#fff;border:1px solid var(--line);border-radius:9px;padding:3px;min-width:0;cursor:pointer}
+.mc-cell.dim{background:none;border:none;cursor:default}
+.mc-cell.today{border-color:var(--rose);box-shadow:0 0 0 1px var(--rose)}
+.mc-dn{font-size:11px;font-weight:800;color:var(--ink);text-align:center;margin-bottom:3px;display:flex;align-items:center;justify-content:center;gap:3px}
+.mc-dn.sun{color:#d0596b}.mc-dn.sat{color:#5b7fd0}
+.mc-nt{font-size:8px;font-weight:800;color:#4f4a7a;background:#ece9f4;padding:0 3px;border-radius:4px}
+.mc-nm{font-size:9.5px;font-weight:700;color:var(--rose-deep);background:var(--soft2);border-radius:4px;padding:1px 2px;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center}
+.mc-nm.guest{background:#f3e7c8;color:var(--gold)}
+.mc-off{font-size:9.5px;color:var(--muted);font-weight:700;text-align:center;padding-top:8px}
+.mc-empty{font-size:9px;color:#cdb9bd;font-weight:700;text-align:center;padding-top:8px}
 .mx-legend{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-bottom:10px}
 .mx-legend span{font-size:10.5px;font-weight:800;padding:3px 9px;border-radius:6px}
 .mx-legend .mx-note{background:none;color:var(--muted);padding:0 2px}
@@ -430,7 +444,8 @@ body[data-theme="matsuri"] .kicker::after{ content:" ⛩"; letter-spacing:0; }
       <div id="screen-schedule" class="screen on">
         <div class="seg" id="viewSeg">
           <button data-v="day" class="on">일별</button>
-          <button data-v="week">주간(월~일)</button>
+          <button data-v="week">주간</button>
+          <button data-v="month">월별</button>
         </div>
         <div class="datebar">
           <button id="prevDay">‹</button>
@@ -1461,7 +1476,51 @@ function renderChips(){
 }
 
 /* ---------- 스케줄 렌더 ---------- */
-function renderSchedule(){ viewMode==='week' ? renderWeek() : renderDay(); }
+function renderSchedule(){ viewMode==='week' ? renderWeek() : viewMode==='month' ? renderMonth() : renderDay(); }
+async function renderMonth(){
+  const list=$('scheduleList'); const admin=!!(session&&session.is_admin);
+  const y=selectedDate.getFullYear(), m=selectedDate.getMonth();
+  const first=new Date(y,m,1), last=new Date(y,m+1,0);
+  $('dateLabel').innerHTML=`${y}년 ${m+1}월<small>월별 · 날짜를 누르면 그날로</small>`;
+  list.innerHTML=`<div style="text-align:center;padding:30px"><span class="spin"></span></div>`;
+  await loadDraftMonths();
+  const isDraft=draftMonths.has(ymOfDate(selectedDate));
+  if(isDraft && !admin){
+    list.innerHTML=`<div class="empty-box"><div class="e-ic"></div><div class="e-t">아직 공개되지 않은 달이에요</div><div class="e-s">스케줄이 확정되면 볼 수 있어요</div></div>`;
+    animList(); return;
+  }
+  const shifts=await fetchRange(ymd(first), ymd(last));
+  const closed=await fetchClosures(ymd(first), ymd(last));
+  const night=await fetchNight(ymd(first), ymd(last));
+  const todayStr=ymd(new Date()); const wp=wpFilter; const N=last.getDate(); const startDow=first.getDay();
+  let cells='';
+  for(let i=0;i<startDow;i++) cells+=`<div class="mc-cell dim"></div>`;
+  for(let d=1; d<=N; d++){
+    const ds=`${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`; const dow=new Date(y,m,d).getDay();
+    const isClosed=closed.has(ds+'|'+wp); const isNight=night[ds+'|'+wp];
+    const rows=shifts.filter(s=>s.work_date===ds && s.workplace===wp);
+    const filled=rows.filter(s=>s.display_name||s.staff_name)
+      .sort((a,b)=>((b.is_guest?1:0)-(a.is_guest?1:0))||String(a.start_time).localeCompare(String(b.start_time)));
+    let inner;
+    if(isClosed) inner=`<div class="mc-off">휴무</div>`;
+    else if(filled.length===0) inner=`<div class="mc-empty">${admin?'비어있음':''}</div>`;
+    else inner=filled.map(s=>`<div class="mc-nm${s.is_guest?' guest':''}">${esc(s.display_name||s.staff_name)}</div>`).join('');
+    cells+=`<div class="mc-cell${ds===todayStr?' today':''}" data-goday="${ds}"><div class="mc-dn${dow===0?' sun':dow===6?' sat':''}">${d}${isNight?'<span class="mc-nt">야</span>':''}</div>${inner}</div>`;
+  }
+  const banner = (admin&&isDraft)?`<div class="draftbar">작성 중 · 직원·손님에겐 안 보여요<button class="db-btn" data-publish="1">공개하기</button></div>`:'';
+  list.innerHTML=banner+`<div class="mc-dow"><span class="sun">일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span class="sat">토</span></div><div class="mc-grid">${cells}</div>`;
+  animList();
+  list.querySelectorAll('[data-goday]').forEach(c=>c.onclick=()=>{
+    selectedDate=new Date(c.dataset.goday+'T00:00:00'); viewMode='day'; navDir=0;
+    $('viewSeg').querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.v==='day'));
+    renderSchedule();
+  });
+  list.querySelectorAll('[data-publish]').forEach(b=>b.onclick=async()=>{
+    if(!confirm('이 달 스케줄을 공개할까요? 공개하면 직원·손님이 볼 수 있어요.')) return;
+    const ok=await rpc('admin_set_published', { p_admin_id:session.id, p_ym:ymOfDate(selectedDate), p_pub:true }, '이 달을 공개했어요');
+    if(ok){ await loadDraftMonths(); renderSchedule(); }
+  });
+}
 
 async function renderWeek(){
   const list = $('scheduleList');
@@ -2125,8 +2184,8 @@ function wireUI(){
     $('viewSeg').querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b));
     renderSchedule();
   });
-  $('prevDay').onclick = ()=>{ navDir=-1; selectedDate.setDate(selectedDate.getDate()-(viewMode==='week'?7:1)); renderSchedule(); };
-  $('nextDay').onclick = ()=>{ navDir=1; selectedDate.setDate(selectedDate.getDate()+(viewMode==='week'?7:1)); renderSchedule(); };
+  $('prevDay').onclick = ()=>{ navDir=-1; if(viewMode==='month') selectedDate.setMonth(selectedDate.getMonth()-1); else selectedDate.setDate(selectedDate.getDate()-(viewMode==='week'?7:1)); renderSchedule(); };
+  $('nextDay').onclick = ()=>{ navDir=1; if(viewMode==='month') selectedDate.setMonth(selectedDate.getMonth()+1); else selectedDate.setDate(selectedDate.getDate()+(viewMode==='week'?7:1)); renderSchedule(); };
   $('todayBtn').onclick = ()=>{ navDir=0; selectedDate=new Date(); renderSchedule(); };
   $('dateLabel').onclick = openCalendar;
   $('calPrev').onclick = ()=>{ calM--; if(calM<0){ calM=11; calY--; } renderCal(); };
