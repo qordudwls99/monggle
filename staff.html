@@ -362,6 +362,14 @@ body[data-theme="matsuri"] .kicker::after{ content:" ⛩"; letter-spacing:0; }
 .dy-row .dn{font-weight:800;font-size:14.5px;color:var(--ink)}
 .dy-row .dc{font-weight:800;font-size:15px;color:var(--rose-deep);white-space:nowrap}
 .dy-row .db{font-size:11.5px;color:var(--muted);font-weight:700;margin-left:4px}
+.ng-day{border-bottom:1px solid var(--line);padding:11px 2px}
+.ng-day:last-child{border-bottom:none}
+.ng-h{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:7px}
+.ng-h b{font-size:14.5px;color:var(--ink)}
+.ng-hrs{font-size:11px;color:#4f4a7a;font-weight:700}
+.ng-names{display:flex;flex-wrap:wrap;gap:6px}
+.ng-nm{font-size:12.5px;font-weight:700;color:#4f4a7a;background:#ece9f4;padding:4px 11px;border-radius:99px}
+.ng-nm.guest{background:#f3e7c8;color:var(--gold)}
 .wh-dow{display:grid;grid-template-columns:repeat(7,1fr);margin-bottom:4px}
 .wh-dow span{text-align:center;font-size:10px;font-weight:800;color:var(--muted)}
 .wh-dow span.sun{color:#d0596b}.wh-dow span.sat{color:#5b7fd0}
@@ -577,6 +585,7 @@ body[data-theme="matsuri"] .kicker::after{ content:" ⛩"; letter-spacing:0; }
           <button class="btn ghost full" id="admMatrix" style="margin-top:8px">제출 표로 보기 (이름×날짜)</button>
           <button class="btn ghost full" id="admWpHope" style="margin-top:8px">근무지별 희망 달력</button>
           <button class="btn ghost full" id="admDays" style="margin-top:8px">근무일수 보기 (누가 며칠)</button>
+          <button class="btn ghost full" id="admNight" style="margin-top:8px">🌙 야간 스케줄 보기</button>
         </div>
 
         <div class="form-card" style="display:none">
@@ -766,6 +775,16 @@ body[data-theme="matsuri"] .kicker::after{ content:" ⛩"; letter-spacing:0; }
     </div>
     <div id="mx-list"></div>
     <button class="closex" id="mx-close">닫기</button>
+  </div>
+</div>
+
+<!-- 야간 스케줄 -->
+<div class="modal" id="nightModal">
+  <div class="modal-c">
+    <div class="modal-t">🌙 야간 스케줄</div>
+    <div class="modal-s" id="ng-sub"></div>
+    <div id="ng-list" style="max-height:62vh;overflow-y:auto"></div>
+    <button class="closex" id="ng-close">닫기</button>
   </div>
 </div>
 
@@ -1353,6 +1372,25 @@ async function renderAdminSubmit(){
   $('admSubStatus').querySelectorAll('[data-viewsub]').forEach(b=>b.onclick=()=>openSubView(Number(b.dataset.viewsub), b.dataset.nm));
 }
 const MX_ABBR={'메이드':'메','데빌':'데','마츠리':'마','상관없음':'상','출근불가능':'✕'};
+async function openNight(){
+  $('ng-sub').textContent=`${ymLabelText(admYM)} · 야간 영업일과 멤버`;
+  $('ng-list').innerHTML=`<div style="text-align:center;padding:24px"><span class="spin"></span></div>`;
+  $('nightModal').classList.add('show');
+  const N=daysInYM(admYM), first=admYM+'-01', last=admYM+'-'+String(N).padStart(2,'0');
+  const [nv, nmR]=await Promise.all([
+    supa.from('night_view').select('*').gte('work_date',first).lte('work_date',last),
+    supa.from('night_member_view').select('*').gte('work_date',first).lte('work_date',last)
+  ]);
+  const nights=(nv.data||[]).sort((a,b)=>String(a.work_date).localeCompare(String(b.work_date))||String(a.workplace).localeCompare(String(b.workplace)));
+  if(!nights.length){ $('ng-list').innerHTML=`<div class="cand-none">이 달 야간 영업이 없어요</div>`; return; }
+  const days=['일','월','화','수','목','금','토'];
+  $('ng-list').innerHTML=nights.map(n=>{
+    const d=new Date(n.work_date+'T00:00:00');
+    const mem=(nmR.data||[]).filter(m=>m.work_date===n.work_date && m.workplace===n.workplace);
+    const names=mem.length? mem.map(m=>`<span class="ng-nm${m.is_guest?' guest':''}">${esc(m.member_name)}</span>`).join('') : `<span style="color:var(--muted);font-weight:700;font-size:12.5px">멤버 미정</span>`;
+    return `<div class="ng-day"><div class="ng-h"><span class="swap-wp ${n.workplace}">${esc(n.workplace)}</span><b>${d.getMonth()+1}/${d.getDate()}(${days[d.getDay()]})</b><span class="ng-hrs">${esc(n.hours||'')}</span></div><div class="ng-names">${names}</div></div>`;
+  }).join('');
+}
 async function openDays(){
   $('dy-sub').textContent=`${ymLabelText(admYM)} · 한 달 근무일수 (야간 포함)`;
   $('dy-list').innerHTML=`<div style="text-align:center;padding:24px"><span class="spin"></span></div>`;
@@ -2439,6 +2477,9 @@ function wireUI(){
   $('admDays').onclick = openDays;
   $('dy-close').onclick = ()=> $('daysModal').classList.remove('show');
   $('daysModal').onclick = e=>{ if(e.target.id==='daysModal') $('daysModal').classList.remove('show'); };
+  $('admNight').onclick = openNight;
+  $('ng-close').onclick = ()=> $('nightModal').classList.remove('show');
+  $('nightModal').onclick = e=>{ if(e.target.id==='nightModal') $('nightModal').classList.remove('show'); };
   $('admMatrix').onclick = openMatrix;
   $('mx-close').onclick = ()=> $('mxModal').classList.remove('show');
   $('mxModal').onclick = e=>{ if(e.target.id==='mxModal') $('mxModal').classList.remove('show'); };
