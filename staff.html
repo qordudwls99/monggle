@@ -830,6 +830,7 @@ const DAYS = ['일','월','화','수','목','금','토'];
 const $ = id => document.getElementById(id);
 const esc = s => (s==null?'':String(s)).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const mondayOf = d => { const x=new Date(d); x.setDate(x.getDate()-((x.getDay()+6)%7)); x.setHours(0,0,0,0); return x; };
+const isWideScreen = ()=> window.matchMedia('(min-width:980px)').matches;   // 드래그는 컴퓨터(넓은 화면)에서만
 const igUrl = h => { h=String(h||'').trim(); if(!h) return null; return /^https?:\/\//i.test(h)?h:'https://instagram.com/'+h.replace(/^@/,''); };
 const IG_SVG = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1.2" fill="currentColor" stroke="none"/></svg>';
 
@@ -1626,7 +1627,7 @@ async function renderMonth(){
       if(isClosed) inner=`<div class="mc-off">휴무</div>`;
       else if(filled.length===0) inner=`<div class="mc-empty">${admin?'비어있음':''}</div>`;
       else inner=filled.map(s=>{
-        const dragA=(admin && all && s.staff_id)?` draggable="true" data-drag="${s.id}" data-dwp="${wp}" data-dnm="${esc(s.staff_name)}"`:'';
+        const dragA=(admin && all && s.staff_id && isWideScreen())?` draggable="true" data-drag="${s.id}" data-dwp="${wp}" data-dnm="${esc(s.staff_name)}"`:'';
         return `<div class="mc-nm ${wp}${s.is_guest?' guest':''}"${dragA}>${esc(s.display_name||s.staff_name)}</div>`;
       }).join('');
       cells+=`<div class="mc-cell${ds===todayStr?' today':''}" data-goday="${ds}"><div class="mc-dn${dow===0?' sun':dow===6?' sat':''}">${d}${isNight?'<span class="mc-nt">야</span>':''}</div>${inner}</div>`;
@@ -1686,7 +1687,7 @@ async function renderWeek(){
       filled.sort((a,b)=> ((b.is_guest?1:0)-(a.is_guest?1:0)) || String(a.start_time).localeCompare(String(b.start_time)));
       const open=rows.length-filled.length;
       const nm=filled.map(s=>{
-        const dragA=(admin && multi && s.staff_id)?` draggable="true" data-drag="${s.id}" data-dwp="${wp}" data-dnm="${esc(s.staff_name||s.display_name)}"`:'';
+        const dragA=(admin && multi && s.staff_id && isWideScreen())?` draggable="true" data-drag="${s.id}" data-dwp="${wp}" data-dnm="${esc(s.staff_name||s.display_name)}"`:'';
         return `<div class="nm${s.is_guest?' guest':''}"${dragA}>${esc(s.display_name||s.staff_name)}</div>`;
       }).join('')+(open>0?`<div class="nm op">모집중 ${open}</div>`:'');
       const dropA=(admin && multi)?` data-dropwp="${wp}"`:'';
@@ -1859,7 +1860,7 @@ function shiftCard(s, admin, apps){
   const av = `<span class="av${(!s.staff_id&&s.guest_name)?' guest':''}${who?'':' none'}" style="${avImg?avStyle(s.staff_avatar):''}">${avImg?'':esc(who.charAt(0)||'·')}</span>`;
   const ig = s.staff_id ? igUrl(s.staff_instagram) : null;
   const igHtml = ig ? `<a class="ig" href="${esc(ig)}" target="_blank" rel="noopener">${IG_SVG}</a>` : '';
-  const drag = (admin && wpFilter==='전체' && s.staff_id) ? ` draggable="true" data-drag="${s.id}" data-dwp="${esc(s.workplace)}" data-dnm="${esc(s.staff_name)}"` : '';
+  const drag = (admin && wpFilter==='전체' && s.staff_id && isWideScreen()) ? ` draggable="true" data-drag="${s.id}" data-dwp="${esc(s.workplace)}" data-dnm="${esc(s.staff_name)}"` : '';
   return `<div class="card"${drag}><div class="s-row">${av}${nameHtml}${badge}${igHtml}</div>${appHtml}${acts}</div>`;
 }
 function bindShiftCards(root){
