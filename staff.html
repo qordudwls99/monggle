@@ -414,6 +414,14 @@ body[data-theme="matsuri"] .kicker::after{ content:" ⛩"; letter-spacing:0; }
 .bx-sel.asn-메이드{background:#e39cae!important;color:#5e1f30}
 .bx-sel.asn-데빌{background:#b3a8e0!important;color:#2f2559}
 .bx-sel.asn-마츠리{background:#a9d18c!important;color:#33501a}
+
+/* ===== 넓은 화면(컴퓨터): 여백 활용 ===== */
+@media (min-width:980px){
+  .app{max-width:1180px}
+  #screen-swaps,#screen-mine,#screen-submit,#screen-admin,#screen-noti{max-width:680px;margin:0 auto;width:100%}
+  /* 일별: 세 매장을 가로로 펼쳐 3단 (화면 넓으면 자동으로 나뉨) */
+  #scheduleList.day-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(330px,1fr));gap:16px;align-items:start}
+}
 </style>
 </head>
 <body>
@@ -1544,7 +1552,7 @@ function renderChips(){
 /* ---------- 스케줄 렌더 ---------- */
 function renderSchedule(){ viewMode==='week' ? renderWeek() : viewMode==='month' ? renderMonth() : renderDay(); }
 async function renderMonth(){
-  const list=$('scheduleList'); const admin=!!(session&&session.is_admin);
+  const list=$('scheduleList'); list.classList.remove('day-grid'); const admin=!!(session&&session.is_admin);
   const y=selectedDate.getFullYear(), m=selectedDate.getMonth();
   const first=new Date(y,m,1), last=new Date(y,m+1,0);
   $('dateLabel').innerHTML=`${y}년 ${m+1}월<small>월별 · 날짜를 누르면 그날로</small>`;
@@ -1602,6 +1610,7 @@ async function renderMonth(){
 
 async function renderWeek(){
   const list = $('scheduleList');
+  list.classList.remove('day-grid');
   const mon = mondayOf(selectedDate); const sun = new Date(mon); sun.setDate(sun.getDate()+6);
   $('dateLabel').innerHTML = `${mon.getMonth()+1}/${mon.getDate()} ~ ${sun.getMonth()+1}/${sun.getDate()}<small>주간 · 좌우로 넘겨보세요</small>`;
   list.innerHTML = `<div style="text-align:center;padding:30px"><span class="spin"></span></div>`;
@@ -1649,6 +1658,7 @@ const shiftOrder = s => (s.staff_id ? 1 : (s.guest_name ? 0 : 2));
 async function renderDay(){
   renderDateLabel();
   const list = $('scheduleList');
+  list.classList.add('day-grid');
   const admin = !!(session && session.is_admin);
   list.innerHTML = `<div style="text-align:center;padding:30px"><span class="spin"></span></div>`;
   await loadDraftMonths();
