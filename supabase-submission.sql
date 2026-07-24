@@ -122,6 +122,22 @@ begin
   return n;
 end; $$;
 
+-- 편성 표: 한 사람의 하루 배정을 지정 (근무지 비우면 그날 그 사람 근무 삭제)
+create or replace function admin_set_assignment(p_admin_id bigint, p_pin text,
+  p_date date, p_staff_id bigint, p_workplace text)
+returns void language plpgsql security definer set search_path = public as $$
+declare v staff;
+begin
+  v := _verify(p_admin_id, p_pin);
+  if v.id is null or not v.is_admin then raise exception '관리자만 가능합니다'; end if;
+  delete from shifts where work_date = p_date and staff_id = p_staff_id;
+  if coalesce(trim(p_workplace),'') <> '' then
+    insert into shifts(work_date, workplace, start_time, end_time, staff_id)
+      values (p_date, p_workplace, '', '', p_staff_id);
+  end if;
+end; $$;
+grant execute on function admin_set_assignment to anon, authenticated;
+
 -- 월별 상태: published(스케줄 공개) + submit_open(제출 받기)
 --   published: row 없으면 '공개'로 간주 (기존 데이터 영향 없음)
 --   submit_open: row 없으면 '닫힘' → 관리자가 열 때만 직원 제출 가능

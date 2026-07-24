@@ -389,6 +389,18 @@ body[data-theme="matsuri"] .kicker::after{ content:" ⛩"; letter-spacing:0; }
 .mx-마츠리{background:#d7e9cd!important;color:#4f6b28}
 .mx-상관없음{background:#f4e1b8!important;color:#856212}
 .mx-출근불가능{background:#efe9ea;color:#a08d90}
+/* 편성 표(클릭 배정) */
+.mx td.bx-cell{padding:0}
+.bx-sel{border:none;background:transparent;font-family:inherit;font-size:11px;font-weight:800;color:var(--ink);width:100%;height:29px;text-align:center;text-align-last:center;cursor:pointer;-webkit-appearance:none;appearance:none;padding:0 2px}
+.bx-sel:focus{outline:2px solid var(--rose);outline-offset:-2px}
+.bx-sel.asn-메이드{background:#f3c9d3;color:#8f3d52}
+.bx-sel.asn-데빌{background:#d8d2ef;color:#4f3f7a}
+.bx-sel.asn-마츠리{background:#d7e9cd;color:#4f6b28}
+.pref-메이드{background:#fceef1}
+.pref-데빌{background:#f0edfa}
+.pref-마츠리{background:#eff7e9}
+.pref-상관없음{background:#fcf4e3}
+.pref-출근불가능{background:#f4eff1}
 </style>
 </head>
 <body>
@@ -516,7 +528,8 @@ body[data-theme="matsuri"] .kicker::after{ content:" ⛩"; letter-spacing:0; }
           <button class="btn ghost full" id="admNightSat" style="margin-bottom:11px">이 달 토요일 데빌 야간 일괄 추가</button>
           <div id="admNightList" style="margin-bottom:6px"></div>
           <div id="admSubStatus"></div>
-          <button class="btn ghost full" id="admMatrix" style="margin-top:12px">제출 표로 보기 (이름×날짜)</button>
+          <button class="btn primary full" id="admBuild" style="margin-top:12px">표로 시프트 짜기 (컴퓨터 추천)</button>
+          <button class="btn ghost full" id="admMatrix" style="margin-top:8px">제출 표로 보기 (이름×날짜)</button>
           <button class="btn ghost full" id="admWpHope" style="margin-top:8px">근무지별 희망 달력</button>
         </div>
 
@@ -677,6 +690,19 @@ body[data-theme="matsuri"] .kicker::after{ content:" ⛩"; letter-spacing:0; }
     <div id="cand-list" style="max-height:52vh;overflow-y:auto"></div>
     <button class="btn primary full" id="cand-save" style="margin-top:10px">선택한 사람 배정</button>
     <button class="closex" id="cand-close">닫기</button>
+  </div>
+</div>
+
+<!-- 편성 표(이름×날짜, 클릭 배정) -->
+<div class="modal" id="buildModal">
+  <div class="modal-c" style="max-width:98vw">
+    <div class="modal-t">표로 시프트 짜기</div>
+    <div class="modal-s" id="bx-sub"></div>
+    <div class="mx-legend">
+      <span class="mx-메이드">메이드</span><span class="mx-데빌">데빌</span><span class="mx-마츠리">마츠리</span><span class="mx-상관없음">상관없음</span><span class="mx-note">· 칸 배경 = 본인 희망 · 칸에서 근무지 고르면 바로 배정</span>
+    </div>
+    <div id="bx-list"></div>
+    <button class="closex" id="bx-close">닫기</button>
   </div>
 </div>
 
@@ -1259,6 +1285,33 @@ async function renderAdminSubmit(){
   $('admSubStatus').querySelectorAll('[data-viewsub]').forEach(b=>b.onclick=()=>openSubView(Number(b.dataset.viewsub), b.dataset.nm));
 }
 const MX_ABBR={'메이드':'메','데빌':'데','마츠리':'마','상관없음':'상','출근불가능':'✕'};
+async function openBuild(){
+  $('bx-sub').textContent=`${ymLabelText(admYM)} · 칸에서 근무지 고르면 즉시 저장`;
+  $('bx-list').innerHTML=`<div style="text-align:center;padding:24px"><span class="spin"></span></div>`;
+  $('buildModal').classList.add('show');
+  const [y,m]=admYM.split('-').map(Number); const N=daysInYM(admYM);
+  const first=admYM+'-01', last=admYM+'-'+String(N).padStart(2,'0');
+  const [shR, subR]=await Promise.all([
+    supa.from('shift_view').select('*').gte('work_date',first).lte('work_date',last),
+    supa.from('submission_answer_view').select('*').eq('ym', admYM)
+  ]);
+  const asn={}; (shR.data||[]).forEach(s=>{ if(s.staff_id){ (asn[s.staff_id]=asn[s.staff_id]||{})[s.work_date]=s.workplace; } });
+  const pref={}; (subR.data||[]).forEach(a=>{ if(a.qkey&&a.qkey.indexOf('d:')===0){ (pref[a.staff_id]=pref[a.staff_id]||{})[a.qkey.slice(2)]=a.choice; } });
+  let head='<th class="mx-name">이름</th>';
+  for(let d=1; d<=N; d++){ const dow=new Date(y,m-1,d).getDay(); head+=`<th class="${dow===0?'sun':dow===6?'sat':''}">${d}</th>`; }
+  let body='';
+  staffList.forEach(s=>{
+    let tds=`<td class="mx-name">${esc(s.name)}</td>`;
+    for(let d=1; d<=N; d++){
+      const ds=`${admYM}-${String(d).padStart(2,'0')}`;
+      const cur=(asn[s.id]||{})[ds]||''; const p=(pref[s.id]||{})[ds]||'';
+      const opts=`<option value="">-</option>`+WORKPLACES.map(w=>`<option value="${w}"${w===cur?' selected':''}>${w}</option>`).join('');
+      tds+=`<td class="bx-cell${p?' pref-'+p:''}"><select class="bx-sel${cur?' asn-'+cur:''}" data-sid="${s.id}" data-d="${ds}">${opts}</select></td>`;
+    }
+    body+=`<tr>${tds}</tr>`;
+  });
+  $('bx-list').innerHTML=`<div class="mx-wrap" style="max-height:72vh"><table class="mx bx"><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table></div>`;
+}
 async function openMatrix(){
   $('mx-sub').textContent=`${ymLabelText(admYM)} · 이름×날짜 (가로로 넘겨보세요)`;
   $('mx-list').innerHTML=`<div style="text-align:center;padding:24px"><span class="spin"></span></div>`;
@@ -2200,6 +2253,17 @@ function wireUI(){
   $('admMatrix').onclick = openMatrix;
   $('mx-close').onclick = ()=> $('mxModal').classList.remove('show');
   $('mxModal').onclick = e=>{ if(e.target.id==='mxModal') $('mxModal').classList.remove('show'); };
+  $('admBuild').onclick = openBuild;
+  $('bx-close').onclick = ()=> $('buildModal').classList.remove('show');
+  $('bx-list').addEventListener('change', async e=>{
+    const sel=e.target; if(!sel.classList || !sel.classList.contains('bx-sel')) return;
+    const sid=Number(sel.dataset.sid), ds=sel.dataset.d, wp=sel.value;
+    sel.disabled=true;
+    const { error }=await supa.rpc('admin_set_assignment',{p_admin_id:session.id, p_pin:session.pin, p_date:ds, p_staff_id:sid, p_workplace:wp||null});
+    sel.disabled=false;
+    if(error){ toast(error.message.replace(/^.*?:\s*/,''), true); return; }
+    sel.className='bx-sel'+(wp?' asn-'+wp:'');
+  });
   $('loginBtn').onclick = doLogin;
   $('loginClose').onclick = closeLogin;
   $('loginPin').onkeydown = e=>{ if(e.key==='Enter') doLogin(); };
