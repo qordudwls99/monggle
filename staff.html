@@ -397,6 +397,7 @@ body[data-theme="matsuri"] .kicker::after{ content:" ⛩"; letter-spacing:0; }
 .mc-multi{display:flex;flex-direction:column;gap:22px}
 .mc-cal-t{font-weight:800;font-size:14.5px;color:var(--ink);margin:0 2px 9px;display:flex;align-items:center;gap:7px}
 .mc-nm.guest{background:#f3e7c8;color:var(--gold)}
+.mc-nm.short{background:#fdecef;color:#c0455c;cursor:pointer}
 .mc-off{font-size:11.5px;color:var(--muted);font-weight:700;text-align:center;padding-top:10px}
 .mc-empty{font-size:11px;color:#cdb9bd;font-weight:700;text-align:center;padding-top:10px}
 .mx-legend{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-bottom:10px}
@@ -737,6 +738,7 @@ body[data-theme="matsuri"] .kicker::after{ content:" ⛩"; letter-spacing:0; }
     <label class="fl" style="margin-top:14px">희망 안 한 사람도 이름 검색해서 추가</label>
     <input class="fld" id="cand-search" placeholder="이름 검색" autocomplete="off" style="margin-bottom:8px">
     <div id="cand-sresult"></div>
+    <button class="btn warn full" id="cand-short" style="margin-top:12px">＋ 부족(빈자리) 슬롯 추가</button>
     <button class="closex" id="cand-close">닫기</button>
   </div>
 </div>
@@ -1522,6 +1524,12 @@ async function candAddOne(id, name){
   renderSchedule();
   openCandModal(candWp, candDate);
 }
+async function candAddShort(){
+  const { error }=await supa.rpc('admin_add_shift',{p_admin_id:session.id, p_pin:session.pin, p_work_date:candDate, p_workplace:candWp, p_start:'', p_end:'', p_assignee:null, p_memo:null, p_guest:null});
+  if(error){ toast(error.message.replace(/^.*?:\s*/,''), true); return; }
+  toast('부족(빈자리) 슬롯을 추가했어요');
+  renderSchedule();
+}
 async function candSave(){
   const ids=[...$('cand-list').querySelectorAll('input:checked')].map(i=>Number(i.value));
   if(!ids.length){ toast('배정할 사람을 선택하세요', true); return; }
@@ -1664,11 +1672,15 @@ async function renderMonth(){
         .sort((a,b)=>((b.is_guest?1:0)-(a.is_guest?1:0))||String(a.start_time).localeCompare(String(b.start_time)));
       let inner;
       if(isClosed) inner=`<div class="mc-off">휴무</div>`;
-      else if(filled.length===0) inner=`<div class="mc-empty">${admin?'비어있음':''}</div>`;
-      else inner=filled.map(s=>{
-        const dragA=(admin && all && s.staff_id && isWideScreen())?` draggable="true" data-drag="${s.id}" data-dwp="${wp}" data-dnm="${esc(s.staff_name)}"`:'';
-        return `<div class="mc-nm ${wp}${s.is_guest?' guest':''}"${dragA}>${esc(s.display_name||s.staff_name)}</div>`;
-      }).join('');
+      else {
+        const parts=filled.map(s=>{
+          const dragA=(admin && all && s.staff_id && isWideScreen())?` draggable="true" data-drag="${s.id}" data-dwp="${wp}" data-dnm="${esc(s.staff_name)}"`:'';
+          return `<div class="mc-nm ${wp}${s.is_guest?' guest':''}"${dragA}>${esc(s.display_name||s.staff_name)}</div>`;
+        });
+        shifts.filter(s=>s.work_date===ds && s.workplace===wp && !s.staff_id && !s.guest_name)
+          .forEach(s=>parts.push(`<div class="mc-nm short"${admin?` data-shortdel="${s.id}" title="누르면 빼기"`:''}>부족</div>`));
+        inner = parts.length ? parts.join('') : `<div class="mc-empty">${admin?'비어있음':''}</div>`;
+      }
       const addBtn=(admin && !isClosed)?`<button class="mc-add" data-candadd="${wp}" data-cd="${ds}" title="희망자 배정">＋</button>`:'';
       const evName=events[ds+'|'+wp]||'';
       const evStrip = evName
@@ -1703,6 +1715,11 @@ async function renderMonth(){
     const ev=prompt(`${ds} · ${wp} 이벤트 이름 (지우려면 비워두기):`, cur);
     if(ev===null) return;
     await rpc('admin_set_day_event', { p_admin_id:session.id, p_date:ds, p_workplace:wp, p_event:ev.trim() }, ev.trim()?'이벤트를 저장했어요':'이벤트를 지웠어요');
+  }));
+  list.querySelectorAll('[data-shortdel]').forEach(el=>el.addEventListener('click', async e=>{
+    e.stopPropagation();
+    if(!confirm('이 부족(빈자리) 자리를 뺄까요?')) return;
+    await rpc('admin_delete_shift', { p_admin_id:session.id, p_shift_id:Number(el.dataset.shortdel) }, '부족 자리를 뺐어요');
   }));
   list.querySelectorAll('[data-publish]').forEach(b=>b.onclick=async()=>{
     if(!confirm('이 달 스케줄을 공개할까요? 공개하면 직원·손님이 볼 수 있어요.')) return;
@@ -2473,6 +2490,7 @@ function wireUI(){
   };
   // 희망자 배정 모달
   $('cand-save').onclick = candSave;
+  $('cand-short').onclick = candAddShort;
   $('cand-close').onclick = ()=> $('candModal').classList.remove('show');
   $('candModal').onclick = e=>{ if(e.target.id==='candModal') $('candModal').classList.remove('show'); };
   $('addShiftBtn').onclick = addShift;
