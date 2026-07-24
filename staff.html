@@ -370,6 +370,15 @@ body[data-theme="matsuri"] .kicker::after{ content:" ⛩"; letter-spacing:0; }
 .ng-names{display:flex;flex-wrap:wrap;gap:6px}
 .ng-nm{font-size:12.5px;font-weight:700;color:#4f4a7a;background:#ece9f4;padding:4px 11px;border-radius:99px}
 .ng-nm.guest{background:#f3e7c8;color:var(--gold)}
+.ng-cards{display:flex;flex-direction:column;gap:10px}
+.ng-card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px 14px;box-shadow:0 6px 16px -14px rgba(80,40,50,.35)}
+.ng-card.today{border-color:var(--rose);box-shadow:0 0 0 1px var(--rose)}
+.ng-ch{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.ng-ch b{font-size:15px;color:var(--ink)}
+.ng-add{margin-left:auto;border:none;cursor:pointer;font-family:inherit;font-weight:800;font-size:12px;color:#fff;background:var(--rose);padding:6px 12px;border-radius:8px}
+.ng-names2{display:flex;flex-wrap:wrap;gap:6px}
+.ng-names2 .mc-nm{font-size:13px;padding:4px 11px;margin-bottom:0}
+.ng-mut{font-size:12.5px;color:var(--muted);font-weight:700}
 .wh-dow{display:grid;grid-template-columns:repeat(7,1fr);margin-bottom:4px}
 .wh-dow span{text-align:center;font-size:10px;font-weight:800;color:var(--muted)}
 .wh-dow span.sun{color:#d0596b}.wh-dow span.sat{color:#5b7fd0}
@@ -1715,30 +1724,29 @@ async function renderNight(){
   ]);
   const mem=(nmR.data||[]).filter(x=>x.workplace===wp);
   const nightOn=new Set((nvR.data||[]).filter(x=>x.workplace===wp).map(x=>x.work_date));
-  const todayStr=ymd(new Date()); const N=last.getDate(); const startDow=first.getDay();
-  let cells='';
-  for(let i=0;i<startDow;i++) cells+=`<div class="mc-cell dim"></div>`;
+  const N=last.getDate(); const days=['일','월','화','수','목','금','토']; const todayStr=ymd(new Date());
+  // 야간은 토요일에만 → 토요일 + (혹시 야간 잡힌 날/멤버 있는 날)만 목록으로
+  const rows=[];
   for(let d=1; d<=N; d++){
     const ds=`${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`; const dow=new Date(y,m,d).getDay();
+    if(dow===6 || nightOn.has(ds) || mem.some(x=>x.work_date===ds)) rows.push({ds,d,dow});
+  }
+  const cards=rows.map(({ds,d,dow})=>{
     const list2=mem.filter(x=>x.work_date===ds);
-    const parts=list2.map(x=>{
+    const chips=list2.map(x=>{
       if(!x.staff_id && x.member_name==='부족') return `<div class="mc-nm short"${admin?` data-nmshort="${x.id}" title="누르면 빼기"`:''}>부족</div>`;
       return `<div class="mc-nm 데빌${x.is_guest?' guest':''}"${admin?` data-nmdel="${x.id}" data-nmnm="${esc(x.member_name)}" title="누르면 빼기"`:''}>${esc(x.member_name)}</div>`;
-    });
-    const inner = parts.length ? parts.join('') : `<div class="mc-empty">${admin?(nightOn.has(ds)?'멤버 미정':''):''}</div>`;
-    const addBtn=admin?`<button class="mc-add" data-nightadd="${ds}" data-non="${nightOn.has(ds)?1:0}" title="야간 멤버 추가">＋</button>`:'';
-    const onTag = nightOn.has(ds)?'<span class="mc-nt">야</span>':'';
-    cells+=`<div class="mc-cell${ds===todayStr?' today':''}" data-goday="${ds}">${addBtn}<div class="mc-dn${dow===0?' sun':dow===6?' sat':''}">${d}${onTag}</div>${inner}</div>`;
-  }
-  const banner=(admin&&isDraft)?`<div class="draftbar">작성 중 · 직원·손님에겐 안 보여요<button class="db-btn" data-publish="1">공개하기</button></div>`:'';
-  const dowHead=`<div class="mc-dow"><span class="sun">일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span class="sat">토</span></div>`;
-  list.innerHTML=banner+`<div class="mc-cal-t"><span class="wp-dot 데빌"></span>데빌 야간</div>`+dowHead+`<div class="mc-grid">${cells}</div>`;
-  animList();
-  list.querySelectorAll('[data-goday]').forEach(c=>c.onclick=()=>{
-    selectedDate=new Date(c.dataset.goday+'T00:00:00'); viewMode='day'; navDir=0;
-    $('viewSeg').querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.v==='day'));
-    $('wpChips').style.display=''; renderSchedule();
+    }).join('');
+    const on=nightOn.has(ds);
+    const addBtn=admin?`<button class="ng-add" data-nightadd="${ds}" data-non="${on?1:0}">＋ 멤버</button>`:'';
+    const body = chips || `<span class="ng-mut">${on?'멤버 미정':'야간 없음'}</span>`;
+    return `<div class="ng-card${ds===todayStr?' today':''}">
+      <div class="ng-ch"><b>${m+1}/${d}(${days[dow]})</b>${on?'<span class="mc-nt">야간</span>':''}${addBtn}</div>
+      <div class="ng-names2">${body}</div></div>`;
   });
+  const banner=(admin&&isDraft)?`<div class="draftbar">작성 중 · 직원·손님에겐 안 보여요<button class="db-btn" data-publish="1">공개하기</button></div>`:'';
+  list.innerHTML=banner+`<div class="mc-cal-t"><span class="wp-dot 데빌"></span>데빌 야간 (토요일)</div><div class="ng-cards">${cards.join('')||'<div class="cand-none">이 달 토요일이 없어요</div>'}</div>`;
+  animList();
   list.querySelectorAll('[data-nightadd]').forEach(b=>b.addEventListener('click', e=>{
     e.stopPropagation(); openNmAdd('데빌', b.dataset.nightadd, b.dataset.non==='1');
   }));
