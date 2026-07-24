@@ -358,16 +358,16 @@ body[data-theme="matsuri"] .kicker::after{ content:" ⛩"; letter-spacing:0; }
 .wh-nm{font-size:9.5px;font-weight:700;color:var(--rose-deep);background:var(--soft2);border-radius:4px;padding:1px 2px;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center}
 .wh-nm.any{background:#f3e7c8;color:var(--gold)}
 .mc-dow{display:grid;grid-template-columns:repeat(7,1fr);margin-bottom:5px}
-.mc-dow span{text-align:center;font-size:10.5px;font-weight:800;color:var(--muted)}
+.mc-dow span{text-align:center;font-size:12px;font-weight:800;color:var(--muted)}
 .mc-dow span.sun{color:#d0596b}.mc-dow span.sat{color:#5b7fd0}
-.mc-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
-.mc-cell{min-height:64px;background:#fff;border:1px solid var(--line);border-radius:9px;padding:3px;min-width:0;cursor:pointer}
+.mc-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.mc-cell{min-height:78px;background:#fff;border:1px solid var(--line);border-radius:10px;padding:5px;min-width:0;cursor:pointer}
 .mc-cell.dim{background:none;border:none;cursor:default}
 .mc-cell.today{border-color:var(--rose);box-shadow:0 0 0 1px var(--rose)}
-.mc-dn{font-size:11px;font-weight:800;color:var(--ink);text-align:center;margin-bottom:3px;display:flex;align-items:center;justify-content:center;gap:3px}
+.mc-dn{font-size:13.5px;font-weight:800;color:var(--ink);text-align:center;margin-bottom:4px;display:flex;align-items:center;justify-content:center;gap:4px}
 .mc-dn.sun{color:#d0596b}.mc-dn.sat{color:#5b7fd0}
-.mc-nt{font-size:8px;font-weight:800;color:#4f4a7a;background:#ece9f4;padding:0 3px;border-radius:4px}
-.mc-nm{font-size:9.5px;font-weight:700;color:var(--rose-deep);background:var(--soft2);border-radius:4px;padding:1px 2px;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center}
+.mc-nt{font-size:9.5px;font-weight:800;color:#4f4a7a;background:#ece9f4;padding:1px 5px;border-radius:5px}
+.mc-nm{font-size:12px;font-weight:700;color:var(--rose-deep);background:var(--soft2);border-radius:5px;padding:2px 5px;margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center}
 .mc-nm.메이드{background:#fadfe5;color:#8f3d52}
 .mc-nm.데빌{background:#e6e0f5;color:#4f3f7a}
 .mc-nm.마츠리{background:#e3f0d8;color:#4f6b28}
@@ -378,8 +378,8 @@ body[data-theme="matsuri"] .kicker::after{ content:" ⛩"; letter-spacing:0; }
 .mc-multi{display:flex;flex-direction:column;gap:22px}
 .mc-cal-t{font-weight:800;font-size:14.5px;color:var(--ink);margin:0 2px 9px;display:flex;align-items:center;gap:7px}
 .mc-nm.guest{background:#f3e7c8;color:var(--gold)}
-.mc-off{font-size:9.5px;color:var(--muted);font-weight:700;text-align:center;padding-top:8px}
-.mc-empty{font-size:9px;color:#cdb9bd;font-weight:700;text-align:center;padding-top:8px}
+.mc-off{font-size:11.5px;color:var(--muted);font-weight:700;text-align:center;padding-top:10px}
+.mc-empty{font-size:11px;color:#cdb9bd;font-weight:700;text-align:center;padding-top:10px}
 .mx-legend{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-bottom:10px}
 .mx-legend span{font-size:10.5px;font-weight:800;padding:3px 9px;border-radius:6px}
 .mx-legend .mx-note{background:none;color:var(--muted);padding:0 2px}
@@ -419,7 +419,7 @@ body[data-theme="matsuri"] .kicker::after{ content:" ⛩"; letter-spacing:0; }
 
 /* ===== 넓은 화면(컴퓨터): 여백 활용 ===== */
 @media (min-width:980px){
-  .app{max-width:1180px}
+  .app{max-width:1460px}
   #screen-swaps,#screen-mine,#screen-submit,#screen-admin,#screen-noti{max-width:680px;margin:0 auto;width:100%}
   /* 일별: 세 매장을 가로로 펼쳐 3단 (화면 넓으면 자동으로 나뉨) */
   #scheduleList.day-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(330px,1fr));gap:16px;align-items:start}
