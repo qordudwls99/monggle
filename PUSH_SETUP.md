@@ -13,16 +13,18 @@
 1. Supabase → 왼쪽 **Edge Functions** → **Create a function**
 2. 이름: **`notify`**
 3. 코드 칸에 저장소의 **`supabase-functions/notify/index.ts`** 내용 **전체 복붙** → **Deploy**
-4. 배포 후 **Secrets(환경변수)** 3개 추가 (Edge Functions → Manage secrets, 또는 Settings → Edge Functions):
+4. 배포 후 **Secrets(환경변수)** 를 추가합니다 (Edge Functions → Manage secrets, 또는 Settings → Edge Functions):
    | 이름 | 값 |
    |------|-----|
-   | `VAPID_PUBLIC_KEY` | `BIGMR24JXMJI0jjsqGLmUfR-IT2ry-BBHf3KoNqijazAHB91X2Gw1Lm_P3Ou7Jd0R1XQgzrZjNmdjQ1vrY7Zwrs` |
-   | `VAPID_PRIVATE_KEY` | `BnDT9PkLKPvYygFSkVpj3Rsc51sBVSk7zSZv5XxzA_g` |
+   | `VAPID_PUBLIC_KEY` | 운영용 웹푸시 공개키 |
+   | `VAPID_PRIVATE_KEY` | 운영용 웹푸시 비밀키 |
    | `VAPID_SUBJECT` | `mailto:본인이메일@example.com` |
-   - `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` 는 자동으로 들어가 있어요 (직접 안 넣어도 됨).
+   | `MONGGLE_ALLOWED_ORIGINS` | 운영/개발 origin 쉼표 구분 |
+   - `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` 는 Supabase가 자동 제공합니다.
 5. 다시 **Deploy**(또는 재배포)해서 secrets 적용.
 
 > ⚠️ `VAPID_PRIVATE_KEY` 는 비밀이에요. 이 함수 secret에만 넣고 다른 곳에 노출 X.
+> 과거 저장소나 문서에 비밀키를 기록한 적이 있다면 새 키로 교체하세요.
 
 ## 3) 각자 폰에서 "알림 켜기"
 - 직원용(`/staff.html`) → 우측 상단 내 이름 → **마이페이지** → **🔔 알림 켜기** → 권한 허용.

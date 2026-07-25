@@ -1,106 +1,54 @@
-# 🌙 출근 시프트 설정 안내
+# 출근 시프트 설정 안내
 
-출근자들이 **시프트를 확인**하고, **대타를 구해서 근무를 변경**할 수 있는 웹앱입니다.
-손님은 로그인 없이 **누가 출근하는지**만 볼 수 있어요.
+출근 스케줄은 누구나 볼 수 있고, 계정 기능은 메이트유 로그인으로 이용합니다.
 
-- 근무지: **메이드 · 데빌 · 마츠리** 3곳
-- 로그인: **개인별 PIN**
-- 근무 변경 규칙: **반드시 대타를 구해야** 근무가 넘어갑니다.
-- 데이터 저장: **Supabase** (무료) — 모든 사람이 같은 데이터를 봅니다.
+- 메이트유 일반 회원: 로그인, 공개 스케줄 조회
+- 출근부 파트너+: 시프트 제출, 빈자리 신청, 대타 수락, 댓글
+- 기존 출근자 연결: 내 근무, 대타 요청, 출근부 프로필
+- 출근부 관리자: 직원·근무·편성 관리
 
----
+파트너+와 출근자 연결은 서로 다른 권한입니다. 파트너+ 회원이어도 실제 직원 레코드가 필요한 기능은 기존 출근자를 한 번 연결해야 합니다.
 
-## 📁 구성 파일
+## 구성 파일
 
 | 파일 | 설명 |
-|------|------|
-| `index.html` | 실제 앱 (이 파일 하나면 동작) |
-| `supabase-setup.sql` | 데이터베이스 초기 설정 SQL |
+|---|---|
+| `staff.html` | 직원용 PWA |
+| `supabase-setup.sql` 및 후속 SQL | 기존 출근부 스키마 |
+| `supabase-mateyou-auth.sql` | 메이트유 OAuth 전환 마이그레이션 |
+| `supabase-functions/sync-mateyou-entitlements/index.ts` | Partner+ 권한 동기화 |
+| `MATEYOU_AUTH_SETUP.md` | 운영 환경 설정과 배포 순서 |
 
----
+## 최초 설치
 
-## 🚀 설정 4단계
+1. Supabase 프로젝트를 생성합니다.
+2. 기존 SQL 파일을 번호 대신 아래 순서로 적용합니다.
+   - `supabase-setup.sql`
+   - `supabase-update.sql`
+   - 나머지 사용 중인 `supabase-*.sql`
+   - 마지막에 `supabase-mateyou-auth.sql`
+3. `staff.html`의 `CONFIG`에 Supabase Project URL과 publishable/anon 키를 설정합니다.
+4. [MATEYOU_AUTH_SETUP.md](./MATEYOU_AUTH_SETUP.md)에 따라 OIDC Provider와 Edge Function을 연결합니다.
 
-### 1. Supabase 프로젝트 만들기
-1. [supabase.com](https://supabase.com) 가입 (무료)
-2. **New project** → 이름/비밀번호 입력 → 생성 (1~2분 소요)
+브라우저에 들어가는 Supabase publishable/anon 키는 공개용입니다. 서비스 역할 키, OIDC client secret, entitlement service token은 브라우저 코드에 넣으면 안 됩니다.
 
-### 2. 데이터베이스 만들기
-1. 좌측 메뉴 **SQL Editor** → **New query**
-2. 이 저장소의 `supabase-setup.sql` **전체 내용**을 복사해 붙여넣기
-3. **Run** 클릭 → "Success" 가 뜨면 완료
+## 기존 직원의 첫 연결
 
-> 샘플 계정이 함께 생성돼요. **꼭 PIN을 바꿔서 사용하세요!**
-> - 관리자 / PIN `0000` (메이드)
-> - 아카리 / `1111`, 유우키 / `2222`, 하루 / `3333`
+1. 관리자가 직원 레코드에 6자리 연결 PIN을 설정합니다.
+2. 직원이 `메이트유로 로그인`을 완료합니다.
+3. 마이페이지에서 `기존 출근자 연결`을 누릅니다.
+4. 출근부 이름과 PIN을 한 번 입력합니다.
 
-### 3. 연결 키 복사
-1. 좌측 **Project Settings**(톱니) → **API**
-2. 두 값을 복사:
-   - **Project URL** (예: `https://abcd1234.supabase.co`)
-   - **anon public** 키 (`eyJ...` 로 시작하는 긴 문자열)
+PIN은 직원 연결 요청에만 사용되고 브라우저 저장소에는 보관되지 않습니다. 연결 이후 인증은 Supabase 세션과 메이트유 계정으로 처리됩니다.
 
-### 4. index.html 에 붙여넣기
-`index.html` 상단의 `CONFIG` 부분을 찾아 두 값을 채워요:
+## 근무 변경 흐름
 
-```js
-const CONFIG = {
-  SUPABASE_URL:      'https://abcd1234.supabase.co',   // ← Project URL
-  SUPABASE_ANON_KEY: 'eyJhbGciOi...',                   // ← anon public 키
-};
+```text
+A의 근무 → 대타 요청 → 게시판 공개 → B가 수락 → 근무가 B에게 이전
 ```
 
-저장하면 끝! 설정 안내 화면이 사라지고 앱이 나타나요.
+대타 요청과 수락은 연결된 출근부 파트너+만 수행할 수 있습니다. 권한은 화면뿐 아니라 데이터베이스 함수에서도 다시 확인합니다.
 
-> `anon public` 키는 브라우저에 공개돼도 안전한 키예요. PIN과 데이터 변경은
-> 데이터베이스 함수가 직접 검증하므로, 키만으로는 손님이 데이터를 바꿀 수 없습니다.
+## 배포
 
----
-
-## 🌐 배포 (인터넷에 올리기)
-
-**Vercel** 로 배포 중이에요:
-1. [vercel.com](https://vercel.com) → GitHub 로 로그인
-2. **Add New… → Project** → `monggle` 저장소 **Import**
-3. Application Preset `Other`, 나머지 기본값 그대로 → **Deploy**
-4. 배포 완료 후 주소가 생깁니다:
-   - 손님/출근자 접속 주소: `https://<프로젝트>.vercel.app/`
-
-`main` 브랜치에 푸시하면 Vercel 이 **자동으로 다시 배포**해요.
-이 주소를 출근자와 손님에게 공유하면 돼요.
-
----
-
-## 📖 사용법
-
-### 손님 (로그인 없이)
-- **📅 스케줄** 탭에서 날짜·근무지별로 누가 출근하는지 확인.
-
-### 출근자 (PIN 로그인)
-- 우측 상단 **로그인** → 이름 선택 + PIN 입력.
-- **내 근무**: 내 근무 확인 → `대타 구하기`.
-- **대타 게시판**: 다른 사람의 대타 요청에 `대타 설게요`.
-- **빈 자리**(모집중)는 스케줄에서 `이 자리 설게요`로 바로 맡기.
-
-### 관리자
-- **⚙️ 관리** 탭에서 근무 추가/삭제, 스태프 추가/삭제.
-
----
-
-## 🔄 근무 변경 흐름
-
-```
-A의 근무 ──[대타 구하기]──▶ 대타 게시판에 공개(🔄 대타 구하는 중)
-                                   │
-                          B가 [대타 설게요]
-                                   ▼
-                     근무가 B에게 넘어감(확정) ✅
-```
-대타가 나타나지 않으면 근무는 그대로 A에게 남습니다. 즉, **대타 없이는 근무가 바뀌지 않아요.**
-
----
-
-## ❓ 자주 막히는 곳
-- **설정 화면이 계속 나와요** → `CONFIG` 두 값이 `YOUR_...` 그대로인지 확인.
-- **로딩 실패 메시지** → `supabase-setup.sql` 을 실행했는지, URL/키가 맞는지 확인.
-- **로그인이 안 돼요** → 이름·PIN 확인. 관리자 탭에서 PIN을 다시 등록할 수 있어요.
+정적 화면은 Vercel 배포를 사용합니다. `supabase-mateyou-auth.sql` 적용 시 기존 PIN 로그인 함수 실행권이 즉시 제거되므로, OIDC Provider·Supabase Custom Provider·Edge Function·프론트엔드가 모두 준비된 유지보수 구간에 전환하세요.
