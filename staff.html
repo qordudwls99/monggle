@@ -35,7 +35,7 @@ body{
 .head{position:relative;z-index:10;padding:max(20px,calc(env(safe-area-inset-top) + 12px)) 20px 8px;display:flex;justify-content:space-between;align-items:flex-start}
 .brand{font-size:22px;font-weight:800;color:var(--ink);letter-spacing:-.5px}
 .kicker{font-size:10px;font-weight:800;letter-spacing:3px;color:var(--rose);text-transform:uppercase}
-.who{display:flex;align-items:center;gap:7px;background:#fff;border:1px solid var(--line);
+.who{display:flex;align-items:center;gap:7px;min-height:44px;background:#fff;border:1px solid var(--line);
   padding:7px 13px;border-radius:99px;box-shadow:0 4px 12px -8px rgba(80,40,50,.3);cursor:pointer;font-family:inherit}
 .who .nm{font-weight:800;font-size:13px;color:var(--ink)}
 .who .role{font-size:10px;font-weight:800;color:var(--rose-deep)}
@@ -253,7 +253,7 @@ body{
 .form-card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:14px;box-shadow:0 6px 16px -14px rgba(80,40,50,.35)}
 .form-card .fc-t{font-weight:800;font-size:15px;color:var(--ink);margin-bottom:13px}
 label.fl{display:block;font-size:12px;font-weight:700;color:var(--ink2);margin:0 0 5px 2px}
-.fld{width:100%;background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:11px 13px;font-size:16px;outline:none;font-family:inherit;color:var(--ink);margin-bottom:11px}
+.fld{width:100%;min-height:44px;background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:11px 13px;font-size:16px;outline:none;font-family:inherit;color:var(--ink);margin-bottom:11px}
 .fld:focus{border-color:var(--rose);background:#fff}
 .frow{display:flex;gap:9px}.frow>*{flex:1}
 select.fld{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%23b5919a' d='M6 8 0 0h12z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center}
@@ -275,7 +275,29 @@ select.fld{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns
 @keyframes up{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
 .modal-t{font-size:19px;font-weight:800;color:var(--ink);text-align:center}
 .modal-s{font-size:13px;font-weight:600;color:var(--ink2);text-align:center;margin:6px 0 18px;line-height:1.5}
-.closex{width:100%;text-align:center;margin-top:10px;color:var(--muted);font-weight:700;font-size:13px;background:none;border:none;cursor:pointer;padding:8px}
+.closex{width:100%;min-height:44px;text-align:center;margin-top:10px;color:var(--muted);font-weight:700;font-size:13px;background:none;border:none;cursor:pointer;padding:8px}
+.modal-c .btn.full{min-height:44px}
+.auth-intro{margin:20px 0 18px;padding:18px;border:1px solid var(--line);border-radius:16px;background:linear-gradient(145deg,#fff 0%,var(--soft2) 100%)}
+.auth-eyebrow{font-size:10px;font-weight:900;letter-spacing:2px;color:var(--rose-deep);text-transform:uppercase}
+.auth-headline{font-size:18px;font-weight:850;color:var(--ink);line-height:1.35;margin-top:8px;letter-spacing:-.35px}
+.auth-copy{font-size:12.5px;font-weight:600;color:var(--ink2);line-height:1.6;margin-top:7px}
+.auth-trust{font-size:11px;font-weight:650;color:var(--muted);line-height:1.55;text-align:center;margin-top:12px}
+.btn.mateyou{min-height:48px;background:var(--ink);color:#fff;display:flex;align-items:center;justify-content:center;gap:9px;font-size:14px}
+.mateyou-mark{display:inline-flex;width:22px;height:22px;align-items:center;justify-content:center;border-radius:7px;background:var(--rose);color:#fff;font-size:12px;font-weight:900}
+.role-pills{display:flex;justify-content:center;gap:6px;flex-wrap:wrap;margin:-8px 0 16px}
+.role-pill{display:inline-flex;align-items:center;min-height:26px;padding:4px 9px;border-radius:99px;background:var(--soft2);color:var(--ink2);font-size:10.5px;font-weight:850}
+.role-pill.plus{background:#f7e3e7;color:var(--rose-deep)}
+.role-pill.admin{background:#eee9f6;color:#665286}
+.account-card{border:1px solid var(--line);border-radius:14px;background:var(--paper);padding:13px 14px;margin-bottom:16px}
+.account-card strong{display:block;color:var(--ink);font-size:13px}
+.account-card span{display:block;color:var(--ink2);font-size:11.5px;line-height:1.5;margin-top:3px;overflow-wrap:anywhere}
+.access-card{border:1px solid var(--ev-border);border-radius:14px;background:var(--soft2);padding:14px;margin:14px 0}
+.access-card strong{display:block;font-size:13.5px;color:var(--ink)}
+.access-card p{font-size:12px;line-height:1.55;color:var(--ink2);margin-top:5px}
+button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{outline:3px solid rgba(168,85,101,.35);outline-offset:2px}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;scroll-behavior:auto!important}
+}
 
 /* toast */
 .toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%) translateY(20px);z-index:120;background:#3f2e30;color:#fff;font-weight:700;font-size:13px;padding:12px 20px;border-radius:99px;opacity:0;transition:.3s;pointer-events:none;max-width:90%;text-align:center}
@@ -663,20 +685,20 @@ body[data-theme="matsuri"] .kicker::after{ content:" ⛩"; letter-spacing:0; }
         </div>
 
         <div class="form-card">
-          <div class="fc-t">스태프 추가</div>
+          <div class="fc-t">출근자 추가</div>
           <div class="frow">
             <div><label class="fl">이름</label><input type="text" class="fld" id="as-name" placeholder="이름"></div>
-            <div><label class="fl">PIN (6자리)</label><input type="text" class="fld" id="as-pin" inputmode="numeric" maxlength="6" placeholder="000000"></div>
+            <div><label class="fl">연결 PIN (6자리)</label><input type="text" class="fld" id="as-pin" inputmode="numeric" maxlength="6" placeholder="일회성 연결용"></div>
           </div>
           <label class="fl">관리자 권한</label>
           <select class="fld" id="as-admin"><option value="false">일반</option><option value="true">관리자</option></select>
-          <button class="btn primary full" id="addStaffBtn">스태프 추가하기</button>
+          <button class="btn primary full" id="addStaffBtn">출근자 추가하기</button>
         </div>
 
         <div class="form-card">
-          <div class="fc-t">스태프 목록</div>
-          <div style="font-size:12px;color:var(--ink2);font-weight:600;margin-bottom:9px;line-height:1.5">PIN 없는 직원에게 <b>공통 임시 PIN</b>을 한 번에 깔아주세요. 직원은 로그인 후 마이페이지에서 본인 PIN으로 바꿉니다.</div>
-          <button class="btn ghost full" id="bulkPinBtn" style="margin-bottom:11px">PIN 없는 직원에게 임시 PIN 일괄 설정</button>
+          <div class="fc-t">출근자 목록</div>
+          <div style="font-size:12px;color:var(--ink2);font-weight:600;margin-bottom:9px;line-height:1.5">PIN은 기존 출근자를 메이트유 계정에 처음 연결할 때만 사용합니다. 연결이 끝나면 브라우저는 PIN을 저장하지 않습니다.</div>
+          <button class="btn ghost full" id="bulkPinBtn" style="margin-bottom:11px">PIN 없는 출근자에게 연결 PIN 설정</button>
           <input type="text" class="fld" id="staffSearch" placeholder="이름 검색">
           <div id="staffMng"></div>
         </div>
@@ -692,21 +714,24 @@ body[data-theme="matsuri"] .kicker::after{ content:" ⛩"; letter-spacing:0; }
     <div class="modal-t">마이페이지</div>
     <div class="mp-pic">
       <div class="bigav" id="myAv"></div>
-      <button class="btn ghost" id="myPicBtn">프로필 사진 변경</button>
-      <input type="file" id="myPicFile" accept="image/*" style="display:none">
     </div>
     <div class="mp-name" id="myName"></div>
-    <label class="fl">인스타그램</label>
-    <input class="fld" id="myIg" placeholder="인스타 아이디 또는 링크">
-    <button class="btn primary full" id="mySave">저장</button>
-    <div style="border-top:1px solid var(--line);margin-top:16px;padding-top:14px">
-      <label class="fl">PIN 변경 (6자리 숫자)</label>
-      <input class="fld" id="myNewPin" inputmode="numeric" maxlength="6" placeholder="새 PIN 6자리" autocomplete="off">
-      <button class="btn ghost full" id="myPinBtn">PIN 바꾸기</button>
+    <div class="role-pills" id="myRoles"></div>
+    <div class="account-card">
+      <strong>메이트유 계정으로 로그인됨</strong>
+      <span id="myAccountMeta"></span>
     </div>
-    <div style="border-top:1px solid var(--line);margin-top:16px;padding-top:14px">
-      <div style="font-size:12px;color:var(--ink2);font-weight:600;margin-bottom:8px">대타 게시판 댓글 알림을 폰으로 받아요</div>
-      <button class="btn ghost full" id="pushBtn">🔔 알림 켜기</button>
+    <div id="myLinkState"></div>
+    <div id="myStaffTools">
+      <button class="btn ghost full" id="myPicBtn">출근부 프로필 사진 변경</button>
+      <input type="file" id="myPicFile" accept="image/*" style="display:none">
+      <label class="fl" style="margin-top:14px">인스타그램</label>
+      <input class="fld" id="myIg" placeholder="인스타 아이디 또는 링크">
+      <button class="btn primary full" id="mySave">저장</button>
+      <div style="border-top:1px solid var(--line);margin-top:16px;padding-top:14px">
+        <div style="font-size:12px;color:var(--ink2);font-weight:600;margin-bottom:8px">대타 게시판 댓글 알림을 폰으로 받아요</div>
+        <button class="btn ghost full" id="pushBtn">알림 켜기</button>
+      </div>
     </div>
   </div>
 </div>
@@ -748,14 +773,42 @@ body[data-theme="matsuri"] .kicker::after{ content:" ⛩"; letter-spacing:0; }
 <!-- 로그인 모달 -->
 <div class="modal" id="loginModal">
   <div class="modal-c">
-    <div class="modal-t">출근자 로그인</div>
-    <div class="modal-s">이름을 고르고 PIN을 입력하세요</div>
-    <label class="fl">이름 (검색)</label>
-    <input class="fld" id="loginName" placeholder="이름 입력" autocomplete="off">
-    <label class="fl">PIN</label>
-    <input type="password" class="fld" id="loginPin" inputmode="numeric" maxlength="6" placeholder="PIN 입력">
-    <button class="btn primary full" id="loginBtn">로그인</button>
+    <div class="modal-t">메이트유로 로그인</div>
+    <div class="auth-intro">
+      <div class="auth-eyebrow">MATEYOU × MONGGLE</div>
+      <div class="auth-headline">메이트유 계정으로<br>출근부를 이어 쓰세요.</div>
+      <div class="auth-copy">일반 회원도 로그인할 수 있어요. 출근부 파트너+라면 시프트 제출과 대타 참여 기능이 함께 열립니다.</div>
+    </div>
+    <button class="btn mateyou full" id="loginBtn"><span class="mateyou-mark">M</span>메이트유 계정으로 계속</button>
+    <div class="auth-trust">비밀번호는 몽글에 전달되지 않으며, 메이트유 로그인 화면에서만 입력합니다.</div>
     <button class="closex" id="loginClose">취소</button>
+  </div>
+</div>
+
+<!-- 기존 출근자 연결 모달 -->
+<div class="modal" id="linkModal">
+  <div class="modal-c">
+    <div class="modal-t">기존 출근자 연결</div>
+    <div class="modal-s">출근부에 등록된 이름과 현재 PIN을 한 번만 확인합니다. PIN은 브라우저에 저장하지 않아요.</div>
+    <label class="fl">출근부 이름</label>
+    <input class="fld" id="linkName" placeholder="등록된 이름 입력" autocomplete="name">
+    <label class="fl">현재 PIN</label>
+    <input type="password" class="fld" id="linkPin" inputmode="numeric" maxlength="6" placeholder="6자리 PIN" autocomplete="one-time-code">
+    <button class="btn primary full" id="linkBtn">이 출근자와 연결</button>
+    <button class="closex" id="linkClose">나중에</button>
+  </div>
+</div>
+
+<!-- Partner+ / 직원 연결 안내 -->
+<div class="modal" id="accessModal">
+  <div class="modal-c">
+    <div class="modal-t" id="accessTitle">권한이 더 필요해요</div>
+    <div class="access-card">
+      <strong id="accessHeadline"></strong>
+      <p id="accessCopy"></p>
+    </div>
+    <button class="btn primary full" id="accessAction"></button>
+    <button class="closex" id="accessClose">닫기</button>
   </div>
 </div>
 
@@ -917,7 +970,9 @@ const igUrl = h => { h=String(h||'').trim(); if(!h) return null; return /^https?
 const IG_SVG = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1.2" fill="currentColor" stroke="none"/></svg>';
 
 let supa = null;
-let session = JSON.parse(localStorage.getItem('shift_session') || 'null'); // {id,name,workplace,is_admin,pin}
+let authSession = null;
+let session = null; // MateYou profile + optional linked staff
+localStorage.removeItem('shift_session');
 let staffList = [];
 let selectedDate = new Date();
 let wpFilter = '메이드';
@@ -938,21 +993,104 @@ function isConfigured(){
 }
 async function boot(){
   if(!isConfigured()){ $('setupScreen').style.display='block'; return; }
-  supa = createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
+  supa = createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY, {
+    auth: {
+      flowType: 'pkce',
+      persistSession: true,
+      autoRefreshToken: true,
+      detectSessionInUrl: true,
+    },
+  });
   $('mainApp').style.display='flex';
-  await loadDirectory();
-  await loadDraftMonths();
   wireUI();
+  await syncAuthState();
+  if(session?.is_admin) await loadDirectory();
+  await loadDraftMonths();
   renderWho();
   applyTheme(wpFilter);
   renderChips();
   renderDateLabel();
   switchTab('schedule');
-  setupPTR(document.querySelector('.body'), async()=>{ await loadDirectory(); await loadDraftMonths(); refreshCurrent(); });
+  supa.auth.onAuthStateChange((event)=>{
+    if(!['SIGNED_IN','SIGNED_OUT','TOKEN_REFRESHED','USER_UPDATED'].includes(event)) return;
+    setTimeout(async()=>{
+      await syncAuthState(event!=='TOKEN_REFRESHED');
+      if(session?.is_admin) await loadDirectory(); else staffList=[];
+      renderWho();
+      refreshCurrent();
+    },0);
+  });
+  document.addEventListener('visibilitychange', ()=>{
+    if(document.visibilityState==='visible' && authSession){
+      syncAuthState(true).then(()=>{ renderWho(); refreshCurrent(); });
+    }
+  });
+  setupPTR(document.querySelector('.body'), async()=>{ if(session?.is_admin) await loadDirectory(); await loadDraftMonths(); refreshCurrent(); });
   if('serviceWorker' in navigator){ navigator.serviceWorker.register('/sw.js').catch(()=>{}); }
-  if(session) setTimeout(maybeAskPush, 1200);
+  if(session?.id) setTimeout(maybeAskPush, 1200);
   // 주기적 새로고침
   // 자동 새로고침 제거: 당겨서 새로고침 / 탭 전환으로 갱신
+}
+
+function fallbackSession(user){
+  const meta=user?.user_metadata||{};
+  const name=meta.name||meta.full_name||user?.email?.split('@')[0]||'메이트유 회원';
+  return {
+    auth_user_id:user?.id||null,
+    id:null,
+    name,
+    email:user?.email||null,
+    avatar:meta.picture||meta.avatar_url||null,
+    is_admin:false,
+    is_partner_plus:false,
+    entitlements:['basic'],
+    linked:false,
+    sync_unavailable:true,
+  };
+}
+
+async function syncAuthState(refreshEntitlements=true){
+  const { data, error } = await supa.auth.getSession();
+  if(error || !data.session){
+    authSession=null;
+    session=null;
+    return;
+  }
+  authSession=data.session;
+
+  let entitlementSyncFailed=false;
+  if(refreshEntitlements){
+    const sync = await supa.functions.invoke('sync-mateyou-entitlements', { body:{} });
+    if(sync.error){
+      entitlementSyncFailed=true;
+      console.warn('MateYou entitlement sync unavailable');
+    }
+  }
+
+  const current = await supa.rpc('my_monggle_session');
+  if(current.error || !current.data){
+    session=fallbackSession(authSession.user);
+    return;
+  }
+
+  const profile=current.data.profile||{};
+  const staff=current.data.staff||null;
+  const entitlementFresh=profile.entitlement_checked_at &&
+    Date.now()-new Date(profile.entitlement_checked_at).getTime()<15*60*1000;
+  session={
+    auth_user_id:profile.user_id||authSession.user.id,
+    mateyou_sub:profile.mateyou_sub||null,
+    id:staff?.id||null,
+    name:staff?.name||profile.display_name||authSession.user.email?.split('@')[0]||'메이트유 회원',
+    account_name:profile.display_name||staff?.name||'메이트유 회원',
+    email:profile.email||authSession.user.email||null,
+    avatar:staff?.avatar_url||profile.avatar_url||null,
+    is_admin:!!staff?.is_admin,
+    is_partner_plus:!!profile.is_partner_plus && !!entitlementFresh,
+    entitlements:Array.isArray(profile.entitlements)?profile.entitlements:['basic'],
+    linked:!!staff,
+    sync_unavailable:entitlementSyncFailed && !entitlementFresh,
+  };
 }
 /* ---------- 푸시 알림 ---------- */
 function urlB64ToUint8(base64){
@@ -963,7 +1101,7 @@ function urlB64ToUint8(base64){
   return arr;
 }
 async function enablePush(){
-  if(!session){ openLogin(); return; }
+  if(!requireStaffAccess()) return;
   if(!('serviceWorker' in navigator)||!('PushManager' in window)){ toast('이 기기는 푸시 알림을 지원하지 않아요', true); return; }
   try{
     const perm = await Notification.requestPermission();
@@ -978,7 +1116,7 @@ async function enablePush(){
 }
 function updatePushBtn(on){ const b=$('pushBtn'); if(b){ b.textContent = on?'🔔 알림 켜짐':'🔔 알림 켜기'; } }
 function maybeAskPush(){
-  if(!session) return;
+  if(!session?.id) return;
   if(!('serviceWorker' in navigator)||!('PushManager' in window)||!('Notification' in window)) return;
   if(Notification.permission!=='default') return;            // 이미 허용/거부면 안 물어봄
   if(localStorage.getItem('push_ask_dismiss')) return;        // 이전에 닫았으면 안 물어봄
@@ -988,6 +1126,7 @@ function maybeAskPush(){
 
 /* ---------- 데이터 ---------- */
 async function loadDirectory(){
+  if(!session?.is_admin){ staffList=[]; return; }
   const { data, error } = await supa.rpc('staff_directory');
   if(error){ toast('스태프 목록 로딩 실패: '+error.message, true); return; }
   staffList = (data || []).sort((a,b)=> ((b.is_admin?1:0)-(a.is_admin?1:0)) || a.name.localeCompare(b.name,'ko'));
@@ -1018,7 +1157,18 @@ async function fetchNightMembers(dateStr){
   const m={}; (data||[]).forEach(r=>(m[r.work_date+'|'+r.workplace]=m[r.work_date+'|'+r.workplace]||[]).push(r)); return m;
 }
 async function fetchApplications(dateStr){
-  const { data } = await supa.from('application_view').select('*').eq('work_date',dateStr);
+  let data=[];
+  if(session?.is_admin){
+    ({data} = await fetchAdminApplications(dateStr));
+  } else if(session?.id){
+    ({data} = await supa.rpc('my_application_list', {
+      p_staff_id:session.id,
+      p_pin:null,
+      p_date:dateStr,
+    }));
+  } else {
+    return {};
+  }
   const map={}; (data||[]).forEach(a=>(map[a.shift_id]=map[a.shift_id]||[]).push(a));
   return map;
 }
@@ -1046,7 +1196,15 @@ async function fetchOpenSwaps(){
 /* ---------- 액션(RPC) ---------- */
 async function rpc(fn, args, okMsg){
   if(!session){ openLogin(); return false; }
-  const { error } = await supa.rpc(fn, { ...args, p_pin: session.pin });
+  if((args.p_staff_id!==undefined || args.p_admin_id!==undefined) && !session.id){
+    openAccess('staff');
+    return false;
+  }
+  let { error } = await supa.rpc(fn, { ...args, p_pin:null });
+  if(error?.message?.includes('권한을 다시 확인') && authSession){
+    await syncAuthState(true);
+    ({ error } = await supa.rpc(fn, { ...args, p_pin:null }));
+  }
   if(error){ toast(error.message.replace(/^.*?:\s*/,'') || '오류', true); return false; }
   if(okMsg) toast(okMsg);
   await refreshCurrent();
@@ -1054,68 +1212,124 @@ async function rpc(fn, args, okMsg){
 }
 // 관리자 전원에게 푸시 (알림탭 이벤트: 빈자리 신청 / 대타 요청)
 function notifyAdmins(title, body){
-  try{ supa.functions.invoke('notify', { body:{ to:'admins', title, body, exclude_id: session?session.id:null } }); }catch(e){}
+  try{ supa.functions.invoke('notify', { body:{ to:'admins', title, body } }); }catch(e){}
 }
 
 /* ---------- 로그인 ---------- */
 function fillLoginNames(){ /* 로그인 시 이름 목록 노출 안 함 (직접 입력) */ }
 function openLogin(){ $('loginModal').classList.add('show'); }
-function closeLogin(){ $('loginModal').classList.remove('show'); $('loginPin').value=''; }
+function closeLogin(){ $('loginModal').classList.remove('show'); }
 async function doLogin(){
-  const name = $('loginName').value.trim(), pin = $('loginPin').value.trim();
-  if(!pin){ toast('PIN을 입력하세요', true); return; }
-  const { data, error } = await supa.rpc('staff_login', { p_name:name, p_pin:pin });
-  if(error){ toast(error.message.replace(/^.*?:\s*/,'') || '로그인 실패', true); return; }
-  if(!data || data.length===0){ toast('이름 또는 PIN이 올바르지 않아요', true); return; }
-  const me = data[0];
-  session = { id:me.id, name:me.name, is_admin:me.is_admin, avatar:me.avatar_url||null, pin, pin_temp:!!me.pin_temp };
-  localStorage.setItem('shift_session', JSON.stringify(session));
-  closeLogin();
-  renderWho();
-  toast(`${me.name}님 환영해요!`);
-  refreshCurrent();
-  if(me.pin_temp){
-    toast('임시 PIN으로 로그인했어요. 마이페이지에서 PIN을 바꿔주세요');
-    setTimeout(openMyPage, 700);
-  } else {
-    setTimeout(maybeAskPush, 800);
-  }
+  const redirectTo=location.origin+location.pathname;
+  const { error } = await supa.auth.signInWithOAuth({
+    provider:'custom:mateyou',
+    options:{ redirectTo },
+  });
+  if(error) toast('메이트유 로그인을 시작하지 못했어요', true);
 }
-function logout(){
+async function logout(){
+  await supa.auth.signOut();
+  authSession = null;
   session = null;
-  localStorage.removeItem('shift_session');
+  staffList = [];
   renderWho();
   switchTab('schedule');
   toast('로그아웃 했어요');
 }
+
+function openLink(){
+  if(!session){ openLogin(); return; }
+  $('linkName').value='';
+  $('linkPin').value='';
+  $('linkModal').classList.add('show');
+  setTimeout(()=>$('linkName').focus(),100);
+}
+
+async function claimStaff(){
+  const name=$('linkName').value.trim();
+  const pin=$('linkPin').value.trim();
+  if(!name || !/^\d{6}$/.test(pin)){
+    toast('출근부 이름과 6자리 PIN을 확인해 주세요', true);
+    return;
+  }
+  const button=$('linkBtn');
+  button.disabled=true;
+  const { data, error } = await supa.rpc('claim_existing_staff', {
+    p_name:name,
+    p_pin:pin,
+  });
+  $('linkPin').value='';
+  button.disabled=false;
+  if(error || !data?.ok){
+    toast(data?.error||'직원 연결에 실패했어요', true);
+    return;
+  }
+  $('linkModal').classList.remove('show');
+  await syncAuthState(false);
+  if(session?.is_admin) await loadDirectory();
+  renderWho();
+  refreshCurrent();
+  toast(`${session.name} 출근자와 연결했어요`);
+}
+
+function openAccess(kind){
+  if(!session){ openLogin(); return; }
+  const isStaff=kind==='staff' || (session.is_partner_plus && !session.id);
+  $('accessTitle').textContent=isStaff?'출근자 연결이 필요해요':'파트너+ 전용 기능이에요';
+  $('accessHeadline').textContent=isStaff
+    ? '메이트유 로그인은 완료됐어요.'
+    : '로그인은 완료됐지만 이 기능은 잠겨 있어요.';
+  $('accessCopy').textContent=isStaff
+    ? '내 근무와 시프트 기능을 쓰려면 기존 출근부 이름을 한 번 연결해 주세요.'
+    : '스케줄 조회와 계정 이용은 가능해요. 시프트 제출·빈자리 신청·대타 참여는 출근부 파트너+에서 열립니다.';
+  $('accessAction').textContent=isStaff?'기존 출근자 연결':'메이트유 계정 확인';
+  $('accessAction').onclick=()=>{
+    $('accessModal').classList.remove('show');
+    if(isStaff) openLink(); else openMyPage();
+  };
+  $('accessModal').classList.add('show');
+}
+
+function requireStaffAccess(partnerPlus=false){
+  if(!session){ openLogin(); return false; }
+  if(partnerPlus && !session.is_partner_plus){ openAccess('partner'); return false; }
+  if(!session.id){ openAccess('staff'); return false; }
+  return true;
+}
+
 async function openMyPage(){
   $('myName').textContent = session.name;
   $('myAv').style.cssText = avStyle(session.avatar);
   $('myAv').textContent = session.avatar?'':session.name.charAt(0);
+  $('myRoles').innerHTML=[
+    '<span class="role-pill">메이트유 회원</span>',
+    session.is_partner_plus?'<span class="role-pill plus">출근부 파트너+</span>':'',
+    session.is_admin?'<span class="role-pill admin">출근부 관리자</span>':'',
+    session.sync_unavailable?'<span class="role-pill">권한 확인 필요</span>':'',
+  ].join('');
+  $('myAccountMeta').textContent=session.email||session.account_name||'연결된 메이트유 계정';
+  $('myStaffTools').style.display=session.id?'block':'none';
+  $('myLinkState').innerHTML=session.id
+    ? `<div class="access-card"><strong>${esc(session.name)} 출근자와 연결됨</strong><p>브라우저에 PIN을 저장하지 않고 메이트유 로그인으로 본인 확인을 이어갑니다.</p></div>`
+    : `<div class="access-card"><strong>아직 출근자 연결 전이에요</strong><p>일반 회원으로 스케줄은 볼 수 있어요. 내 근무 기능은 기존 출근자를 연결한 뒤 사용할 수 있습니다.</p><button class="btn primary full" id="myLinkBtn" style="margin-top:10px">기존 출근자 연결</button></div>`;
+  if(!session.id) $('myLinkBtn').onclick=openLink;
   $('myIg').value='';
-  $('myNewPin').value='';
   $('myModal').classList.add('show');
-  try{ const r=await supa.rpc('my_profile',{p_staff_id:session.id,p_pin:session.pin});
+  if(!session.id) return;
+  try{ const r=await supa.rpc('my_profile',{p_staff_id:session.id,p_pin:null});
     if(r.data){ $('myIg').value=r.data.instagram||''; } }catch(e){}
   try{ if('serviceWorker' in navigator){ const reg=await navigator.serviceWorker.ready; const sub=await reg.pushManager.getSubscription(); updatePushBtn(!!sub && Notification.permission==='granted'); } }catch(e){}
 }
 async function saveMyProfile(){
+  if(!requireStaffAccess()) return;
   const ok = await rpc('set_my_instagram', { p_staff_id:session.id, p_insta:$('myIg').value.trim() }, '저장했어요');
 }
-async function changeMyPin(){
-  const np=$('myNewPin').value.trim();
-  if(!/^\d{6}$/.test(np)){ toast('새 PIN은 6자리 숫자로 입력하세요', true); return; }
-  const { error } = await supa.rpc('set_my_pin', { p_staff_id:session.id, p_pin:session.pin, p_new_pin:np });
-  if(error){ toast(error.message.replace(/^.*?:\s*/,'')||'PIN 변경 실패', true); return; }
-  session.pin=np; session.pin_temp=false; localStorage.setItem('shift_session', JSON.stringify(session));
-  $('myNewPin').value=''; toast('PIN을 바꿨어요');
-}
 async function bulkSetPin(){
-  const np=prompt('PIN 없는 직원에게 깔 임시 PIN (6자리 숫자):', '000000'); if(np===null) return;
-  if(!/^\d{6}$/.test(np.trim())){ toast('임시 PIN은 6자리 숫자로 입력하세요', true); return; }
-  const { data, error } = await supa.rpc('admin_set_default_pin', { p_admin_id:session.id, p_pin:session.pin, p_new_pin:np.trim() });
+  const np=prompt('PIN 없는 출근자에게 설정할 연결 PIN (6자리 숫자):'); if(np===null) return;
+  if(!/^\d{6}$/.test(np.trim())){ toast('연결 PIN은 6자리 숫자로 입력하세요', true); return; }
+  const { data, error } = await supa.rpc('admin_set_default_pin', { p_admin_id:session.id, p_pin:null, p_new_pin:np.trim() });
   if(error){ toast(error.message.replace(/^.*?:\s*/,'')||'설정 실패', true); return; }
-  toast(`임시 PIN을 ${data||0}명에게 설정했어요`);
+  toast(`연결 PIN을 ${data||0}명에게 설정했어요`);
   await loadDirectory(); renderStaffList();
 }
 /* ----- 프로필 사진 크롭 ----- */
@@ -1182,15 +1396,16 @@ function applyCrop(){
   c.toBlob(blob=>{ $('cropModal').classList.remove('show'); cropState=null; if(blob) doUploadAvatar(blob); }, 'image/jpeg', 0.85);
 }
 async function doUploadAvatar(blob){
+  if(!requireStaffAccess()) return;
   toast('사진 올리는 중…');
   try{
-    const path=`${session.id}-${Date.now()}.jpg`;
+    const path=`${authSession.user.id}/${Date.now()}.jpg`;
     const up=await supa.storage.from('avatars').upload(path, blob, {contentType:'image/jpeg',upsert:true});
     if(up.error) throw up.error;
     const url=supa.storage.from('avatars').getPublicUrl(path).data.publicUrl;
-    const { error }=await supa.rpc('set_my_avatar',{p_staff_id:session.id,p_pin:session.pin,p_url:url});
+    const { error }=await supa.rpc('set_my_avatar',{p_staff_id:session.id,p_pin:null,p_url:url});
     if(error) throw error;
-    session.avatar=url; localStorage.setItem('shift_session',JSON.stringify(session));
+    session.avatar=url;
     $('myAv').style.cssText=avStyle(url); $('myAv').textContent='';
     renderWho(); toast('프로필 사진을 바꿨어요');
   }catch(e){ toast('사진 업로드 실패: '+(e.message||e), true); }
@@ -1210,7 +1425,7 @@ function openNmAdd(wp, dateStr, nightOn){
 }
 async function ensureNightOn(){   // 야간 멤버 넣을 때 그날 야간영업 자동 켜기
   if(nmNightOn) return;
-  await supa.rpc('admin_set_night',{p_admin_id:session.id, p_pin:session.pin, p_date:nmDate, p_workplace:nmWp, p_on:true, p_hours:'주간 16:00~23:00 · 야간 23:00~익일 05:00'});
+  await supa.rpc('admin_set_night',{p_admin_id:session.id, p_pin:null, p_date:nmDate, p_workplace:nmWp, p_on:true, p_hours:'주간 16:00~23:00 · 야간 23:00~익일 05:00'});
   nmNightOn=true;
 }
 async function nmAddShort(){
@@ -1225,11 +1440,27 @@ function nightCovers(label, year, targetYmd){
   const start=pad(+m[1],+m[2]); const end=m[3]?pad(+m[3],+m[4]):start;
   return targetYmd>=start && targetYmd<=end;
 }
+async function fetchAdminSubmissionAnswers(ym){
+  if(!session?.is_admin) return {data:[],error:null};
+  return supa.rpc('admin_submission_answers',{
+    p_admin_id:session.id,
+    p_pin:null,
+    p_ym:ym,
+  });
+}
+async function fetchAdminApplications(date=null){
+  if(!session?.is_admin) return {data:[],error:null};
+  return supa.rpc('admin_application_list',{
+    p_admin_id:session.id,
+    p_pin:null,
+    p_date:date,
+  });
+}
 async function loadNmCands(){
   const box=$('nm-cands'); const ym=nmDate.slice(0,7);
   const [nqR, ansR, memR] = await Promise.all([
     supa.from('submission_night_view').select('*').eq('ym', ym),
-    supa.from('submission_answer_view').select('*').eq('ym', ym),
+    fetchAdminSubmissionAnswers(ym),
     supa.from('night_member_view').select('*').eq('work_date', nmDate)
   ]);
   const nights=(nqR.data||[]).sort((a,b)=>String(a.work_date||"").localeCompare(String(b.work_date||""))||a.sort-b.sort||a.id-b.id);
@@ -1272,9 +1503,10 @@ function renderWho(){
   const btn = $('whoBtn');
   if(session){
     const av = `<span class="wav" style="${avStyle(session.avatar)}">${session.avatar?'':esc(session.name.charAt(0))}</span>`;
-    btn.innerHTML = `${av}<span class="nm">${esc(session.name)}</span>${session.is_admin?'<span class="role">관리자</span>':''}`;
+    const role=session.is_admin?'관리자':session.is_partner_plus?'파트너+':'메이트유';
+    btn.innerHTML = `${av}<span class="nm">${esc(session.name)}</span><span class="role">${role}</span>`;
   } else {
-    btn.innerHTML = `<span class="nm">로그인</span>`;
+    btn.innerHTML = `<span class="nm">메이트유 로그인</span>`;
   }
   const adm = (session && session.is_admin);
   $('adminTab').style.display = adm ? 'block' : 'none';
@@ -1326,7 +1558,17 @@ async function renderSubmit(){
   // 화면에 이미 골라둔 값 보존 (자동 새로고침 등으로 지워지지 않게)
   const keep={}; document.querySelectorAll('#submitList select[data-qkey]').forEach(s=>{ keep[s.dataset.qkey]=s.value; });
   if(!session){ save.style.display='none'; $('subMonthLabel').textContent='';
-    list.innerHTML=`<button class="btn primary full" id="subLogin">로그인하기</button>`; $('subLogin').onclick=openLogin; return; }
+    list.innerHTML=`<div class="access-card"><strong>메이트유 로그인 후 이용해요</strong><p>일반 회원도 로그인할 수 있고, 출근부 파트너+에게 제출 기능이 열립니다.</p><button class="btn primary full" id="subLogin" style="margin-top:10px">메이트유로 로그인</button></div>`; $('subLogin').onclick=openLogin; return; }
+  if(!session.is_partner_plus){
+    save.style.display='none'; $('subMonthLabel').textContent='';
+    list.innerHTML=`<div class="access-card"><strong>시프트 제출은 파트너+ 전용이에요</strong><p>스케줄 조회는 계속 이용할 수 있습니다.</p><button class="btn ghost full" id="subAccess" style="margin-top:10px">내 권한 보기</button></div>`;
+    $('subAccess').onclick=()=>openAccess('partner'); return;
+  }
+  if(!session.id){
+    save.style.display='none'; $('subMonthLabel').textContent='';
+    list.innerHTML=`<div class="access-card"><strong>출근자를 한 번 연결해 주세요</strong><p>파트너+ 권한은 확인됐어요. 기존 출근부 이름을 연결하면 바로 제출할 수 있습니다.</p><button class="btn primary full" id="subLink" style="margin-top:10px">기존 출근자 연결</button></div>`;
+    $('subLink').onclick=openLink; return;
+  }
   await loadDraftMonths();
   if(!submitYM) submitYM=[...openMonths].sort()[0] || thisNextYM();
   $('subMonthLabel').textContent=ymLabelText(submitYM);
@@ -1339,7 +1581,7 @@ async function renderSubmit(){
   list.innerHTML=`<div style="text-align:center;padding:30px"><span class="spin"></span></div>`;
   const [nq, mine] = await Promise.all([
     supa.from('submission_night_view').select('*').eq('ym', submitYM),
-    supa.rpc('my_submission',{p_staff_id:session.id, p_pin:session.pin, p_ym:submitYM})
+    supa.rpc('my_submission',{p_staff_id:session.id, p_pin:null, p_ym:submitYM})
   ]);
   const nights=(nq.data||[]).sort((a,b)=>String(a.work_date||"").localeCompare(String(b.work_date||""))||a.sort-b.sort||a.id-b.id);
   const ans={}; (mine.data||[]).forEach(a=>ans[a.qkey]=a.choice);
@@ -1362,9 +1604,10 @@ async function renderSubmit(){
   list.innerHTML=html; save.style.display='block';
 }
 async function submitSave(){
+  if(!requireStaffAccess(true)) return;
   const answers=[];
   $('submitList').querySelectorAll('select[data-qkey]').forEach(s=>{ if(s.value) answers.push({qkey:s.dataset.qkey, choice:s.value}); });
-  const { data, error } = await supa.rpc('submit_shift',{p_staff_id:session.id, p_pin:session.pin, p_ym:submitYM, p_answers:answers});
+  const { data, error } = await supa.rpc('submit_shift',{p_staff_id:session.id, p_pin:null, p_ym:submitYM, p_answers:answers});
   if(error){ toast(error.message.replace(/^.*?:\s*/,'')||'제출 실패', true); return; }
   toast(`제출했어요! (${data||0}개 입력)`);
 }
@@ -1372,7 +1615,7 @@ async function submitSave(){
 async function addNightQ(wp, dateStr, hrs){
   const d=new Date(dateStr+'T00:00:00');
   const label=`${d.getMonth()+1}/${d.getDate()}(${DAYS[d.getDay()]}) ${wp} 야간${hrs?' '+hrs:''}`;
-  const { error } = await supa.rpc('admin_add_night_q',{p_admin_id:session.id, p_pin:session.pin, p_ym:admYM, p_workplace:wp, p_work_date:dateStr, p_hours:hrs||null, p_label:label});
+  const { error } = await supa.rpc('admin_add_night_q',{p_admin_id:session.id, p_pin:null, p_ym:admYM, p_workplace:wp, p_work_date:dateStr, p_hours:hrs||null, p_label:label});
   if(error){ toast(error.message.replace(/^.*?:\s*/,''), true); return false; }
   return true;
 }
@@ -1391,19 +1634,19 @@ async function renderAdminSubmit(){
       <button class="btn ${isDraft?'primary':'ghost'}" id="admPubToggle" style="padding:7px 13px;font-size:12px">${isDraft?'이 달 공개하기':'비공개로 전환'}</button></div>`;
   $('admOpenToggle').onclick=async()=>{
     const open=!isOpen;
-    const { error } = await supa.rpc('admin_set_submit_open',{p_admin_id:session.id, p_pin:session.pin, p_ym:admYM, p_open:open});
+    const { error } = await supa.rpc('admin_set_submit_open',{p_admin_id:session.id, p_pin:null, p_ym:admYM, p_open:open});
     if(error){ toast(error.message.replace(/^.*?:\s*/,''), true); return; }
     toast(open?'제출을 열었어요':'제출을 마감했어요'); await loadDraftMonths(); renderAdminSubmit();
   };
   $('admPubToggle').onclick=async()=>{
     const pub=isDraft;
-    const { error } = await supa.rpc('admin_set_published',{p_admin_id:session.id, p_pin:session.pin, p_ym:admYM, p_pub:pub});
+    const { error } = await supa.rpc('admin_set_published',{p_admin_id:session.id, p_pin:null, p_ym:admYM, p_pub:pub});
     if(error){ toast(error.message.replace(/^.*?:\s*/,''), true); return; }
     toast(pub?'이 달을 공개했어요':'비공개로 전환했어요'); await loadDraftMonths(); renderAdminSubmit();
   };
   const [nq, ansR]=await Promise.all([
     supa.from('submission_night_view').select('*').eq('ym', admYM),
-    supa.from('submission_answer_view').select('*').eq('ym', admYM)
+    supa.rpc('admin_submission_answers',{p_admin_id:session.id,p_pin:null,p_ym:admYM})
   ]);
   const nights=(nq.data||[]).sort((a,b)=>String(a.work_date||"").localeCompare(String(b.work_date||""))||a.sort-b.sort||a.id-b.id);
   const byq={}; (ansR.data||[]).forEach(a=>{ if(a.qkey&&a.qkey.indexOf('n:')===0){ (byq[a.qkey.slice(2)]=byq[a.qkey.slice(2)]||[]).push(a); } });
@@ -1416,11 +1659,11 @@ async function renderAdminSubmit(){
   }).join(''):`<div style="font-size:12.5px;color:var(--muted);font-weight:700;padding:4px 2px">야간 문항 없음 (토요일 밤 데빌 등)</div>`;
   $('admNightList').querySelectorAll('[data-nqdel]').forEach(b=>b.onclick=async()=>{
     if(!confirm('이 야간 문항을 삭제할까요? 관련 답변도 지워져요.')) return;
-    const { error } = await supa.rpc('admin_del_night_q',{p_admin_id:session.id, p_pin:session.pin, p_id:Number(b.dataset.nqdel)});
+    const { error } = await supa.rpc('admin_del_night_q',{p_admin_id:session.id, p_pin:null, p_id:Number(b.dataset.nqdel)});
     if(error){ toast(error.message.replace(/^.*?:\s*/,''), true); return; }
     toast('삭제했어요'); renderAdminSubmit();
   });
-  const sa=await supa.from('submission_answer_view').select('staff_id,staff_name').eq('ym', admYM);
+  const sa=await supa.rpc('admin_submission_answers',{p_admin_id:session.id,p_pin:null,p_ym:admYM});
   const submitted=new Set((sa.data||[]).map(r=>r.staff_id));
   const doneList=staffList.filter(s=>submitted.has(s.id));
   const notYet=staffList.filter(s=>!submitted.has(s.id));
@@ -1478,7 +1721,7 @@ async function openBuild(){
   const first=admYM+'-01', last=admYM+'-'+String(N).padStart(2,'0');
   const [shR, subR]=await Promise.all([
     supa.from('shift_view').select('*').gte('work_date',first).lte('work_date',last),
-    supa.from('submission_answer_view').select('*').eq('ym', admYM)
+    fetchAdminSubmissionAnswers(admYM)
   ]);
   const asn={}; (shR.data||[]).forEach(s=>{ if(s.staff_id){ (asn[s.staff_id]=asn[s.staff_id]||{})[s.work_date]=s.workplace; } });
   const pref={}; (subR.data||[]).forEach(a=>{ if(a.qkey&&a.qkey.indexOf('d:')===0){ (pref[a.staff_id]=pref[a.staff_id]||{})[a.qkey.slice(2)]=a.choice; } });
@@ -1501,7 +1744,7 @@ async function openMatrix(){
   $('mx-sub').textContent=`${ymLabelText(admYM)} · 이름×날짜 (가로로 넘겨보세요)`;
   $('mx-list').innerHTML=`<div style="text-align:center;padding:24px"><span class="spin"></span></div>`;
   $('mxModal').classList.add('show');
-  const ansR=await supa.from('submission_answer_view').select('*').eq('ym', admYM);
+  const ansR=await fetchAdminSubmissionAnswers(admYM);
   const map={}; (ansR.data||[]).forEach(a=>{ (map[a.staff_id]=map[a.staff_id]||{})[a.qkey]=a.choice; });
   const [y,m]=admYM.split('-').map(Number); const N=daysInYM(admYM);
   const rows=staffList.filter(s=>map[s.id]);
@@ -1526,7 +1769,7 @@ async function openWpHope(){
   $('wh-sub').textContent=ymLabelText(admYM);
   $('wh-chips').innerHTML=''; $('wh-list').innerHTML=`<div style="text-align:center;padding:24px"><span class="spin"></span></div>`;
   $('wpHopeModal').classList.add('show');
-  const ansR=await supa.from('submission_answer_view').select('*').eq('ym', admYM);
+  const ansR=await fetchAdminSubmissionAnswers(admYM);
   whAns=ansR.data||[];
   renderWhChips(); renderWhCal();
 }
@@ -1559,10 +1802,11 @@ async function openSubView(id, name){
   $('sv-sub').textContent=ymLabelText(admYM);
   $('sv-list').innerHTML=`<div style="text-align:center;padding:24px"><span class="spin"></span></div>`;
   $('subViewModal').classList.add('show');
-  const [ansR, nqR]=await Promise.all([
-    supa.from('submission_answer_view').select('*').eq('ym', admYM).eq('staff_id', id),
+  const [allAnsR, nqR]=await Promise.all([
+    fetchAdminSubmissionAnswers(admYM),
     supa.from('submission_night_view').select('*').eq('ym', admYM)
   ]);
+  const ansR={data:(allAnsR.data||[]).filter(a=>a.staff_id===id)};
   const ans={}; (ansR.data||[]).forEach(a=>ans[a.qkey]=a.choice);
   const nights=(nqR.data||[]).sort((a,b)=>String(a.work_date||"").localeCompare(String(b.work_date||""))||a.sort-b.sort||a.id-b.id);
   const cClass=c=> c==='출근불가능'?'off' : (c?'':'none');
@@ -1586,10 +1830,11 @@ async function openCandModal(wp, dateStr){
   $('cand-sub').textContent=`${candDate} · ${wp} 희망자`;
   $('cand-list').innerHTML=`<div style="text-align:center;padding:24px"><span class="spin"></span></div>`;
   $('candModal').classList.add('show');
-  const [ansR, shR] = await Promise.all([
-    supa.from('submission_answer_view').select('*').eq('ym', ym).eq('qkey','d:'+candDate),
+  const [allAnsR, shR] = await Promise.all([
+    fetchAdminSubmissionAnswers(ym),
     supa.from('shift_view').select('staff_id,workplace').eq('work_date', candDate)
   ]);
+  const ansR={data:(allAnsR.data||[]).filter(a=>a.qkey==='d:'+candDate)};
   const ans=ansR.data||[]; const placed={};
   (shR.data||[]).forEach(s=>{ if(s.staff_id){ (placed[s.staff_id]=placed[s.staff_id]||new Set()).add(s.workplace); } });
   const cands=[];
@@ -1614,14 +1859,14 @@ async function openCandModal(wp, dateStr){
   };
 }
 async function candAddOne(id, name){
-  const { error }=await supa.rpc('admin_assign_from_submission',{p_admin_id:session.id, p_pin:session.pin, p_date:candDate, p_workplace:candWp, p_staff_ids:[id]});
+  const { error }=await supa.rpc('admin_assign_from_submission',{p_admin_id:session.id, p_pin:null, p_date:candDate, p_workplace:candWp, p_staff_ids:[id]});
   if(error){ toast(error.message.replace(/^.*?:\s*/,''), true); return; }
   toast(`${name}님 배정했어요`);
   renderSchedule();
   openCandModal(candWp, candDate);
 }
 async function candAddShort(){
-  const { error }=await supa.rpc('admin_add_shift',{p_admin_id:session.id, p_pin:session.pin, p_work_date:candDate, p_workplace:candWp, p_start:'', p_end:'', p_assignee:null, p_memo:null, p_guest:null});
+  const { error }=await supa.rpc('admin_add_shift',{p_admin_id:session.id, p_pin:null, p_work_date:candDate, p_workplace:candWp, p_start:'', p_end:'', p_assignee:null, p_memo:null, p_guest:null});
   if(error){ toast(error.message.replace(/^.*?:\s*/,''), true); return; }
   toast('부족(빈자리) 슬롯을 추가했어요');
   renderSchedule();
@@ -1629,7 +1874,7 @@ async function candAddShort(){
 async function candSave(){
   const ids=[...$('cand-list').querySelectorAll('input:checked')].map(i=>Number(i.value));
   if(!ids.length){ toast('배정할 사람을 선택하세요', true); return; }
-  const { data, error } = await supa.rpc('admin_assign_from_submission',{p_admin_id:session.id, p_pin:session.pin, p_date:candDate, p_workplace:candWp, p_staff_ids:ids});
+  const { data, error } = await supa.rpc('admin_assign_from_submission',{p_admin_id:session.id, p_pin:null, p_date:candDate, p_workplace:candWp, p_staff_ids:ids});
   if(error){ toast(error.message.replace(/^.*?:\s*/,''), true); return; }
   toast(`${data||0}명 배정했어요`); $('candModal').classList.remove('show'); renderSchedule();
 }
@@ -1638,7 +1883,7 @@ function notiSaveSeen(set){ localStorage.setItem('noti_seen_ids', JSON.stringify
 async function updateNotiBadge(){
   if(!(session && session.is_admin)) return;
   const [ap, sw] = await Promise.all([
-    supa.from('application_view').select('id'),
+    fetchAdminApplications(),
     supa.from('swap_view').select('id').eq('status','open')
   ]);
   const keys = [ ...(ap.data||[]).map(a=>'ap:'+a.id), ...(sw.data||[]).map(s=>'sw:'+s.id) ];
@@ -1651,10 +1896,11 @@ async function renderNoti(){
   const list = $('notiList');
   list.innerHTML = `<div style="text-align:center;padding:30px"><span class="spin"></span></div>`;
   const [apR, swR] = await Promise.all([
-    supa.from('application_view').select('*').order('work_date'),
+    fetchAdminApplications(),
     supa.from('swap_view').select('*').order('created_at',{ascending:false})
   ]);
-  const apps = apR.data||[]; const swaps = swR.data||[];
+  const apps = (apR.data||[]).sort((a,b)=>String(a.work_date).localeCompare(String(b.work_date)));
+  const swaps = swR.data||[];
   const open = swaps.filter(s=>s.status==='open');
   const done = swaps.filter(s=>s.status==='completed').slice(0,10);
   // 이 탭을 열었으니 지금 항목은 "읽음" 처리 → 배지에서 사라짐
@@ -2155,7 +2401,19 @@ function shiftCard(s, admin, apps){
   const btns=[];
   if(session && !admin){
     if(mine && s.status==='confirmed'){
-      btns.push(`<button class="btn ghost" data-act="seek" data-id="${s.id}" data-info="${esc(s.workplace+' '+ymd(selectedDate))}">대타 구하기</button>`);
+      btns.push(session.is_partner_plus
+        ? `<button class="btn ghost" data-act="seek" data-id="${s.id}" data-info="${esc(s.workplace+' '+ymd(selectedDate))}">대타 구하기</button>`
+        : `<button class="btn ghost" data-access="partner">대타 기능은 파트너+</button>`);
+    }
+    if(isEmpty){
+      const mineApp=apps.find(a=>a.applicant_id===session.id);
+      if(mineApp){
+        btns.push(`<button class="btn ghost" data-act="unapply" data-id="${s.id}">신청 취소</button>`);
+      } else if(session.is_partner_plus && session.id){
+        btns.push(`<button class="btn primary" data-act="apply" data-id="${s.id}">이 자리에 신청</button>`);
+      } else {
+        btns.push(`<button class="btn ghost" data-access="${session.is_partner_plus?'staff':'partner'}">${session.is_partner_plus?'출근자 연결 후 신청':'파트너+ 전용'}</button>`);
+      }
     }
   }
   // 관리자: 빈자리 신청자 목록 (수락/거절)
@@ -2174,8 +2432,9 @@ function shiftCard(s, admin, apps){
   return `<div class="card"${drag}><div class="s-row">${av}${nameHtml}${badge}${igHtml}</div>${appHtml}${acts}</div>`;
 }
 function bindShiftCards(root){
+  root.querySelectorAll('[data-access]').forEach(b=>b.onclick=()=>openAccess(b.dataset.access));
   root.querySelectorAll('[data-act="apply"]').forEach(b=>b.onclick=async()=>{
-    if(!session){ openLogin(); return; }
+    if(!requireStaffAccess(true)) return;
     const ok = await rpc('apply_slot', { p_staff_id:session.id, p_shift_id:Number(b.dataset.id) }, '신청했어요! 관리자 승인을 기다려주세요');
     if(ok) notifyAdmins('빈자리 신청', `${session.name}님이 빈자리에 신청했어요`);
   });
@@ -2240,7 +2499,7 @@ async function deleteShiftFromModal(){
 
 /* ---------- 대타 모달 ---------- */
 function openSubModal(shiftId, info){
-  if(!session){ openLogin(); return; }
+  if(!requireStaffAccess(true)) return;
   pendingSubShiftId = shiftId;
   $('subModalSub').textContent = info + ' 근무의 대타를 구합니다';
   $('subReason').value='';
@@ -2299,8 +2558,12 @@ async function renderSwaps(){
     let act;
     if(mineReq){
       act = `<button class="btn warn full" data-act="cancel" data-id="${s.id}">내 요청 취소하기</button>`;
-    } else {
+    } else if(session?.is_partner_plus && session?.id) {
       act = `<button class="btn primary full" data-act="accept" data-id="${s.id}" data-when="${when}" data-wp="${esc(s.workplace)}">대타 설게요</button>`;
+    } else if(session) {
+      act = `<button class="btn ghost full" data-access="${session.is_partner_plus?'staff':'partner'}">${session.is_partner_plus?'출근자 연결 후 참여':'대타 참여는 파트너+ 전용'}</button>`;
+    } else {
+      act = `<button class="btn ghost full" data-login>메이트유 로그인 후 참여</button>`;
     }
     const list2 = cmts[s.id]||[];
     const clist = list2.map(c=>{
@@ -2308,7 +2571,9 @@ async function renderSwaps(){
       const canDel = session && (mineC || session.is_admin);
       return `<div class="cmt"><span class="cmt-b"><b>${esc(c.author_name)}</b> ${esc(c.body)}</span>${canDel?`<button class="cmt-x" data-cdel="${c.id}">×</button>`:''}</div>`;
     }).join('');
-    const cinput = session ? `<div class="cmt-in"><input class="cmt-input" id="ci-${s.id}" placeholder="댓글 달기…" maxlength="200"><button class="cmt-go" data-csend="${s.id}">등록</button></div>` : '';
+    const cinput = session?.is_partner_plus && session?.id
+      ? `<div class="cmt-in"><input class="cmt-input" id="ci-${s.id}" placeholder="댓글 달기…" maxlength="200"><button class="cmt-go" data-csend="${s.id}">등록</button></div>`
+      : '';
     const delBtn = admin ? `<button class="swap-del" data-swapdel="${s.id}" data-info="${esc(s.requester_name+' · '+when)}">삭제</button>` : '';
     return `<div class="swap">
       <div class="swap-top"><span class="swap-wp ${s.workplace}">${esc(s.workplace)}</span><span class="swap-when">${when}</span>${list2.length?`<span class="cmt-cnt">댓글 ${list2.length}</span>`:''}${delBtn}</div>
@@ -2318,8 +2583,10 @@ async function renderSwaps(){
       ${act}
       <div class="cmts">${clist}${cinput}</div></div>`;
   }).join('');
+  list.querySelectorAll('[data-login]').forEach(b=>b.onclick=openLogin);
+  list.querySelectorAll('[data-access]').forEach(b=>b.onclick=()=>openAccess(b.dataset.access));
   list.querySelectorAll('[data-act="accept"]').forEach(b=>b.onclick=()=>{
-    if(!session){ openLogin(); return; }
+    if(!requireStaffAccess(true)) return;
     if(!confirm(`【${b.dataset.wp}】 ${b.dataset.when} 근무\n\n이 날 정말 대타를 서시겠어요?`)) return;
     rpc('accept_sub', { p_staff_id:session.id, p_request_id:Number(b.dataset.id) }, '대타를 맡았어요! 고마워요');
   });
@@ -2330,10 +2597,10 @@ async function renderSwaps(){
   list.querySelectorAll('[data-act="cancel"]').forEach(b=>b.onclick=()=>
     rpc('cancel_sub', { p_staff_id:session.id, p_request_id:Number(b.dataset.id) }, '요청을 취소했어요'));
   list.querySelectorAll('[data-csend]').forEach(b=>b.onclick=async()=>{
-    if(!session){ openLogin(); return; }
+    if(!requireStaffAccess(true)) return;
     const id=Number(b.dataset.csend); const inp=$('ci-'+id); const body=inp.value.trim(); if(!body) return;
     const ok = await rpc('add_swap_comment', { p_staff_id:session.id, p_request_id:id, p_body:body }, '댓글을 남겼어요');
-    if(ok){ try{ supa.functions.invoke('notify', { body:{ request_id:id, body, author_name:session.name, author_id:session.id } }); }catch(e){} }
+    if(ok){ try{ supa.functions.invoke('notify', { body:{ request_id:id, body } }); }catch(e){} }
   });
   list.querySelectorAll('[data-cdel]').forEach(b=>b.onclick=()=>
     rpc('delete_swap_comment', { p_staff_id:session.id, p_id:Number(b.dataset.cdel) }, '댓글을 지웠어요'));
@@ -2345,8 +2612,14 @@ async function renderMine(){
   const list = $('mineList');
   if(!session){
     $('mineSub').textContent = '로그인하면 내 근무를 볼 수 있어요.';
-    list.innerHTML = `<button class="btn primary full" id="mineLogin">로그인하기</button>`;
+    list.innerHTML = `<button class="btn primary full" id="mineLogin">메이트유로 로그인</button>`;
     $('mineLogin').onclick = openLogin;
+    return;
+  }
+  if(!session.id){
+    $('mineSub').textContent = '메이트유 로그인은 완료됐어요.';
+    list.innerHTML = `<div class="access-card"><strong>내 출근자 기록을 연결해 주세요</strong><p>연결 후 예정된 근무와 대타 요청 상태를 한눈에 볼 수 있습니다.</p><button class="btn primary full" id="mineLink" style="margin-top:10px">기존 출근자 연결</button></div>`;
+    $('mineLink').onclick=openLink;
     return;
   }
   $('mineSub').textContent = `${session.name}님의 다가오는 근무예요. 카드를 누르면 그날 출근표로 가요.`;
@@ -2362,7 +2635,9 @@ async function renderMine(){
     const seeking = s.status==='seeking_sub';
     const act = seeking
       ? `<button class="btn ghost full" data-act="mine-cancel" data-id="${s.id}">대타 요청 취소</button>`
-      : `<button class="btn ghost full" data-act="seek" data-id="${s.id}" data-info="${esc(s.workplace+' '+when)}">대타 구하기</button>`;
+      : session.is_partner_plus
+        ? `<button class="btn ghost full" data-act="seek" data-id="${s.id}" data-info="${esc(s.workplace+' '+when)}">대타 구하기</button>`
+        : `<button class="btn ghost full" data-access="partner">대타 기능은 파트너+ 전용</button>`;
     return `<div class="card" data-goday="${s.work_date}" data-gowp="${esc(s.workplace)}" style="cursor:pointer">
       <div class="s-row">
         <div class="s-time" style="min-width:auto">${when}</div>
@@ -2409,11 +2684,11 @@ function renderStaffList(){
     <div class="mng">
       <button class="mname mname-btn" data-rename="${s.id}" data-cur="${esc(s.name)}">${esc(s.name)}</button>
       ${s.is_admin?'<span class="madmin">★관리자</span>':''}
-      ${s.has_pin===false?'<span class="mwp" style="background:#fff7ed;color:#ea580c">PIN없음</span>':''}
+      ${s.is_linked?'<span class="mwp">메이트유 연결</span>':s.has_pin===false?'<span class="mwp" style="background:#fff7ed;color:#ea580c">연결 PIN 없음</span>':''}
       ${s.locked?`<span class="mwp" style="background:#fee2e2;color:#b91c1c">잠김</span><button class="btn warn" data-unlock="${s.id}">잠금해제</button>`:''}
       <button class="btn ghost" data-ig="${s.id}">IG</button>
       ${s.id!==session.id?`<button class="btn ghost" data-role="${s.id}" data-admin="${s.is_admin?1:0}">${s.is_admin?'일반으로':'관리자로'}</button>`:''}
-      <button class="btn ghost" data-pin="${s.id}">PIN</button>
+      ${s.is_linked?(s.id!==session.id?`<button class="btn warn" data-unlink="${s.id}" data-name="${esc(s.name)}">연결 해제</button>`:''):`<button class="btn ghost" data-pin="${s.id}">연결 PIN</button>`}
       ${s.id!==session.id?`<button class="btn warn" data-del-staff="${s.id}">삭제</button>`:''}
     </div>`).join('');
   mng.querySelectorAll('[data-rename]').forEach(b=>b.onclick=async()=>{
@@ -2435,11 +2710,16 @@ function renderStaffList(){
     if(ok) await loadDirectory();
   });
   mng.querySelectorAll('[data-pin]').forEach(b=>b.onclick=async()=>{
-    const np=prompt('새 PIN 6자리 숫자 (지우려면 비워두기):'); if(np===null) return;
+    const np=prompt('연결 PIN 6자리 숫자 (지우려면 비워두기):'); if(np===null) return;
     if(np.trim() && !/^\d{6}$/.test(np.trim())){ toast('PIN은 6자리 숫자로 입력하세요', true); return; }
     const tid=Number(b.dataset.pin);
     const ok = await rpc('admin_set_pin', { p_admin_id:session.id, p_target_id:tid, p_new_pin:np.trim() }, 'PIN을 설정했어요');
-    if(ok){ if(tid===session.id && np.trim()){ session.pin=np.trim(); localStorage.setItem('shift_session',JSON.stringify(session)); } await loadDirectory(); }
+    if(ok) await loadDirectory();
+  });
+  mng.querySelectorAll('[data-unlink]').forEach(b=>b.onclick=async()=>{
+    if(!confirm(`${b.dataset.name}님의 메이트유 연결을 해제할까요?\n\n다시 연결하려면 새 연결 PIN을 설정해야 합니다.`)) return;
+    const ok=await rpc('admin_unlink_staff',{p_admin_id:session.id,p_target_id:Number(b.dataset.unlink)},'메이트유 연결을 해제했어요');
+    if(ok) await loadDirectory();
   });
   mng.querySelectorAll('[data-del-staff]').forEach(b=>b.onclick=async()=>{
     if(!confirm('이 스태프를 삭제할까요? 배정된 근무는 빈 자리가 됩니다.')) return;
@@ -2555,7 +2835,7 @@ async function runImport(){
   if(!impRows.length){ toast('미리보기를 먼저 하세요',true); return; }
   $('impRunBtn').disabled=true;
   const { data, error } = await supa.rpc('admin_import_shifts', {
-    p_admin_id:session.id, p_pin:session.pin, p_workplace:$('imp-wp').value,
+    p_admin_id:session.id, p_pin:null, p_workplace:$('imp-wp').value,
     p_rows:impRows, p_replace:$('imp-replace').checked
   });
   $('impRunBtn').disabled=false;
@@ -2638,7 +2918,6 @@ function wireUI(){
   $('myClose').onclick = ()=> $('myModal').classList.remove('show');
   $('myLogout').onclick = ()=>{ $('myModal').classList.remove('show'); logout(); };
   $('mySave').onclick = saveMyProfile;
-  $('myPinBtn').onclick = changeMyPin;
   $('bulkPinBtn').onclick = bulkSetPin;
   $('pushBtn').onclick = enablePush;
   $('pushAskBtn').onclick = enablePush;
@@ -2704,14 +2983,17 @@ function wireUI(){
     const sel=e.target; if(!sel.classList || !sel.classList.contains('bx-sel')) return;
     const sid=Number(sel.dataset.sid), ds=sel.dataset.d, wp=sel.value;
     sel.disabled=true;
-    const { error }=await supa.rpc('admin_set_assignment',{p_admin_id:session.id, p_pin:session.pin, p_date:ds, p_staff_id:sid, p_workplace:wp||null});
+    const { error }=await supa.rpc('admin_set_assignment',{p_admin_id:session.id, p_pin:null, p_date:ds, p_staff_id:sid, p_workplace:wp||null});
     sel.disabled=false;
     if(error){ toast(error.message.replace(/^.*?:\s*/,''), true); return; }
     sel.className='bx-sel'+(wp?' asn-'+wp:'');
   });
   $('loginBtn').onclick = doLogin;
   $('loginClose').onclick = closeLogin;
-  $('loginPin').onkeydown = e=>{ if(e.key==='Enter') doLogin(); };
+  $('linkBtn').onclick = claimStaff;
+  $('linkClose').onclick = ()=> $('linkModal').classList.remove('show');
+  $('linkPin').onkeydown = e=>{ if(e.key==='Enter') claimStaff(); };
+  $('accessClose').onclick = ()=> $('accessModal').classList.remove('show');
   $('subConfirm').onclick = confirmSub;
   $('subClose').onclick = closeSubModal;
   // 시프트 제출
@@ -2750,7 +3032,7 @@ function wireUI(){
   $('imp-file').onchange = onImpFile;
   $('impPreviewBtn').onclick = previewImport;
   $('impRunBtn').onclick = runImport;
-  [ 'loginModal','subModal' ].forEach(id=>$(id).onclick=e=>{ if(e.target.id===id) $(id).classList.remove('show'); });
+  [ 'loginModal','linkModal','accessModal','subModal' ].forEach(id=>$(id).onclick=e=>{ if(e.target.id===id) $(id).classList.remove('show'); });
 }
 
 boot();
