@@ -947,7 +947,8 @@ async function boot(){
   applyTheme(wpFilter);
   renderChips();
   renderDateLabel();
-  switchTab('schedule');
+  const startTab=(location.hash||'').replace('#','');
+  switchTab(['schedule','swaps','mine','submit'].includes(startTab)?startTab:'schedule');
   setupPTR(document.querySelector('.body'), async()=>{ await loadDirectory(); await loadDraftMonths(); refreshCurrent(); });
   if('serviceWorker' in navigator){ navigator.serviceWorker.register('/sw.js').catch(()=>{}); }
   if(session) setTimeout(maybeAskPush, 1200);
