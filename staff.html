@@ -1097,7 +1097,7 @@ function logout(){
 async function openMyPage(){
   $('myName').textContent = session.name;
   $('myAv').style.cssText = avStyle(session.avatar);
-  $('myAv').textContent = session.avatar?'':session.name.charAt(0);
+  $('myAv').textContent = '';
   $('myIg').value='';
   $('myNewPin').value='';
   $('myModal').classList.add('show');
@@ -1201,7 +1201,8 @@ async function doUploadAvatar(blob){
     renderWho(); toast('프로필 사진을 바꿨어요');
   }catch(e){ toast('사진 업로드 실패: '+(e.message||e), true); }
 }
-function avStyle(url){ return url?`background-image:url('${url.replace(/'/g,"%27")}')`:''; }
+const AV_DEFAULT = "background-image:url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22%3E%3Cpath fill=%22%23bfa6ab%22 d=%22M12 12.4a4.2 4.2 0 1 0 0-8.4 4.2 4.2 0 0 0 0 8.4Zm0 1.6c-4.7 0-8 2.5-8 5.5V21h16v-1.5c0-3-3.3-5.5-8-5.5Z%22/%3E%3C/svg%3E');background-size:74%;background-repeat:no-repeat;background-position:center 60%";
+function avStyle(url){ return url?`background-image:url('${String(url).replace(/'/g,"%27")}')`:AV_DEFAULT; }
 
 /* 야간 멤버 추가 모달 */
 let nmWp=null, nmDate=null, nmNightOn=true;
@@ -1277,7 +1278,7 @@ async function nmSave(){
 function renderWho(){
   const btn = $('whoBtn');
   if(session){
-    const av = `<span class="wav" style="${avStyle(session.avatar)}">${session.avatar?'':esc(session.name.charAt(0))}</span>`;
+    const av = `<span class="wav" style="${avStyle(session.avatar)}"></span>`;
     btn.innerHTML = `${av}<span class="nm">${esc(session.name)}</span>${session.is_admin?'<span class="role">관리자</span>':''}`;
   } else {
     btn.innerHTML = `<span class="nm">로그인</span>`;
@@ -2071,7 +2072,7 @@ async function renderDay(){
         const avi=!m.is_guest&&m.avatar;
         const nig=(!m.is_guest)?igUrl(m.instagram):null;
         const nigHtml=nig?`<a class="ig sm" href="${esc(nig)}" target="_blank" rel="noopener">${IG_SVG}</a>`:'';
-        return `<div class="night-row"><span class="nmav${m.is_guest?' guest':''}" style="${avi?avStyle(m.avatar):''}">${avi?'':esc((m.member_name||'·').charAt(0))}</span><span class="nmname">${esc(m.member_name)}</span>${nigHtml}${admin?`<button class="btn warn nmdel" data-nmdel="${m.id}">×</button>`:''}</div>`;
+        return `<div class="night-row"><span class="nmav${m.is_guest?' guest':''}" style="${avStyle(m.is_guest?null:m.avatar)}"></span><span class="nmname">${esc(m.member_name)}</span>${nigHtml}${admin?`<button class="btn warn nmdel" data-nmdel="${m.id}">×</button>`:''}</div>`;
       }).join('') : `<div class="dn-empty">미정</div>`;
       if(admin) nightCol += `<button class="btn ghost full" data-nmadd="${wp}" style="margin-top:6px;font-size:12px">+ 야간 멤버</button>`;
       html += `<div class="daynight"><div class="dn-col"><div class="dn-h">주간</div>${dayCol}</div><div class="dn-col night"><div class="dn-h">야간 ${mem.length?mem.length+'명':''}</div>${nightCol}</div></div>`;
@@ -2173,7 +2174,8 @@ function shiftCard(s, admin, apps){
   const acts = btns.length ? `<div class="s-acts">${btns.join('')}</div>` : '';
   const who = s.staff_id?s.staff_name:(s.guest_name||'');
   const avImg = s.staff_id && s.staff_avatar;
-  const av = `<span class="av${(!s.staff_id&&s.guest_name)?' guest':''}${who?'':' none'}" style="${avImg?avStyle(s.staff_avatar):''}">${avImg?'':esc(who.charAt(0)||'·')}</span>`;
+  const isPerson = !!(s.staff_id || s.guest_name);
+  const av = `<span class="av${(!s.staff_id&&s.guest_name)?' guest':''}${who?'':' none'}" style="${isPerson?avStyle(s.staff_id?s.staff_avatar:null):''}">${isPerson?'':'·'}</span>`;
   const ig = s.staff_id ? igUrl(s.staff_instagram) : null;
   const igHtml = ig ? `<a class="ig" href="${esc(ig)}" target="_blank" rel="noopener">${IG_SVG}</a>` : '';
   const drag = (admin && wpFilter==='전체' && s.staff_id && isWideScreen()) ? ` draggable="true" data-drag="${s.id}" data-dwp="${esc(s.workplace)}" data-dnm="${esc(s.staff_name)}"` : '';
