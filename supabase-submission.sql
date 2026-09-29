@@ -148,6 +148,29 @@ begin
 end; $$;
 grant execute on function admin_set_day_event to anon, authenticated;
 
+-- 게스트를 직원으로 전환: 같은 이름 직원 없으면 생성, 그 게스트의 모든 근무/야간을 직원으로 이동
+create or replace function admin_guest_to_staff(p_admin_id bigint, p_pin text, p_guest_name text, p_new_pin text)
+returns json language plpgsql security definer set search_path = public as $$
+declare v staff; g text; sid bigint; np text; moved int; nmoved int;
+begin
+  v := _verify(p_admin_id, p_pin);
+  if v.id is null or not v.is_admin then raise exception '관리자만 가능합니다'; end if;
+  g := nullif(trim(p_guest_name), '');
+  if g is null then raise exception '게스트 이름이 없어요'; end if;
+  np := nullif(trim(p_new_pin), '');
+  if np is not null and np !~ '^\d{6}$' then raise exception 'PIN은 6자리 숫자로 입력하세요'; end if;
+  select id into sid from staff where name = g limit 1;
+  if sid is null then
+    insert into staff(name, pin, is_admin) values (g, np, false) returning id into sid;
+  end if;
+  update shifts set staff_id = sid, guest_name = null where guest_name = g and staff_id is null;
+  get diagnostics moved = row_count;
+  update night_members set staff_id = sid, member_name = null where member_name = g and staff_id is null;
+  get diagnostics nmoved = row_count;
+  return json_build_object('staff_id', sid, 'shifts', moved, 'night', nmoved);
+end; $$;
+grant execute on function admin_guest_to_staff to anon, authenticated;
+
 -- 드래그로 근무지 이동: 한 근무의 근무지를 바꿈
 create or replace function admin_move_shift(p_admin_id bigint, p_pin text, p_shift_id bigint, p_workplace text)
 returns void language plpgsql security definer set search_path = public as $$

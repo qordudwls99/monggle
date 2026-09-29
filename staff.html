@@ -745,6 +745,7 @@ body[data-theme="matsuri"] .kicker::after{ content:" ⛩"; letter-spacing:0; }
     <select class="fld" id="sm-staff"></select>
     <input type="text" class="fld" id="sm-guest" placeholder="게스트 이름" style="display:none">
     <button class="btn primary full" id="sm-save">저장</button>
+    <button class="btn ghost full" id="sm-convert" style="margin-top:9px;display:none">게스트를 직원으로 전환</button>
     <button class="btn warn full" id="sm-del" style="margin-top:9px;display:none">이 근무 삭제</button>
     <button class="closex" id="sm-close">취소</button>
   </div>
@@ -2211,6 +2212,7 @@ function openShiftAdd(wp){
   $('sm-title').textContent='근무 추가';
   $('sm-sub').textContent=`${ymd(selectedDate)} · ${wp}`;
   smFillStaff(); setSmKind('staff');
+  $('sm-convert').style.display='none';
   $('sm-del').style.display='none';
   $('shiftModal').classList.add('show');
 }
@@ -2222,6 +2224,7 @@ function openShiftEdit(s){
   if(s.staff_id){ setSmKind('staff'); $('sm-staff').value=String(s.staff_id); }
   else if(s.guest_name){ setSmKind('guest'); $('sm-guest').value=s.guest_name; }
   else setSmKind('open');
+  $('sm-convert').style.display = s.guest_name ? 'block' : 'none';
   $('sm-del').style.display='block';
   $('shiftModal').classList.add('show');
 }
@@ -2238,6 +2241,18 @@ async function saveShift(){
     ok = await rpc('admin_add_shift', { p_admin_id:session.id, p_work_date:ymd(selectedDate), p_workplace:smWp, p_start:smStart, p_end:smEnd, p_assignee:assignee, p_memo:null, p_guest:guest }, '근무를 추가했어요');
   }
   if(ok) closeShiftModal();
+}
+async function convertGuestToStaff(){
+  const g=$('sm-guest').value.trim();
+  if(!g){ toast('게스트 이름이 없어요', true); return; }
+  if(!confirm(`"${g}"을(를) 직원으로 전환할까요?\n\n같은 이름으로 잡힌 게스트 근무·야간이 모두 이 직원으로 바뀌어요.`)) return;
+  let np=prompt(`${g} 직원의 PIN 6자리 (나중에 정하려면 비워두기):`, '');
+  if(np===null) return; np=np.trim();
+  if(np && !/^\d{6}$/.test(np)){ toast('PIN은 6자리 숫자로 입력하세요', true); return; }
+  const { data, error }=await supa.rpc('admin_guest_to_staff', { p_admin_id:session.id, p_pin:session.pin, p_guest_name:g, p_new_pin:np||null });
+  if(error){ toast(error.message.replace(/^.*?:\s*/,''), true); return; }
+  toast(`직원으로 전환했어요 (근무 ${(data&&data.shifts)||0}개)`);
+  closeShiftModal(); await loadDirectory(); refreshCurrent();
 }
 async function deleteShiftFromModal(){
   if(!smShiftId) return;
@@ -2752,6 +2767,7 @@ function wireUI(){
   document.querySelectorAll('#af-kind button').forEach(b=>b.onclick=()=>setAfKind(b.dataset.k));
   document.querySelectorAll('#sm-kind button').forEach(b=>b.onclick=()=>setSmKind(b.dataset.k));
   $('sm-save').onclick = saveShift;
+  $('sm-convert').onclick = convertGuestToStaff;
   $('sm-del').onclick = deleteShiftFromModal;
   $('sm-close').onclick = closeShiftModal;
   $('shiftModal').onclick = e=>{ if(e.target.id==='shiftModal') closeShiftModal(); };
