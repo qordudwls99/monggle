@@ -2246,12 +2246,37 @@ async function convertGuestToStaff(){
   const g=$('sm-guest').value.trim();
   if(!g){ toast('게스트 이름이 없어요', true); return; }
   if(!confirm(`"${g}"을(를) 직원으로 전환할까요?\n\n같은 이름으로 잡힌 게스트 근무·야간이 모두 이 직원으로 바뀌어요.`)) return;
-  let np=prompt(`${g} 직원의 PIN 6자리 (나중에 정하려면 비워두기):`, '');
-  if(np===null) return; np=np.trim();
-  if(np && !/^\d{6}$/.test(np)){ toast('PIN은 6자리 숫자로 입력하세요', true); return; }
-  const { data, error }=await supa.rpc('admin_guest_to_staff', { p_admin_id:session.id, p_pin:session.pin, p_guest_name:g, p_new_pin:np||null });
-  if(error){ toast(error.message.replace(/^.*?:\s*/,''), true); return; }
-  toast(`직원으로 전환했어요 (근무 ${(data&&data.shifts)||0}개)`);
+  // 1) 같은 이름 직원 찾기, 없으면 생성
+  let st=staffList.find(s=>s.name===g), sid;
+  if(st){ sid=st.id; }
+  else{
+    let np=prompt(`${g} 직원의 PIN 6자리 (나중에 정하려면 비워두기):`, '');
+    if(np===null) return; np=np.trim();
+    if(np && !/^\d{6}$/.test(np)){ toast('PIN은 6자리 숫자로 입력하세요', true); return; }
+    const r=await supa.rpc('admin_add_staff', { p_admin_id:session.id, p_pin:session.pin, p_name:g, p_new_pin:np||'', p_is_admin:false });
+    if(r.error){ toast(r.error.message.replace(/^.*?:\s*/,''), true); return; }
+    await loadDirectory();
+    st=staffList.find(s=>s.name===g);
+    if(!st){ toast('직원 생성 실패', true); return; }
+    sid=st.id;
+  }
+  toast('전환 중…');
+  // 2) 그 게스트 근무를 모두 직원으로
+  let moved=0;
+  const { data:shs }=await supa.from('shift_view').select('*').eq('guest_name', g);
+  for(const s of (shs||[])){
+    const r=await supa.rpc('admin_update_shift', { p_admin_id:session.id, p_pin:session.pin, p_shift_id:s.id, p_start:s.start_time||'', p_end:s.end_time||'', p_assignee:sid, p_guest:null });
+    if(!r.error) moved++;
+  }
+  // 3) 야간 게스트 멤버도 직원으로 (빼고 다시 추가)
+  const { data:nm }=await supa.from('night_member_view').select('*').eq('member_name', g);
+  for(const m of (nm||[])){
+    if(m.is_guest){
+      await supa.rpc('admin_remove_night_member', { p_admin_id:session.id, p_pin:session.pin, p_id:m.id });
+      await supa.rpc('admin_add_night_member', { p_admin_id:session.id, p_pin:session.pin, p_date:m.work_date, p_workplace:m.workplace, p_staff_id:sid, p_name:null });
+    }
+  }
+  toast(`직원으로 전환했어요 (근무 ${moved}개)`);
   closeShiftModal(); await loadDirectory(); refreshCurrent();
 }
 async function deleteShiftFromModal(){
