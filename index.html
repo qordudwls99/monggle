@@ -137,7 +137,10 @@ body{
 .wpgrp{margin-bottom:7px}
 .wpgrp:last-child{margin-bottom:0}
 .wpgrp-h{display:flex;align-items:center;justify-content:center;gap:3px;font-size:10px;font-weight:800;color:var(--muted);margin-bottom:4px}
-.wpgrp .nm{font-size:13px;font-weight:600;color:var(--ink);padding:5px 2px;text-align:center;background:var(--nm-bg);border-radius:8px;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.wpgrp .nm{font-size:13px;font-weight:600;color:var(--ink);padding:5px 2px;display:flex;align-items:center;justify-content:center;gap:4px;background:var(--nm-bg);border-radius:8px;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.wpgrp .nm .wkav{width:18px;height:18px;border-radius:50%;flex-shrink:0;background-color:var(--avbg);background-size:cover;background-position:center}
+.wpgrp .nm .wknm{min-width:0;overflow:hidden;text-overflow:ellipsis}
+.wpgrp .nm.guest .wkav{background-color:#fbf3df}
 .wpgrp .nm.op{background:none;color:var(--muted);font-weight:600;font-size:11px}
 .wpgrp .nm.guest{background:#f3e7c8;color:var(--gold)}
 .dcol-off{text-align:center;font-size:12px;color:var(--muted);font-weight:600;padding:14px 0}
@@ -495,7 +498,7 @@ async function renderWeek(){
       const filled=dayShifts.filter(s=>s.workplace===wp&&(s.display_name||s.staff_name));
       if(filled.length===0) return;
       filled.sort((a,b)=> ((b.is_guest?1:0)-(a.is_guest?1:0)) || String(a.start_time).localeCompare(String(b.start_time)));
-      const nm = filled.map(s=>`<div class="nm${s.is_guest?' guest':''}">${esc(s.display_name||s.staff_name)}</div>`).join('');
+      const nm = filled.map(s=>`<div class="nm${s.is_guest?' guest':''}"><span class="wkav" style="${avStyle(s.is_guest?null:s.staff_avatar)}"></span><span class="wknm">${esc(s.display_name||s.staff_name)}</span></div>`).join('');
       body += `<div class="wpgrp">${multi?`<div class="wpgrp-h"><span class="wp-dot ${wp}"></span>${wp}</div>`:''}${nm}</div>`;
     });
     if(!body) body = dayDraft ? `<div class="dcol-off">미공개</div>` : `<div class="dcol-off">휴무</div>`;
