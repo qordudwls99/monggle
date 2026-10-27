@@ -5,6 +5,7 @@
 // 배포 방법은 PUSH_SETUP.md 참고. 필요한 Secrets:
 //   VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, VAPID_SUBJECT (예: mailto:you@example.com)
 // (SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY 는 자동 주입됨)
+// 배포: supabase functions deploy notify --no-verify-jwt  (호출자 확인은 아래 세션 토큰으로 직접 함)
 
 import webpush from 'npm:web-push@3.6.7';
 import { createClient } from 'npm:@supabase/supabase-js@2';
@@ -14,11 +15,30 @@ const cors = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 };
+const json = (o: unknown, status = 200) => new Response(JSON.stringify(o), { status, headers: cors });
+
+async function sha256hex(s: string) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s));
+  return [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, '0')).join('');
+}
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors });
   try {
     const payload = await req.json();
+
+    const supa = createClient(
+      Deno.env.get('SUPABASE_URL')!,
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
+    );
+
+    // 호출한 직원 확인 : 앱 로그인 세션 토큰(staff_sessions)과 staff_id 가 맞아야 함
+    const callerId = Number(payload.staff_id);
+    const token = String(payload.token || '');
+    if (!callerId || !token.startsWith('tk_')) return json({ error: 'unauthorized' }, 401);
+    const { data: sess } = await supa.from('staff_sessions').select('staff_id')
+      .eq('token_hash', await sha256hex(token)).maybeSingle();
+    if (!sess || Number(sess.staff_id) !== callerId) return json({ error: 'unauthorized' }, 401);
 
     webpush.setVapidDetails(
       Deno.env.get('VAPID_SUBJECT') || 'mailto:admin@example.com',
@@ -26,39 +46,34 @@ Deno.serve(async (req) => {
       Deno.env.get('VAPID_PRIVATE_KEY')!,
     );
 
-    const supa = createClient(
-      Deno.env.get('SUPABASE_URL')!,
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
-    );
-
     const ids = new Set<number>();
     let title = '모에 스케줄';
     let body = '';
-    let url = '/staff.html';
+    const url = '/staff.html';           // 알림을 누르면 항상 직원용 페이지로 (외부 링크 불가)
 
     if (payload.to === 'admins') {
-      // 관리자 전원에게
+      // 관리자 전원에게 (보낸 사람 본인 제외)
       const { data: admins } = await supa.from('staff').select('id').eq('is_admin', true);
       (admins || []).forEach((a: any) => a.id && ids.add(a.id));
-      if (payload.exclude_id) ids.delete(payload.exclude_id);
-      title = payload.title || '모에 스케줄 알림';
+      ids.delete(callerId);
+      title = String(payload.title || '모에 스케줄 알림').slice(0, 40);
       body = String(payload.body || '').slice(0, 120);
-      url = payload.url || '/staff.html';
     } else {
-      // 댓글 알림 (요청자 + 그 글에 댓글 단 사람들, 작성자 본인 제외)
-      const { request_id, body: cbody, author_name, author_id } = payload;
+      // 댓글 알림 (요청자 + 그 글에 댓글 단 사람들, 작성자 본인 제외) · 작성자 이름은 DB 에서
+      const { request_id, body: cbody } = payload;
       const { data: reqRow } = await supa.from('swap_requests').select('requester_id').eq('id', request_id).maybeSingle();
-      if (reqRow?.requester_id) ids.add(reqRow.requester_id);
+      if (!reqRow) return json({ sent: 0 });
+      if (reqRow.requester_id) ids.add(reqRow.requester_id);
       const { data: coms } = await supa.from('swap_comments').select('author_id').eq('request_id', request_id);
       (coms || []).forEach((c: any) => c.author_id && ids.add(c.author_id));
-      if (author_id) ids.delete(author_id);
+      ids.delete(callerId);
+      const { data: me } = await supa.from('staff').select('name').eq('id', callerId).maybeSingle();
       title = '대타 게시판 새 댓글';
-      body = `${author_name || '누군가'}: ${cbody || ''}`.slice(0, 120);
-      url = '/staff.html';
+      body = `${me?.name || '누군가'}: ${cbody || ''}`.slice(0, 120);
     }
 
     const idArr = [...ids];
-    if (idArr.length === 0) return new Response(JSON.stringify({ sent: 0 }), { headers: cors });
+    if (idArr.length === 0) return json({ sent: 0 });
 
     const { data: subs } = await supa.from('push_subscriptions').select('*').in('staff_id', idArr);
     const out = JSON.stringify({ title, body, url });
@@ -75,8 +90,8 @@ Deno.serve(async (req) => {
       }
     }));
 
-    return new Response(JSON.stringify({ sent }), { headers: cors });
+    return json({ sent });
   } catch (e) {
-    return new Response(JSON.stringify({ error: String(e) }), { status: 500, headers: cors });
+    return json({ error: String(e) }, 500);
   }
 });
