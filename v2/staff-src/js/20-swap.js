@@ -43,7 +43,8 @@
   A.screen('swaps', {
     async render(el) {
       const mySeq = ++boardSeq;
-      const [open0, done] = await Promise.all([A.store.swaps({ status: 'open' }), A.store.swaps({ status: 'completed', limit: 10 })]);
+      const [open0, done0] = await Promise.all([A.store.swaps({ status: 'open' }), A.store.swaps({ status: 'completed', limit: 30 })]);
+      const done = done0.filter(s => s.date >= A.today()).slice(0, 10);   // 정해짐: 오늘 이후 근무만 (지난 기록은 빼요)
       const open = open0.filter(s => deadline(s.date) - Date.now() > 0);   // 당일 16시 지난 글은 숨김 (운영 2357)
       const cm = await A.store.comments([...open, ...done].map(s => s.id));
       if (mySeq !== boardSeq) return;                    // 더 새 그리기가 시작됐으면 옛 데이터로 덮지 않기

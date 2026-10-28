@@ -15,6 +15,7 @@
   const monOf = ym => +ym.slice(5);
   const hrs = h => String(h || '').replace('-', '~');
   const daysOf = ym => { const [y, m] = ym.split('-').map(Number), out = []; for (let d = new Date(y, m - 1, 1); d.getMonth() === m - 1; d.setDate(d.getDate() + 1)) out.push(A.ymd(d)); return out; };
+  const mrow = (attr, t, d) => `<button class="menu-row mr2" ${attr}><span class="mr-t"><b>${t}</b><small>${d}</small></span>${I.chev}</button>`;
   const tool = (kind, ym) => { if (A.adminTools && A.adminTools.open) A.adminTools.open(kind, ym); else A.toast('준비 중이에요'); };
   // 쓰기 뒤: 캐시 비우기 → 다시 그리기 → 알림
   const after = async (msg, inv = 'all') => {
@@ -180,12 +181,18 @@
   }
 
   // ── 3. 편성 도구 (32-admin-tools.js) · 출근표 편집 · 근무 추가 ──
-  function toolsSec() {
-    const row = (k, l) => `<button class="menu-row" data-tool="${k}">${l}${I.chev}</button>`;
-    return `<section class="sec ad-sec"><div class="sec-h"><h2>편성</h2></div><div class="menu-list">
-      <button class="menu-row" id="adEdit">출근표 편집하기${I.chev}</button>
-      <button class="menu-row" id="adShiftAdd">근무 추가${I.chev}</button>
-      ${row('builder', '표로 시프트 짜기')}${row('matrix', '제출 표로 보기')}${row('hopecal', '근무지별 희망 달력')}${row('counts', '근무일수 보기')}${row('nights', '야간 스케줄 보기')}</div></section>`;
+  // 짜기(바꾸는 것)와 살펴보기(읽기만)를 나누고, 줄마다 무슨 일을 하는지 한 줄로
+  function toolsSec(ym) {
+    const m = +ym.slice(5), t = k => `data-tool="${k}"`;
+    return `<section class="sec ad-sec"><div class="sec-h"><h2>${m}월 출근표 짜기</h2></div><div class="menu-list">
+      ${mrow('id="adEdit"', '출근표 편집하기', '날짜별 출근표에서 사람을 넣고 빼요')}
+      ${mrow(t('builder'), '표로 한 번에 짜기', '사람 × 날짜 표에서 칸마다 매장을 골라요. 고르면 바로 저장돼요')}
+      ${mrow('id="adShiftAdd"', '근무 한 칸 추가', '날짜와 매장을 골라 직원·게스트·빈 자리를 넣어요')}</div></section>
+    <section class="sec ad-sec"><div class="sec-h"><h2>${m}월 살펴보기</h2><span class="aside">보기만 해요</span></div><div class="menu-list">
+      ${mrow(t('matrix'), '제출 표', '직원들이 낸 희망을 사람 × 날짜 표로 봐요')}
+      ${mrow(t('hopecal'), '매장별 희망 달력', '매장마다 날짜별로 누가 오고 싶어 하는지 봐요')}
+      ${mrow(t('counts'), '근무일수', '사람마다 이 달에 몇 번 일하는지 봐요 (야간 포함)')}
+      ${mrow(t('nights'), '데빌 야간 목록', '야간이 있는 날과 멤버를 한눈에 봐요')}</div></section>`;
   }
   function bindTools(el, ym, staff) {
     el.querySelectorAll('[data-tool]').forEach(b => b.onclick = () => tool(b.dataset.tool, ym));
@@ -236,12 +243,11 @@
   // ── 4. 직원: 확인할 사람 먼저, 처음엔 8명만, 초성으로도 찾기 ──
   const CHO = 'ㄱㄲㄴㄷㄸㄹㅁㅂㅃㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎ';
   const cho = s => [...String(s)].map(c => { const k = c.charCodeAt(0) - 0xAC00; return k >= 0 && k < 11172 ? CHO[Math.floor(k / 588)] : c; }).join('');
-  // 확인 필요 = 잠김, PIN 없음, 임시 PIN (admin_staff_directory 의 locked / has_pin / pin_temp)
-  const need = s => !!(s.locked || s.has_pin === false || s.pin_temp);
-  const rank = s => need(s) ? 0 : s.is_admin ? 1 : 2;
+  // 확인 필요 = 잠김, PIN 없음 (admin_staff_directory 의 locked / has_pin). 임시 PIN 은 대부분이라 빼요 (사용자 2026-10-28)
+  const need = s => !!(s.locked || s.has_pin === false);
   const FILTERS = [['all', '전체', () => true], ['need', '확인 필요', need], ['admin', '관리자', s => !!s.is_admin]];
   const stTags = s => [s.is_admin ? '<span class="tag">관리자</span>' : '', s.locked ? '<span class="tag red">잠김</span>' : '',
-    s.has_pin === false ? '<span class="tag soft">PIN 없음</span>' : '', s.pin_temp ? '<span class="tag soft">임시 PIN</span>' : ''].join('');
+    s.has_pin === false ? '<span class="tag soft">PIN 없음</span>' : ''].join('');
 
   function staffSec(staff) {
     return `<section class="sec ad-sec" id="adStaffSec"><div class="sec-h"><h2>직원 ${staff.length}명</h2><button class="btn sm ad-addb" id="adStaffAdd">${I.plus}직원 추가</button></div>
@@ -262,7 +268,7 @@
     const box = el.querySelector('#adStaff');
     const q = query.trim(), qc = cho(q), f = FILTERS.find(x => x[0] === filt)[2];
     const list = staff.filter(s => f(s) && (!q || String(s.name).includes(q) || cho(s.name).includes(qc)))
-      .sort((a, b) => rank(a) - rank(b) || String(a.name).localeCompare(String(b.name), 'ko'));
+      .sort((a, b) => String(a.name).localeCompare(String(b.name), 'ko'));   // 이름순만 (사용자 2026-10-28)
     const cut = !q && filt === 'all' && list.length > SHOW + 2, shown = cut && !expanded ? list.slice(0, SHOW) : list;
     el.querySelector('#adFound').textContent = q ? `${list.length}명 찾았어요` : '';
     box.innerHTML = shown.map(s => `<div class="lrow ad-st"><button class="ad-main" data-st="${s.id}" aria-label="${esc(s.name)}님 관리">${A.avatar(s)}<span class="lt">${esc(s.name)}</span>${stTags(s)}</button>${s.locked ? `<button class="btn sm hit" data-unlock="${s.id}" aria-label="${esc(s.name)}님 잠금 풀기">잠금 풀기</button>` : ''}${I.chev}</div>`).join('')
@@ -291,10 +297,15 @@
     if (!s) return;
     const self = me() && s.id === me().id, admin = !!s.is_admin, v2 = !!(A.features && A.features.v2db);
     const head = `<div class="me-card">${A.avatar(s, 'me-av lg')}<div><b>${esc(s.name)}</b><span class="ad-tags">${stTags(s) || '<span class="tag soft">직원</span>'}</span></div></div>`;
-    const row = (k, l) => `<button class="menu-row" data-act="${k}">${l}${I.chev}</button>`;
-    const body = `<div class="menu-list">${row('person', '낸 내용 보기')}${row('rename', '이름 바꾸기')}${row('ig', '인스타그램')}
-      ${s.locked ? row('unlock', '잠금 풀기') : ''}
-      ${self ? '' : row('role', admin ? '직원으로 바꾸기' : '관리자로 바꾸기') + row('pin', 'PIN 정하기') + (v2 ? row('temp', '임시 PIN 만들기') : '')}</div>
+    const row = (k, t, d) => mrow(`data-act="${k}"`, t, d), noPin = s.has_pin === false;
+    // PIN 은 한 줄만: v2 DB 가 있으면 임시 PIN(본인이 다음 로그인 때 바꿈), 없으면 관리자가 직접 정하기
+    const pinRow = v2 ? row('temp', noPin ? 'PIN 만들기' : 'PIN 초기화', noPin ? '임시 PIN을 만들어 알려 주면 로그인할 수 있어요' : 'PIN을 잊었을 때 임시 PIN을 만들어 알려 줘요. 다음 로그인 때 본인이 새로 정해요')
+      : row('pin', noPin ? 'PIN 만들기' : 'PIN 다시 정하기', 'PIN을 잊었을 때 새 PIN을 정해 알려 줘요');
+    const body = `<div class="menu-list">${row('person', `${admYM ? +admYM.slice(5) + '월 ' : ''}제출 내용`, '날짜마다 고른 매장을 봐요')}
+      ${s.locked ? row('unlock', '잠금 풀기', 'PIN을 여러 번 틀려 잠겼어요. 풀면 다시 로그인할 수 있어요') : ''}
+      ${self ? '' : pinRow}
+      ${row('rename', '이름 바꾸기', '출근표와 목록에 보이는 이름이에요')}${row('ig', '인스타그램', '출근표 이름 옆 링크로 보여요')}
+      ${self ? '' : row('role', admin ? '직원으로 바꾸기' : '관리자로 바꾸기', admin ? '관리 탭과 출근표 편집을 더는 못 써요' : '관리 탭과 출근표 편집을 쓸 수 있게 돼요')}</div>
       ${self ? '<p class="sheet-p">내 권한과 PIN은 여기서 바꾸지 않아요. 위쪽 내 정보에서 PIN을 바꿀 수 있어요.</p>' : s.has_pin === false ? '<p class="sheet-p">아직 PIN이 없어서 로그인할 수 없어요. PIN을 정해 주세요.</p>' : ''}`;
     const sh = A.sheet({
       title: `${s.name}님`, html: head + body,
@@ -394,7 +405,7 @@
       const done = new Set(answers.map(a => a.staffId));
       el.innerHTML = `${A.pageHead('관리', '제출, 야간 문항, 직원을 한곳에서 관리해요')}
         <div class="datebar sb-mbar"><button class="nav" data-m="-1" aria-label="이전 달">${I.prev}</button><div class="dlabel">${ymLabel(ym)}</div><button class="nav" data-m="1" aria-label="다음 달">${I.next}</button></div>
-        ${scheduleSec(ym, st, staff, answers, hasV2)}${nightsSec(nights, answers)}${toolsSec()}${staffSec(staff)}`;
+        ${scheduleSec(ym, st, staff, answers, hasV2)}${nightsSec(nights, answers)}${toolsSec(ym)}${staffSec(staff)}`;
       el.querySelectorAll('.sb-mbar [data-m]').forEach(b => b.onclick = () => { admYM = A.ymShift(admYM, +b.dataset.m); A.render(); });
       bindSchedule(el, ym, staff.filter(s => !done.has(s.id)).length);
       bindNights(el, ym, nights);

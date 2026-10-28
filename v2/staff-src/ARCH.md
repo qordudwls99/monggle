@@ -249,7 +249,7 @@ Show `night.hours` raw. Edit it with `A.prompt`, prefilled with the current text
 The live directory has about 90 people. The 관리 staff list therefore uses:
 - One-line 52px rows.
 - A `.seg` filter: 전체 / 확인 필요 (locked, no PIN or temp PIN) / 관리자.
-- Sort order: 확인 필요, then admins, then 가나다.
+- Sort order: name only (가나다). Superseded on 2026-10-28: 확인 필요 first, then admins. 확인 필요 = locked or no PIN; temp PIN is not shown because most staff have one.
 - Under 전체 with no search, the first 8 rows plus "나머지 N명 보기".
 - Search by name or 초성.
 
