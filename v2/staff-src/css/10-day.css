@@ -1,0 +1,42 @@
+/* 스케줄 일별 · 달력 시트 · 끌어 옮기기 (10-day.js, 13-drag.js). 공통 줄·칸은 00-moe-system.css / 01-staff.css */
+
+/* 줄 덧붙임: 대타 구하는 중 · 대타 구하기 · 야간 부족 */
+.row .seek{flex-shrink:0;font-size:11.5px;font-weight:800;color:var(--red);background:var(--red-soft);border-radius:99px;padding:3px 8px;white-space:nowrap}
+.row.sm .seek{font-size:10.5px;padding:2px 6px}
+.dn-col.night .row .seek{color:#fff;background:var(--devil-red)}
+.row .sub-btn{flex-shrink:0;white-space:nowrap}
+.row.sm .sub-btn{padding-left:7px;padding-right:7px}
+.row.short .av.empty{background:none;box-shadow:inset 0 0 0 1.5px #d6d2da;color:#b4afb9}
+.row.short .av.empty svg{width:16px;height:16px}
+.row.short .nm{color:var(--ink2)}
+.dn-col.night .row.short .av.empty{box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.3);color:rgba(255,255,255,.6)}
+.dn-col.night .row.short .nm{color:rgba(255,255,255,.7)}
+.slot-a+.more,.row.slot>.btn+.more{margin-left:2px}
+.hrs-box{font-size:15px;font-weight:700;color:var(--ink);line-height:1.5}
+
+/* 달력 시트 (날짜 고르기) */
+.calp-h{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px}
+.calp-h b{font-size:17px;font-weight:800;letter-spacing:-.3px;font-variant-numeric:tabular-nums}
+.calp-h .nav{width:40px;height:40px;flex-shrink:0;border:none;border-radius:50%;background:var(--fill);color:var(--ink);cursor:pointer;display:flex;align-items:center;justify-content:center}
+.calp-h .nav svg{width:18px;height:18px}
+.calp-h .nav:active{transform:scale(.92)}
+.calp-dow{display:grid;grid-template-columns:repeat(7,1fr);text-align:center;font-size:12px;font-weight:700;color:var(--ink2);padding:4px 0}
+.calp-dow .sun{color:var(--sun)}.calp-dow .sat{color:var(--sat)}
+.calp-g{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}
+.calp-c{height:44px;border:none;border-radius:12px;background:var(--cell);color:var(--ink);font-size:15px;font-weight:700;cursor:pointer;font-variant-numeric:tabular-nums}
+.calp-c.blank{background:none;pointer-events:none}
+.calp-c.sun{color:var(--sun)}.calp-c.sat{color:var(--sat)}
+.calp-c.today{box-shadow:inset 0 0 0 2px var(--ink)}
+.calp-c.sel{background:var(--ink);color:#fff}
+.calp-c:active{transform:scale(.94)}
+
+/* 끌어 옮기기 (넓은 화면, 관리자, 전체) */
+.can-drag{cursor:grab}
+.dragging{opacity:.4}
+.dragover{box-shadow:inset 0 0 0 2px var(--ink);border-radius:12px}
+.drag-trash{position:fixed;left:50%;bottom:26px;transform:translateX(-50%);z-index:130;display:none;align-items:center;gap:8px;background:var(--red-soft);color:var(--red);font-weight:800;font-size:14px;padding:14px 22px;border-radius:14px;box-shadow:0 10px 26px -12px rgba(0,0,0,.35);transition:transform .12s ease}
+.drag-trash svg{width:18px;height:18px}
+.drag-trash.show{display:flex}
+.drag-trash.over{background:var(--red);color:#fff;transform:translateX(-50%) scale(1.06)}
+@media (prefers-reduced-motion:reduce){.drag-trash,.drag-trash.over{transition:none}.drag-trash.over{transform:translateX(-50%)}}
+.row.sm.me .nm{min-width:2em}

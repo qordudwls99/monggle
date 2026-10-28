@@ -1,0 +1,241 @@
+/* 모에 스케줄 디자인 시스템 — 손님 페이지(.ui-design/build/parts/style.css)에서 확정된 최종 값만 정리
+   규칙 설명: .ui-design/system/DESIGN.md */
+
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+:root{
+  /* 글자·면 */
+  --ink:#17151a; --ink2:#615c66; --muted:#8f8a94; --line:#eeebef; --fill:#f4f2f5; --cell:#f8f7f9;
+  /* 상태 */
+  --red:#d92d20; --red-soft:#fdecec; --orange:#e8590c; --green:#1f8a4c; --green-soft:#e6f4ec; --sun:#d92d20; --sat:#2e6be6;
+  /* 데빌 야간 · 달 · 데빌 포인트 빨강 */
+  --night:#1f1b1e; --moon:#e0525c; --devil-red:#b3262f;
+  /* 기본 테마(전체) */
+  --acc:#17151a; --acc-ink:#17151a; --acc-soft:#f1eff2;
+  --chip-bg:#f4f2f5; --chip-ink:#17151a; --av-bg:#f1eff2; --av-ink:#17151a;
+  --r-lg:14px; --r-md:12px; --r-sm:10px; --r-xs:8px;
+  --font:'Pretendard','Apple SD Gothic Neo','Noto Sans KR',-apple-system,system-ui,'Malgun Gothic',sans-serif;
+}
+/* 매장 테마: 층 순서 3층 데빌 → 2층 메이드 → 1층 마츠리 */
+[data-theme="all"]{--acc:#17151a;--acc-ink:#17151a;--acc-soft:#f1eff2;--chip-bg:#f4f2f5;--chip-ink:#17151a;--av-bg:#f1eff2;--av-ink:#17151a}
+[data-theme="devil"]{--acc:#26211f;--acc-ink:#26211f;--acc-soft:#eeebec;--chip-bg:#2b2628;--chip-ink:#fff;--av-bg:#2b2628;--av-ink:#fff;
+  --band:#26211f;--band-ink:#fff;--band-sub:rgba(255,255,255,.6);--band-line:rgba(255,255,255,.14)}
+[data-theme="maid"]{--acc:#d94079;--acc-ink:#b8285f;--acc-soft:#fdedf3;--chip-bg:#fde4ef;--chip-ink:#7d1a42;--av-bg:#fde4ef;--av-ink:#b8285f;
+  --band:#d94079;--band-ink:#fff;--band-sub:rgba(255,255,255,.7);--band-line:rgba(255,255,255,.2)}
+[data-theme="matsuri"]{--acc:#e0452e;--acc-ink:#c2381f;--acc-soft:#ffeadf;--chip-bg:#ffe6d6;--chip-ink:#8f2a12;--av-bg:#ffe6d6;--av-ink:#c2381f;
+  --band:#e0452e;--band-ink:#fff;--band-sub:rgba(255,255,255,.7);--band-line:rgba(255,255,255,.2)}
+
+html,body{height:100%}
+html{-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
+body{font-family:var(--font);color:var(--ink);background:var(--fill);letter-spacing:-0.2px}
+button,input,select,textarea{font-family:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--acc);outline-offset:2px;border-radius:8px}
+::selection{background:var(--acc-soft);color:var(--acc-ink)}
+
+/* ── 앱 틀 ── */
+.app{width:100%;max-width:480px;margin:0 auto;height:100vh;height:100dvh;display:flex;flex-direction:column;background:#fff;position:relative;overflow:hidden}
+.top{display:flex;align-items:center;gap:6px;padding:max(6px,env(safe-area-inset-top)) 8px 6px 20px;min-height:56px;background:#fff;border-bottom:1px solid var(--line);position:relative;z-index:20}
+.brand{font-size:18px;font-weight:800;letter-spacing:-.4px;margin-right:auto;display:flex;align-items:center;gap:6px}
+.icon-btn{width:44px;height:44px;border:none;background:none;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--ink);border-radius:12px;position:relative;flex-shrink:0}
+.icon-btn svg{width:23px;height:23px}
+.icon-btn:active{transform:scale(.92)}
+.body{position:relative;flex:1;min-height:0;overflow-y:auto;overscroll-behavior-y:contain;padding:14px 16px 28px}
+
+/* 보기 전환(일별·주간…) */
+.seg{display:flex;background:var(--fill);border-radius:10px;padding:3px}
+.seg button{flex:1;border:none;cursor:pointer;font-weight:700;font-size:13.5px;padding:7px 11px;border-radius:8px;background:none;color:var(--ink2);transition:background-color .15s ease,color .15s ease}
+.seg button.on{background:#fff;color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.1)}
+
+/* 날짜 줄: ‹ 날짜 › + 아래 '오늘' */
+.datebar{display:flex;align-items:center;gap:8px;margin-top:10px}
+.datebar .nav{width:40px;height:40px;flex-shrink:0;border:none;border-radius:50%;background:var(--fill);color:var(--ink);cursor:pointer;display:flex;align-items:center;justify-content:center}
+.datebar .nav svg{width:18px;height:18px}
+.datebar .nav:active{transform:scale(.92)}
+.datebar .nav:disabled{opacity:.3;pointer-events:none}
+.dlabel{flex:1;border:none;background:none;cursor:pointer;min-width:0;font-size:22px;font-weight:800;letter-spacing:-.5px;color:var(--ink);font-variant-numeric:tabular-nums;white-space:nowrap}
+.subline{height:28px;margin-top:2px;display:flex;align-items:center;justify-content:center}
+.today-tag{font-size:12px;font-weight:800;color:#fff;background:var(--acc);border-radius:99px;padding:3px 10px}
+.today-btn{border:1px solid var(--line);background:#fff;color:var(--ink2);font-size:12.5px;font-weight:700;border-radius:99px;padding:4px 12px;cursor:pointer}
+.today-tag[hidden],.today-btn[hidden]{display:none}
+
+/* 매장 고르기: 실제 로고 칩 (전체 · 3층 데빌 · 2층 메이드 · 1층 마츠리) */
+.chips{display:grid;grid-template-columns:.62fr 1fr 1fr 1fr;gap:6px}
+.chip{height:52px;min-width:0;padding:0 6px;border:1px solid var(--line);background:#fff;border-radius:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px;color:var(--ink2);transition:border-color .15s ease,background-color .15s ease,color .15s ease,transform .12s ease}
+.chip img{width:30px;height:30px;border-radius:50%;object-fit:cover;flex-shrink:0;box-shadow:0 0 0 1px rgba(0,0,0,.06)}
+.chip .ct{display:flex;flex-direction:column;align-items:flex-start;line-height:1.15;min-width:0}
+.chip .ct b{font-size:14.5px;font-weight:800;white-space:nowrap}
+.chip .ct small{font-size:11px;font-weight:700;color:var(--muted)}
+.chip.all b{font-size:15px;font-weight:800}
+.chip.on{border-color:var(--c);box-shadow:inset 0 0 0 1px var(--c);background:var(--cs);color:var(--ci)}
+.chip.on .ct small{color:inherit;opacity:.75}
+.chip:active{transform:scale(.97)}
+
+/* ── 출근표: 층 구역 ── */
+.floor{padding:4px 0 6px}
+.floor+.floor{margin:10px -16px 0;padding:16px 16px 6px;border-top:8px solid var(--fill)}
+.floor-h{display:flex;align-items:center;gap:9px;padding:2px 0 10px}
+.floor-h .store{display:flex;align-items:center;gap:9px;min-width:0;min-height:44px;color:inherit;text-decoration:none}
+.floor-h img{width:38px;height:38px;border-radius:50%;object-fit:cover;box-shadow:0 0 0 1px rgba(0,0,0,.06)}
+.floor-h .fl{font-size:14px;font-weight:800;color:var(--acc-ink)}
+.floor-h b{font-size:19px;font-weight:800;letter-spacing:-.4px}
+.floor-h .cnt{margin-left:auto;display:flex;align-items:center;gap:6px;font-size:13.5px;font-weight:700;color:var(--ink2);font-variant-numeric:tabular-nums}
+.ig-mini{width:22px;height:22px;border-radius:7px;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:#fff;background:linear-gradient(45deg,#f09433,#e6683c 25%,#dc2743 50%,#cc2366 75%,#bc1888)}
+.ig-mini svg{width:14px;height:14px}
+
+/* 이벤트 날: 층 색으로 꽉 찬 띠 */
+.event{display:flex;align-items:center;gap:10px;background:var(--acc);color:#fff;border-radius:14px;padding:12px 14px;margin-bottom:4px}
+.event .ev-tag{flex-shrink:0;font-size:11.5px;font-weight:800;border-radius:99px;padding:3px 9px;background:rgba(255,255,255,.2)}
+[data-theme="devil"] .event .ev-tag{background:var(--devil-red)}
+.event .ev-name{min-width:0;font-size:17px;font-weight:800;letter-spacing:-.3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* 이름 줄 */
+.row{display:flex;align-items:center;gap:13px;min-height:60px;padding:8px 4px;border-bottom:1px solid var(--line)}
+.row:last-child{border-bottom:none}
+.av{width:40px;height:40px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;background:var(--av-bg) center/cover no-repeat;color:var(--av-ink);font-size:16px;font-weight:800}
+.av.photo{color:transparent}
+.nm{flex:1;min-width:0;font-size:18px;font-weight:700;letter-spacing:-.3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* 게스트: 노란색 금지. 매장 색 뱃지, 데빌 야간은 데빌 빨강 */
+.gbadge{flex-shrink:0;display:inline-flex;align-items:center;font-size:12.5px;font-weight:800;color:#fff;background:var(--acc);border-radius:99px;padding:3px 10px}
+.night .gbadge,.dn-col.night .gbadge{background:var(--devil-red)}
+.gcount{display:inline-flex;align-items:center;font-size:13px;font-weight:800;color:var(--ink2);margin-right:8px}
+.ig{width:44px;height:44px;margin:-6px -6px -6px 0;display:flex;align-items:center;justify-content:center;flex-shrink:0;border-radius:12px}
+.ig span{width:30px;height:30px;border-radius:9px;display:flex;align-items:center;justify-content:center;color:#fff;background:linear-gradient(45deg,#f09433,#e6683c 25%,#dc2743 50%,#cc2366 75%,#bc1888)}
+.ig svg{width:19px;height:19px}
+.ig:active{transform:scale(.92)}
+.none{text-align:center;color:var(--muted);font-weight:600;font-size:14px;padding:20px 0}
+.hrs-line{font-size:13px;font-weight:600;color:var(--ink2);padding:8px 2px 0}
+
+/* 데빌 주간 | 야간 두 칸 (야간 = 유일한 어두운 면) */
+.dn{display:grid;grid-template-columns:1fr 1fr;gap:8px;align-items:start;margin-top:8px}
+.dn-col{min-width:0;border-radius:14px;padding:2px 10px 6px;background:#fff;box-shadow:inset 0 0 0 1px var(--line)}
+.dn-col.night{box-shadow:none;background:var(--night);color:#fff}
+.dn-h{display:flex;flex-wrap:wrap;align-items:center;gap:2px 6px;padding:10px 0 6px;font-size:14px}
+.dn-h b{font-weight:800}
+.dn-h span{font-weight:700;color:var(--ink2)}
+.dn-h small{flex-basis:100%;font-size:12px;font-weight:600;color:var(--ink2);font-variant-numeric:tabular-nums}
+.dn-h svg{width:13px;height:13px;color:var(--moon)}
+.dn-col.night .dn-h span,.dn-col.night .dn-h small{color:rgba(255,255,255,.7)}
+.dn-col.night .row{border-bottom-color:rgba(255,255,255,.1)}
+.dn-col.night .av{background-color:rgba(255,255,255,.12);color:#fff}
+.dn-col.night .none{color:rgba(255,255,255,.6)}
+.row.sm{gap:9px;min-height:50px;padding:6px 0}
+.row.sm .av{width:32px;height:32px;font-size:13px}
+.row.sm .nm{font-size:16px}
+.row.sm .ig{width:36px;height:40px;margin:-4px -4px -4px 0}
+.row.sm .ig span{width:26px;height:26px;border-radius:8px}
+.row.sm .ig svg{width:16px;height:16px}
+.row.sm .gbadge{font-size:10.5px;padding:2px 6px}
+
+/* 빈 상태 */
+.empty-box{text-align:center;padding:52px 20px 40px;color:var(--ink2)}
+.empty-box .e-ic{display:flex;justify-content:center;color:#b4afb9}
+.empty-box .e-ic svg{width:44px;height:44px}
+.empty-box .e-t{font-weight:800;font-size:19px;margin-top:14px;color:var(--ink)}
+.empty-box .e-s{font-size:14px;font-weight:500;margin-top:6px}
+
+/* ── 주간 시간표: 층 = 가로 단색 띠, 날짜 = 세로 칸 ── */
+.wt{margin:0 -6px}
+.wt-row{display:grid;grid-template-columns:repeat(7,minmax(0,1fr))}
+.wt-h{border:none;background:none;cursor:pointer;color:var(--ink);padding:2px 0 6px;display:flex;flex-direction:column;align-items:center;gap:2px;min-width:0}
+.wt-h .dow{font-size:11px;font-weight:700;color:var(--ink2)}
+.wt-h.sun .dow{color:var(--sun)}.wt-h.sat .dow{color:var(--sat)}
+.wt-h .dn{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;font-variant-numeric:tabular-nums}
+.wt-h.today .dn{background:var(--acc);color:#fff}
+.wt-h .st{font-size:10px;font-weight:700;color:var(--muted)}
+.wt-band{margin-top:8px;border-radius:12px;background:var(--band);color:var(--band-ink);overflow:hidden}
+.wt-label{display:flex;align-items:center;gap:5px;font-size:12px;font-weight:800;color:var(--band-ink);padding:8px 10px 2px}
+.wt-label i{width:8px;height:8px;border-radius:2px;background:#fff}
+.wt-c{min-width:0;border:none;background:none;cursor:pointer;padding:4px 1px 9px;display:flex;flex-direction:column;align-items:center;gap:4px;color:var(--band-ink)}
+.wt-c+.wt-c{box-shadow:inset 1px 0 var(--band-line)}
+.wt-c:active{background:rgba(0,0,0,.04)}
+.wt-c .n,.mnm{display:flex;align-items:center;justify-content:center;max-width:100%;font-size:11.5px;font-weight:700;letter-spacing:-.5px;line-height:1.2;white-space:nowrap;overflow:hidden;color:var(--band-ink)}
+.wt-c .n.g,.mnm.g{font-weight:800}
+.wt-c .no{font-size:10.5px;font-weight:600;color:var(--band-sub)}
+.wt-c .ev,.mev{align-self:stretch;margin:0 3px;font-size:10px;font-weight:800;line-height:1.25;color:var(--acc-ink);background:#fff;border-radius:5px;padding:3px 2px;text-align:center;white-space:nowrap;overflow:hidden;letter-spacing:-.3px}
+[data-theme="devil"] .wt-c .ev,[data-theme="devil"] .mev{color:var(--devil-red)}
+.wk-hint{font-size:12.5px;color:var(--muted);padding:12px 2px 0}
+/* 칸 안: 게스트 묶음 · 야간 묶음 */
+.gl{font-size:8.5px;font-weight:700;line-height:1.1;color:var(--band-sub)}
+.gsep{align-self:stretch;height:1px;background:var(--band-line);margin:2px 5px}
+.nsep{align-self:stretch;height:2px;border-radius:1px;background:var(--band-line);margin:4px 3px 2px}
+.ntl{display:flex;align-items:center;justify-content:center;gap:2px;font-size:9px;font-weight:800;line-height:1.1;color:var(--band-ink)}
+.ntl svg{width:8px;height:8px;color:#fff}
+
+/* ── 월간: 작은 달력 + 아래 상세 ── */
+.mlegend{display:flex;justify-content:center;flex-wrap:wrap;gap:4px 12px;font-size:11.5px;font-weight:700;color:var(--ink2);margin-bottom:6px}
+.mlegend span{display:inline-flex;align-items:center;gap:4px}
+.mlegend i{width:10px;height:10px;border-radius:3px;background:var(--band)}
+.mlegend i.evd{width:7px;height:7px;border-radius:50%;background:var(--ink);box-shadow:none}
+.mdow{display:grid;grid-template-columns:repeat(7,1fr);text-align:center;font-size:11px;font-weight:700;color:var(--ink2);padding:4px 0}
+.mdow .sun{color:var(--sun)}.mdow .sat{color:var(--sat)}
+.mgrid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:3px}
+.mc{min-width:0;min-height:58px;border:none;background:var(--cell);border-radius:9px;padding:3px 2px 4px;display:flex;flex-direction:column;align-items:stretch;justify-content:flex-start;gap:2px;cursor:pointer;text-align:center;color:var(--ink)}
+.mc:active{background:#f0eef2}
+.mc.blank{background:none;pointer-events:none}
+.mc:disabled{opacity:.35;cursor:default}
+.mc .mn{position:relative;align-self:center;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12.5px;font-weight:800;font-variant-numeric:tabular-nums}
+.mc.sun .mn{color:var(--sun)}.mc.sat .mn{color:var(--sat)}
+.mc.today .mn{background:var(--ink);color:#fff}
+.mc.sel{background:#fff;box-shadow:inset 0 0 0 2px var(--ink)}
+.mc .mn .evd{position:absolute;top:-1px;right:-5px}
+.evd{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--ink);box-shadow:0 0 0 1.5px #fff}
+.mb{display:flex;align-items:center;justify-content:center;gap:1px;height:13px;margin:0 1px;border-radius:4px;background:var(--band);color:#fff;font-size:9.5px;font-weight:800;line-height:1;font-variant-numeric:tabular-nums}
+.mb svg{width:7px;height:7px;margin-left:2px;color:#fff}
+.moff{font-size:10px;font-weight:600;color:var(--muted);margin-top:4px}
+.md-h{display:flex;align-items:center;justify-content:space-between;padding:4px 2px 10px;margin-top:14px}
+.md-h b{font-size:18px;font-weight:800;letter-spacing:-.4px}
+.md-go{display:flex;align-items:center;gap:2px;border:none;background:var(--fill);border-radius:99px;padding:6px 8px 6px 12px;font-size:12.5px;font-weight:700;color:var(--ink2);cursor:pointer}
+.md-go svg{width:14px;height:14px}
+.dfl{background:var(--band);color:var(--band-ink);border-radius:14px;padding:10px 12px 12px;margin-bottom:8px}
+.dfh{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:800;margin-bottom:6px}
+.dfh i{width:8px;height:8px;border-radius:2px;background:#fff}
+.dfh .dev{font-size:11.5px;font-weight:800;background:#fff;color:var(--acc-ink);border-radius:99px;padding:2px 8px}
+[data-theme="devil"] .dfh .dev{color:var(--devil-red)}
+.dfh .dcnt{margin-left:auto;font-weight:700;opacity:.8}
+.dl{display:flex;gap:8px;align-items:baseline}
+.dl+.dl{margin-top:6px;padding-top:6px;border-top:1px solid var(--band-line)}
+.dl em{flex-shrink:0;display:flex;align-items:center;gap:2px;font-style:normal;font-size:11.5px;font-weight:800;opacity:.75}
+.dl em svg{width:10px;height:10px}
+.dnm{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 10px;font-size:15px;font-weight:600}
+.dnm b{font-weight:800}
+.dnm .dg{font-size:11px;font-weight:800;opacity:.75}
+.dnm .dsep{width:1px;height:12px;background:var(--band-sub);align-self:center}
+.dnm .no{font-size:13px;opacity:.7}
+
+/* ── 버튼: 평평한 2단계 (주 버튼은 화면당 하나) ── */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;border:none;cursor:pointer;font-weight:700;white-space:nowrap;
+  height:40px;padding:0 16px;border-radius:var(--r-sm);font-size:15px;background:var(--fill);color:var(--ink);transition:filter .12s ease,transform .12s ease}
+.btn.lg{height:48px;border-radius:var(--r-md);font-size:16px;width:100%}
+.btn.sm{height:32px;padding:0 12px;border-radius:var(--r-xs);font-size:13px}
+.btn.primary{background:var(--ink);color:#fff}
+.btn.danger{background:var(--red-soft);color:var(--red)}
+.btn.ghost{background:none;color:var(--ink2)}
+.btn:active{filter:brightness(.92);transform:scale(.98)}
+.btn:disabled,.btn[aria-busy="true"]{opacity:.45;pointer-events:none}
+.btn svg{width:18px;height:18px}
+
+/* ── 시트 · 알림 ── */
+.modal{position:fixed;inset:0;z-index:80;display:none;align-items:flex-end;justify-content:center;background:rgba(20,14,22,.42)}
+.modal.show{display:flex}
+.modal-c{width:100%;max-width:480px;max-height:88vh;overflow-y:auto;background:#fff;border-radius:22px 22px 0 0;padding:10px 20px max(20px,env(safe-area-inset-bottom));animation:up .28s cubic-bezier(.2,.8,.2,1)}
+.grab{width:38px;height:5px;border-radius:3px;background:#ddd9e0;margin:0 auto 12px}
+.sheet-h{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;gap:10px}
+.sheet-h b{font-size:19px;font-weight:800}
+.closex{border:none;background:none;color:var(--ink2);font-weight:700;font-size:14px;cursor:pointer;padding:10px 4px}
+.toast{position:fixed;left:50%;bottom:96px;z-index:90;transform:translate(-50%,12px);opacity:0;pointer-events:none;background:var(--ink);color:#fff;font-size:14px;font-weight:700;border-radius:99px;padding:11px 18px;max-width:calc(100% - 40px);text-align:center;transition:opacity .2s ease,transform .2s ease}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+
+/* 입력 */
+.fld{width:100%;height:48px;border:1px solid var(--line);background:#f7f6f8;border-radius:var(--r-md);padding:0 14px;font-size:16px;color:var(--ink)}
+textarea.fld{height:auto;min-height:88px;padding:12px 14px;resize:vertical;line-height:1.5}
+.fld:focus{outline:none;border-color:var(--ink);background:#fff}
+
+.spin{display:inline-block;width:20px;height:20px;border:3px solid #ece8ee;border-top-color:var(--acc);border-radius:50%;animation:rot .8s linear infinite}
+@keyframes rot{to{transform:rotate(360deg)}}
+@keyframes up{from{transform:translateY(24px);opacity:.6}to{transform:none;opacity:1}}
+@keyframes slideR{from{opacity:0;transform:translateX(18px)}to{opacity:1;transform:none}}
+@keyframes slideL{from{opacity:0;transform:translateX(-18px)}to{opacity:1;transform:none}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.anim-r{animation:slideR .26s cubic-bezier(.22,.61,.36,1)}
+.anim-l{animation:slideL .26s cubic-bezier(.22,.61,.36,1)}
+.anim-f{animation:fadeUp .24s ease}
+@media (prefers-reduced-motion:reduce){.anim-r,.anim-l,.anim-f,.modal-c{animation:none}.toast{transition:none}}

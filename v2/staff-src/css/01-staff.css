@@ -1,0 +1,165 @@
+/* 직원 페이지 공통: 위 바 · 아래 메뉴 · 스케줄 머리 · 페이지 제목 · 목록 줄 · 태그 · 시트 안쪽
+   토큰과 기본 부품은 moe-system.css. 여기 값은 그 토큰만 씀 */
+
+/* ── 위 바: 브랜드 + '직원' 표 + 종(관리자) + 내 사진 동그라미 ── */
+.brand em{font-style:normal;font-size:11px;font-weight:800;letter-spacing:0;background:var(--ink);color:#fff;border-radius:6px;padding:3px 6px}
+.nbadge{position:absolute;top:6px;right:6px;min-width:17px;height:17px;border-radius:9px;background:var(--red);color:#fff;font-size:10.5px;font-weight:800;display:flex;align-items:center;justify-content:center;padding:0 4px;box-shadow:0 0 0 2px #fff;font-variant-numeric:tabular-nums}
+.me-av{width:32px;height:32px;border-radius:50%;background:#3a3539 center/cover no-repeat;color:#fff;font-size:14px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.me-av.lg{width:52px;height:52px;font-size:20px}
+
+/* ── 아래 메뉴 ── */
+.mtabbar{display:grid;background:#fff;border-top:1px solid var(--line);padding:6px 4px max(10px,env(safe-area-inset-bottom));position:relative;z-index:20}
+.mtab{border:none;background:none;cursor:pointer;min-height:52px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-size:11.5px;font-weight:600;color:var(--muted);transition:color .15s ease,transform .12s ease}
+.mtab svg{width:24px;height:24px}
+.mtab.on{color:var(--ink)}
+.mtab.on span{font-weight:800}
+.mtab:active{transform:scale(.95)}
+
+/* ── 스케줄 머리: 보기 전환 + 편집(관리자) ── */
+.sched-h{display:flex;align-items:stretch;gap:8px}
+.sched-h .seg{flex:1}
+.edit-tg{flex-shrink:0;height:auto;min-height:40px;border-radius:10px}
+.edit-tg.on{background:#e6e3e8}
+.edit-tg svg{width:16px;height:16px}
+.sched-h+.chips{margin-top:10px}
+/* 고르는 줄(보기·매장·날짜)과 내용 사이를 한 단계 띄움 */
+#list{margin-top:10px}
+.dn.stack{grid-template-columns:1fr}
+.modal-c:focus{outline:none}
+
+/* 공개 전 달 (관리자만 보임) */
+.draft-bar{display:flex;align-items:center;gap:10px;background:var(--fill);border-radius:var(--r-md);padding:10px 10px 10px 14px;margin-bottom:16px;font-size:13.5px;font-weight:600;color:var(--ink2)}
+.draft-bar>svg{width:18px;height:18px;flex-shrink:0;color:var(--ink2)}
+.draft-bar span{flex:1;min-width:0;line-height:1.4}
+.draft-bar b{color:var(--ink);font-weight:800}
+
+/* 층별 편집 도구 (관리자 편집 중) */
+.ftools{display:flex;gap:6px;overflow-x:auto;margin:-2px -16px 8px;padding:0 16px 2px;scrollbar-width:none}
+.ftools::-webkit-scrollbar{display:none}
+.ftools .btn{flex-shrink:0}
+.ftools .btn b{font-weight:800;color:var(--acc-ink)}
+
+/* 출근표 줄 덧붙임: 나 · 더보기 · 빈 자리 */
+.mybadge{flex-shrink:0;font-size:11.5px;font-weight:800;color:var(--acc-ink);background:var(--acc-soft);border-radius:99px;padding:3px 8px}
+[data-theme="devil"] .mybadge{color:#fff;background:var(--devil-red)}
+.row.me .nm{font-weight:800}
+.more{width:40px;height:40px;margin:-6px -8px -6px 0;border:none;background:none;border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--ink2);flex-shrink:0}
+.more svg{width:20px;height:20px}
+.more:active{background:var(--fill)}
+.dn-col.night .more{color:rgba(255,255,255,.7)}
+.row.slot .av.empty{background:none;box-shadow:inset 0 0 0 1.5px #d6d2da;color:#b4afb9}
+.row.slot .av.empty svg{width:18px;height:18px}
+.row.slot .nm{color:var(--ink2)}
+.row.slot .ap{display:block;font-size:12.5px;font-weight:700;color:var(--acc-ink);margin-top:1px}
+.row.slot .slot-a{display:flex;gap:6px;flex-shrink:0}
+
+/* ── 다른 화면들이 같이 쓰는 부품 ── */
+.page-h{padding:6px 2px 20px}
+.page-h h1{font-size:26px;font-weight:800;letter-spacing:-.6px;line-height:1.25}
+.page-h p{font-size:14px;font-weight:600;color:var(--ink2);margin-top:4px;line-height:1.45}
+
+.sec+.sec{margin:16px -16px 0;padding:20px 16px 0;border-top:8px solid var(--fill)}
+.sec-h{display:flex;align-items:baseline;justify-content:space-between;gap:10px;padding:0 2px 6px}
+.sec-h h2{font-size:17px;font-weight:800;letter-spacing:-.3px}
+.sec-h .aside{font-size:13px;font-weight:700;color:var(--ink2);font-variant-numeric:tabular-nums}
+
+.lrow{display:flex;align-items:center;gap:12px;min-height:60px;padding:10px 2px;border-bottom:1px solid var(--line);width:100%;text-align:left;background:none;border-left:0;border-right:0;border-top:0;color:inherit;font:inherit}
+.lrow:last-child{border-bottom:none}
+button.lrow{cursor:pointer}
+button.lrow:active{background:var(--cell)}
+.lrow .lm{flex:1;min-width:0}
+.lrow .lt{display:block;font-size:16px;font-weight:700;letter-spacing:-.3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lrow .ls{display:block;font-size:13px;font-weight:600;color:var(--ink2);margin-top:2px}
+.lrow .la{flex-shrink:0;display:flex;align-items:center;gap:6px}
+.lrow>svg{width:18px;height:18px;color:var(--muted);flex-shrink:0}
+
+.tag{display:inline-flex;align-items:center;gap:3px;flex-shrink:0;font-size:12px;font-weight:800;border-radius:99px;padding:3px 9px;background:var(--ink);color:#fff;white-space:nowrap}
+.tag.soft{background:var(--fill);color:var(--ink2)}
+.tag.red{background:var(--red-soft);color:var(--red)}
+.tag.green{background:var(--green-soft);color:var(--green)}
+.tag.acc{background:var(--acc-soft);color:var(--acc-ink)}
+
+/* 매장 표시: 로고 + 이름만 (바탕·테두리 없음) */
+.store-tag{display:inline-flex;align-items:center;gap:6px;flex-shrink:0;font-size:14px;font-weight:700;color:var(--ink);white-space:nowrap}
+.store-tag img{width:22px;height:22px;border-radius:50%;object-fit:cover;box-shadow:0 0 0 1px rgba(0,0,0,.06)}
+
+.box{background:var(--cell);border-radius:var(--r-lg);padding:14px}
+.tools{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none}
+.tools::-webkit-scrollbar{display:none}
+.tools .btn{flex-shrink:0}
+.prog{height:8px;border-radius:4px;background:var(--fill);overflow:hidden}
+.prog i{display:block;height:100%;border-radius:4px;background:var(--ink)}
+/* 진행 칸 막대: 칸 = 사람(30명 넘으면 10%씩 10칸), 색 = 진행 정도 빨강 → 주황 → 초록 */
+.segbar{display:flex;gap:3px;height:10px}
+.segbar i{flex:1;min-width:0;border-radius:2px;background:var(--fill)}
+.segbar i:first-child{border-radius:5px 2px 2px 5px}
+.segbar i:last-child{border-radius:2px 5px 5px 2px}
+.segbar.lo i.on{background:var(--red)}
+.segbar.mid i.on{background:var(--orange)}
+.segbar.hi i.on{background:var(--green)}
+/* 화면 아래 붙는 주 버튼 */
+.cta{position:sticky;bottom:-28px;z-index:5;margin:18px -16px -28px;padding:12px 16px 16px;background:#fff;border-top:1px solid var(--line)}
+.cta .note{font-size:12.5px;font-weight:600;color:var(--ink2);text-align:center;margin-top:8px}
+
+/* ── 시트 안쪽 ── */
+.sheet-b{display:flex;flex-direction:column;gap:12px}
+.sheet-a{display:flex;gap:8px;margin-top:18px}
+.sheet-a .btn{flex:1;width:auto}
+.sheet-p{font-size:15px;font-weight:500;color:var(--ink2);line-height:1.55}
+.sheet-err{color:var(--red);font-size:13.5px;font-weight:700}
+.sheet-err[hidden]{display:none}
+.fld-l{display:flex;flex-direction:column;gap:6px;font-size:13.5px;font-weight:700;color:var(--ink2)}
+.fld-row{display:flex;gap:8px}
+.fld-row>*{flex:1;min-width:0}
+select.fld{appearance:none;-webkit-appearance:none}
+.sheet-b .seg{margin-bottom:2px}
+.pick-list{max-height:46vh;overflow-y:auto;margin:0 -4px;padding:0 4px}
+.pick-list .lrow{min-height:54px;padding:6px 2px}
+.pick-list .av{width:34px;height:34px;font-size:14px}
+
+.noti-list{display:flex;flex-direction:column}
+.noti{display:flex;flex-direction:column;gap:3px;text-align:left;border:none;background:none;cursor:pointer;padding:12px 2px 12px 18px;border-bottom:1px solid var(--line);position:relative;color:var(--ink2)}
+.noti:last-child{border-bottom:none}
+.noti.unread{color:var(--ink)}
+.noti.unread::before{content:"";position:absolute;left:3px;top:19px;width:7px;height:7px;border-radius:50%;background:var(--red)}
+.noti-t{font-size:15px;font-weight:700;line-height:1.4}
+.noti-s{font-size:12.5px;font-weight:600;color:var(--muted)}
+.noti:active{background:var(--cell)}
+
+.me-card{display:flex;align-items:center;gap:14px;padding:4px 2px 8px}
+.me-card b{display:block;font-size:19px;font-weight:800;margin-bottom:4px}
+.menu-list{display:flex;flex-direction:column;border-top:1px solid var(--line)}
+.menu-row{display:flex;align-items:center;justify-content:space-between;min-height:54px;border:none;border-bottom:1px solid var(--line);background:none;cursor:pointer;font-size:16px;font-weight:700;padding:0 2px;text-align:left}
+.menu-row svg{width:18px;height:18px;color:var(--muted)}
+.menu-row:active{background:var(--cell)}
+.menu-row small{font-size:13px;font-weight:600;color:var(--ink2)}
+
+/* 아주 좁은 화면(320): 매장 칩은 로고·이름만 */
+@media (max-width:359px){.chips{gap:4px}.chip{gap:5px;padding:0 4px}.chip img{width:24px;height:24px}.chip .ct b{font-size:13px}.chip .ct small{display:none}}
+
+/* ── v2 실서버 연결용 덧붙임: 숨김 · 로그인 · 띠 · 당겨서 새로고침 · 알림 오류 ── */
+[hidden]{display:none!important}
+.screen-root{min-height:100%}
+.top-login{margin-right:4px}
+.icon-btn.bell[hidden]{display:none}
+
+/* 화면 몸통 + 당겨서 새로고침 표시 */
+.stage{position:relative;flex:1;min-height:0;display:flex;flex-direction:column}
+.ptr{position:absolute;top:0;left:0;right:0;height:44px;display:flex;align-items:center;justify-content:center;gap:8px;font-size:13px;font-weight:700;color:var(--ink2);opacity:0;pointer-events:none}
+.ptr .spin{width:16px;height:16px;border-width:2.5px}
+
+/* 설치·알림 띠 (위 바 바로 아래) */
+.installbar{display:flex;align-items:center;gap:6px;padding:6px 6px 6px 16px;background:var(--fill);border-bottom:1px solid var(--line);font-size:13.5px;font-weight:700;color:var(--ink)}
+.installbar .ib-t{flex:1;min-width:0;line-height:1.4}
+.installbar .ib-go{background:#fff;flex-shrink:0;min-height:36px}
+.ib-x{width:44px;height:44px;border:none;background:none;cursor:pointer;color:var(--ink2);display:flex;align-items:center;justify-content:center;flex-shrink:0;border-radius:10px}
+.ib-x svg{width:18px;height:18px}
+.ib-x:active{background:#ebe8ed}
+
+/* 로그인 시트 */
+.login-f{display:flex;flex-direction:column;gap:12px}
+.login-f .fld{font-variant-numeric:tabular-nums}
+.sheet-note{font-size:13px;font-weight:600;color:var(--muted);line-height:1.5}
+
+/* 알림(토스트) 오류 */
+.toast.err{background:var(--red)}

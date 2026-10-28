@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>모에 스케줄 · 직원용</title>
+<meta name="description" content="이번 달 시프트를 제출하고 근무표를 확인하세요.">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="theme-color" content="#ffffff">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="모에 스케줄">
+<!--STYLE-->
+</head>
+<body data-theme="all">
+<div class="app" id="app">
+  <header class="top" id="top"></header>
+  <div class="bars" id="bars">
+    <div class="installbar" id="installBar" hidden>
+      <span class="ib-t">직원용을 앱으로 설치하면 더 편해요</span>
+      <button class="btn sm ib-go" id="installBtn">설치</button>
+      <button class="ib-x" id="installX" aria-label="닫기"></button>
+    </div>
+    <div class="installbar" id="pushBar" hidden>
+      <span class="ib-t">대타 댓글 알림을 받을까요?</span>
+      <button class="btn sm ib-go" id="pushAskBtn">켜기</button>
+      <button class="ib-x" id="pushAskX" aria-label="닫기"></button>
+    </div>
+  </div>
+  <div class="stage">
+    <div class="ptr" id="ptr" aria-hidden="true"><span class="spin" id="ptrSpin" hidden></span><span id="ptrTxt">당겨서 새로고침</span></div>
+    <main class="body" id="screen"></main>
+  </div>
+  <nav class="mtabbar" id="tabbar" aria-label="메뉴"></nav>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+</div>
+<!--SCRIPT-->
+</body>
+</html>

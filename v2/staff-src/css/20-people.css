@@ -1,0 +1,96 @@
+/* 대타 게시판 · 내 근무 · 종(알림) · 내 정보: 01-staff.css 에 없는 것만 (시안 swap.css 바탕) */
+
+/* ── 대타 목록 줄 ── */
+.lrow.sw{padding:16px 2px}
+.lrow.sw .lm{display:flex;flex-direction:column;align-items:flex-start;gap:6px}
+/* 묶음: [매장·날짜 + 구하는 사람] 8 [사유 + 마감] */
+.lrow.sw .sw-who{margin-bottom:2px}
+.lrow.sw .sw-meta{margin-top:-4px}
+.lrow.sw .sw-who+.sw-meta{margin-top:0}
+.sw-top{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;min-width:0}
+.sw-date{font-size:15px;font-weight:800;letter-spacing:-.3px;font-variant-numeric:tabular-nums}
+.sw-who{display:flex;align-items:center;gap:8px;min-width:0;font-size:16px;font-weight:800;letter-spacing:-.3px}
+.sw-who>span:last-child{min-width:0}
+.av.sw-av{width:26px;height:26px;font-size:12px;flex-shrink:0}
+.sw-take{display:flex}
+.sw-why{display:block;max-width:100%;font-size:14.5px;font-weight:500;color:var(--ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sw-meta{font-size:13px;font-weight:600;color:var(--ink2);font-variant-numeric:tabular-nums}
+
+/* ── 대타 글 시트 ── */
+.sw-sd-top{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+.sw-sd-top+.sw-sd-date{margin-top:-8px}
+.sw-reason+.sw-meta{margin-top:-6px}
+.sw-sd-date{font-size:22px;font-weight:800;letter-spacing:-.5px;font-variant-numeric:tabular-nums}
+.sw-reason{font-size:15px;font-weight:600;line-height:1.55;overflow-wrap:anywhere}
+.sw-state{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;font-size:14px;font-weight:600;color:var(--ink2)}
+.sw-cmbox{border-top:1px solid var(--line);padding-top:12px}
+.sw-cm-h{font-size:15px;font-weight:800}
+.sw-cm-h b{font-variant-numeric:tabular-nums}
+.sw-cm{display:flex;gap:10px;align-items:flex-start;padding:10px 0;border-bottom:1px solid var(--line)}
+.sw-cm:last-child{border-bottom:none}
+.sw-cm .av.sw-av{margin-top:1px}
+.sw-cm-b{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.sw-cm-b b{font-size:14px;font-weight:800}
+.sw-cm-b span{font-size:15px;font-weight:500;line-height:1.5;overflow-wrap:anywhere}
+.sw-cm-x{width:44px;height:44px;margin:-10px -10px -10px 0;flex-shrink:0;border:none;background:none;border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--muted)}
+.sw-cm-x svg{width:16px;height:16px}
+.sw-cm-x:active{background:var(--fill)}
+.sw-none{padding:14px 0 4px}
+.sw-form{display:flex;gap:8px}
+.sw-form .fld{flex:1;min-width:0}
+.sw-form .btn{height:48px;flex-shrink:0;border-radius:var(--r-md)}
+
+/* ── 내 근무 ── */
+.mn-todays{display:flex;flex-direction:column;gap:10px}
+.mn-today{padding:16px;display:flex;flex-direction:column;gap:4px;background:#fff;box-shadow:inset 0 0 0 1px var(--line)}
+.mn-t-top{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+.mn-t-date{font-size:24px;font-weight:800;letter-spacing:-.6px;font-variant-numeric:tabular-nums;margin-top:4px}
+.mn-t-what{font-size:15px;font-weight:700;color:var(--acc-ink);font-variant-numeric:tabular-nums;margin-bottom:8px}
+.mn-hours{font-size:13px;font-weight:600;color:var(--ink2);font-variant-numeric:tabular-nums;margin:-6px 0 6px;overflow-wrap:anywhere}
+.mn-with{font-size:14px;font-weight:600;line-height:1.5;color:var(--ink2);overflow-wrap:anywhere}
+.mn-with span{display:inline-block;min-width:3.6em;margin-right:8px;font-size:12.5px;font-weight:800;color:var(--ink)}
+.mn-t-acts{display:flex;gap:8px;margin-top:12px}
+.mn-t-acts .btn{flex:1;height:44px;min-width:0}
+.mn-login{width:100%;margin-top:4px}
+
+.mn-row{gap:14px;min-height:64px}
+.mn-d{width:58px;flex-shrink:0;display:flex;flex-direction:column;align-items:center;line-height:1.15}
+.mn-d b{font-size:21px;font-weight:800;letter-spacing:-.5px;font-variant-numeric:tabular-nums}
+.mn-d small{font-size:11.5px;font-weight:700;color:var(--ink2);white-space:nowrap}
+.mn-d small.sun{color:var(--sun)}
+.mn-d small.sat{color:var(--sat)}
+.mn-line{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+
+.mn-sh-top{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+.mn-sh-what{font-size:16px;font-weight:700;font-variant-numeric:tabular-nums}
+.sheet-b .mn-hours{margin:-8px 0 0}
+
+/* ── 종(알림) 시트 ── */
+.bl-body{display:flex;flex-direction:column}
+.bl-load{display:flex;justify-content:center;padding:30px 0}
+.bl-h{font-size:13.5px;font-weight:800;color:var(--ink2);padding:14px 2px 2px}
+.bl-h:first-child{padding-top:0}
+.bl-h b{font-variant-numeric:tabular-nums;color:var(--ink)}
+.noti-b{font-size:14px;font-weight:600;line-height:1.45;color:var(--ink2);overflow-wrap:anywhere}
+.noti.bl-ap{cursor:default}
+.noti.bl-ap:active{background:none}
+.bl-acts{display:flex;gap:6px;justify-content:flex-end;margin-top:6px}
+.bl-acts .btn{min-width:64px}
+
+/* ── 내 정보 ── */
+.ac-l{display:flex;flex-direction:column;gap:2px;min-width:0}
+.ac-l small{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ac-l small.ac-warn{color:var(--red)}
+.ac-pin{font-variant-numeric:tabular-nums;letter-spacing:2px}
+.crop-wrap{position:relative;width:100%;max-width:280px;aspect-ratio:1;margin:0 auto;border-radius:var(--r-lg);overflow:hidden;background:var(--fill)}
+.crop-cv{display:block;width:100%;height:100%;touch-action:none;cursor:grab}
+.crop-cv:active{cursor:grabbing}
+.crop-ring{position:absolute;inset:0;border-radius:50%;box-shadow:0 0 0 999px rgba(255,255,255,.6);pointer-events:none}
+.crop-zoom{width:100%;height:44px;accent-color:var(--ink)}
+
+@media (max-width:340px){
+  .mn-d{width:50px}
+  .mn-d b{font-size:18px}
+  .mn-row{gap:10px}
+  .sw-sd-date,.mn-t-date{font-size:20px}
+}

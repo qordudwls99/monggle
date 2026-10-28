@@ -1,0 +1,114 @@
+/* 시프트 제출 + 관리 화면: moe-system / staff.css에 없는 것만 */
+
+/* 작은 버튼도 누르는 자리는 44px */
+.btn.t44{min-height:44px}
+.btn.sm.hit{position:relative}
+.btn.sm.hit::after{content:"";position:absolute;inset:-6px -4px}
+
+.sb-quiet{font-size:13px;font-weight:600;color:var(--muted);padding:0 2px 6px}
+
+/* ── 시프트 제출 ── */
+.sb-stat{display:flex;align-items:center;gap:8px;margin:0 0 10px;font-size:15px;font-variant-numeric:tabular-nums}
+.sb-stat b{font-weight:800}
+.sb-sec{margin-top:24px}
+.sb-row{display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--line)}
+.sb-sec .sb-row:last-child{border-bottom:none}
+.sb-date{width:34px;flex-shrink:0;display:flex;flex-direction:column;align-items:center;line-height:1.15;font-variant-numeric:tabular-nums}
+.sb-date b{font-size:17px;font-weight:800;letter-spacing:-.3px}
+.sb-date small{font-size:11.5px;font-weight:700;color:var(--ink2)}
+.sb-date.sat b,.sb-date.sat small{color:var(--sat)}
+.sb-date.sun b,.sb-date.sun small{color:var(--sun)}
+
+.sb-cs{flex:1;min-width:0;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:4px}
+.sb-c{min-width:0;min-height:52px;padding:4px 2px;border:1px solid var(--line);background:#fff;border-radius:var(--r-sm);cursor:pointer;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;color:var(--ink2);font-size:12px;font-weight:700;letter-spacing:-.4px;white-space:nowrap;overflow:hidden;
+  transition:border-color .15s ease,background-color .15s ease,color .15s ease,transform .12s ease}
+.sb-c img{width:22px;height:22px;border-radius:50%;object-fit:cover;flex-shrink:0;box-shadow:0 0 0 1px rgba(0,0,0,.06)}
+.sb-c span{max-width:100%;overflow:hidden;text-overflow:clip}
+.sb-c:active{transform:scale(.96)}
+.sb-c[aria-pressed="true"]{border-color:var(--c);box-shadow:inset 0 0 0 1px var(--c);background:var(--cs);color:var(--ci);font-weight:800}
+.sb-c.any[aria-pressed="true"]{border-color:var(--ink);box-shadow:none;background:var(--ink);color:#fff}
+.sb-c.no[aria-pressed="true"]{border-color:var(--red);box-shadow:inset 0 0 0 1px var(--red);background:var(--red-soft);color:var(--red)}
+.sb-c.any,.sb-c.no{font-size:12.5px}
+
+/* 야간: 날짜 + 시간 + 가능/불가 */
+.sb-n .sb-nm{flex:1;min-width:0;display:flex;align-items:center;gap:8px}
+.sb-nm img{width:28px;height:28px;border-radius:50%;object-fit:cover;flex-shrink:0;box-shadow:0 0 0 1px rgba(0,0,0,.06)}
+.sb-nm span{min-width:0;display:flex;flex-direction:column;line-height:1.25}
+.sb-nm b{font-size:14.5px;font-weight:800;white-space:nowrap}
+.sb-nm small{font-size:12px;font-weight:600;color:var(--ink2);font-variant-numeric:tabular-nums;white-space:nowrap}
+.sb-ans{display:grid;grid-template-columns:repeat(2,56px);gap:4px;flex-shrink:0}
+.sb-ans .sb-c{min-height:48px;font-size:14px}
+
+/* 제출 끝난 화면 */
+.sb-sum{min-height:52px}
+.sb-sum b{font-size:16px;font-weight:800;font-variant-numeric:tabular-nums}
+.sb-lg{width:24px;height:24px;border-radius:50%;object-fit:cover;vertical-align:middle;margin-right:8px;box-shadow:0 0 0 1px rgba(0,0,0,.06)}
+
+/* 320px: 날짜를 윗줄로 올리고 5칸을 한 줄 전체로 */
+@media (max-width:350px){
+  .sb-d{flex-wrap:wrap;gap:4px 0}
+  .sb-d .sb-date{width:100%;flex-direction:row;justify-content:flex-start;align-items:baseline;gap:5px}
+  .sb-d .sb-cs{flex:1 1 100%}
+  .sb-c{font-size:11.5px}
+  .sb-c.any,.sb-c.no{font-size:12px}
+  .sb-n{flex-wrap:wrap;gap:4px 8px}
+  .sb-n .sb-date{width:100%;flex-direction:row;justify-content:flex-start;align-items:baseline;gap:5px}
+  .sb-n .sb-ans{margin-left:auto}
+}
+
+/* ── 관리 ── */
+.ad-sec .sec-h .tag{align-self:center}
+.ad-cnt{font-size:15px;font-weight:800;font-variant-numeric:tabular-nums;padding:2px 2px 8px}
+.ad-miss{padding:16px 2px 0;display:flex;flex-direction:column;align-items:flex-start;gap:8px}
+.ad-lbl{font-size:13px;font-weight:700;color:var(--ink2)}
+.ad-tags{display:flex;flex-wrap:wrap;gap:5px}
+.ad-sec .lt+.ad-tags{margin-top:4px}
+.ad-sec>.btn.lg.primary{margin-top:20px}
+.ad-done{margin-top:14px;padding:12px 2px 0;font-size:14px;font-weight:700;color:var(--ink2)}
+.ad-links{margin-top:16px}
+.ad-add{margin-top:12px}
+.ad-q .ls{font-variant-numeric:tabular-nums}
+/* 직원 목록: 사람이 많아도 짧게. 한 줄 52px, 이름 옆 태그 */
+.ad-addb{gap:4px;padding:0 10px 0 8px;align-self:center}
+.ad-addb svg{width:16px;height:16px}
+.ad-filt{margin-top:8px}
+.ad-filt b{font-weight:800;font-variant-numeric:tabular-nums;margin-left:2px}
+.ad-found{font-size:13px;font-weight:700;color:var(--ink2);padding:8px 2px 0}
+.ad-found:empty{display:none}
+#adStaff{margin-top:4px}
+.ad-st{min-height:52px;padding:4px 0;gap:8px}
+.ad-st .ad-main{flex:1;min-width:0;min-height:44px;display:flex;align-items:center;gap:6px;border:none;background:none;text-align:left;cursor:pointer;font:inherit;color:inherit;padding:0}
+.ad-st .av{width:32px;height:32px;font-size:13px;margin-right:6px}
+.ad-st .lt{font-size:15.5px;flex-shrink:1;min-width:0}
+.ad-more{width:100%;margin-top:10px}
+.ad-st .ad-main:active .lt{color:var(--ink2)}
+.ad-st>svg{width:18px;height:18px;color:var(--muted);flex-shrink:0}
+.me-card .ad-tags{margin-top:2px}
+
+/* ── v2 덧붙임 ── */
+/* 달 고르기 (제출 · 관리) */
+.sb-mbar{margin:0 0 14px}
+.sb-mbar .dlabel{text-align:center;cursor:default}
+/* 제출 기간이 아닐 때: 받는 달로 가기 */
+.sb-jump{display:flex;flex-direction:column;gap:8px;margin-top:-12px}
+.sb-jump .btn{width:100%;height:48px}
+/* 관리: 단계 머리 태그 · 보조 버튼 · 낸 사람 이름 버튼 · 야간 답 · 임시 PIN */
+.ad-sec .sec-h>.ad-tags{align-self:center;justify-content:flex-end}
+.ad-sub{display:flex;gap:8px;margin-top:10px}
+.ad-sub .btn{flex:1;min-width:0;width:auto}
+.ad-pb{border:none;cursor:pointer;position:relative;font:inherit;font-size:12px;font-weight:800}
+.ad-pb::after{content:"";position:absolute;inset:-8px -2px}
+.ad-pb:active{filter:brightness(.94)}
+.ad-q .ad-yes{color:var(--ink);font-weight:600;white-space:normal;line-height:1.45}
+.ad-q .ad-yes b{font-weight:800}
+.ad-q .lt{white-space:normal}
+.ad-st .tag{font-size:11px;padding:2px 7px}
+.ad-pin{font-size:36px;font-weight:800;letter-spacing:6px;text-align:center;font-variant-numeric:tabular-nums;background:var(--cell);border-radius:var(--r-md);padding:18px 0;user-select:all}
+@media (max-width:350px){.ad-sub{flex-direction:column}}
+.ad-det{padding:14px 2px 0}
+.ad-det summary{display:flex;align-items:center;min-height:44px;cursor:pointer;list-style:none}
+.ad-det summary::-webkit-details-marker{display:none}
+.ad-det summary::after{content:"";width:7px;height:7px;margin-left:8px;border:solid var(--muted);border-width:0 2px 2px 0;transform:rotate(45deg) translateY(-2px)}
+.ad-det[open] summary::after{transform:rotate(-135deg) translateY(-2px)}
+.ad-hint{font-size:12.5px;font-weight:600;color:var(--muted);padding:0 0 8px}
