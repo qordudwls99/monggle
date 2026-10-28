@@ -37,7 +37,8 @@
     }
     return v;
   };
-  const log = (fn, args) => { calls.push({ fn, args: redact(args ?? null), at: Date.now() }); console.info('[dev] blocked', fn); };
+  let blockedAt = 0;
+  const log = (fn, args) => { blockedAt = Date.now(); calls.push({ fn, args: redact(args ?? null), at: Date.now() }); console.info('[dev] blocked', fn); };
   const ok = data => Promise.resolve({ data, error: null, status: 200 });
   const stale = () => Promise.resolve({ data: null, error: { message: 'P0001: PIN이 올바르지 않습니다' }, status: 400 });
 
@@ -133,6 +134,12 @@
 
   // 표시
   document.body.insertAdjacentHTML('beforeend', '<div id="devLabel" style="position:fixed;top:0;left:50%;transform:translateX(-50%);z-index:200;background:#d92d20;color:#fff;font:700 10px/1.2 system-ui,sans-serif;padding:2px 8px 3px;border-radius:0 0 8px 8px;pointer-events:none">DEV · 쓰기 차단</div>');
+
+  // 막힌 쓰기 바로 뒤의 성공 알림에는 '실제로는 저장 안 됨'을 붙여요 (진짜 저장된 줄 알고 헷갈리지 않게)
+  queueMicrotask(() => {
+    const t0 = A.toast;
+    if (t0) A.toast = (msg, err) => t0(!err && msg && Date.now() - blockedAt < 5000 ? `${msg} · 테스트 화면이라 실제로는 저장 안 됐어요` : msg, err);
+  });
 
   // 임시 스케줄 화면: 진짜 스케줄 화면(10-day.js)이 없을 때만. store.ensure + day() 가 실데이터를 주는지 보는 용도
   queueMicrotask(() => {

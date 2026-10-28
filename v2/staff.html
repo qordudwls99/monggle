@@ -2073,7 +2073,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
       const wp = b.dataset.hwp, name = b.dataset.hn;
       const r = await rpc('admin_assign_from_submission', { p_admin_id: adminId(), p_date: ds, p_workplace: wp, p_staff_ids: [Number(b.dataset.hope)] });
       if (r === false) { b.disabled = false; b.removeAttribute('aria-busy'); return; }
-      await done(ds, `${name}님을 ${A.storeName(wp)}에 넣었어요`);
+      await done(ds, r === 0 ? `${name}님은 이미 ${A.storeName(wp)}에 있어요` : `${name}님을 ${A.storeName(wp)}에 넣었어요`);
     } finally { hoping = false; }
   }
 
