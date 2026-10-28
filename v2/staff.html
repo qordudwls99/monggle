@@ -230,13 +230,24 @@ button,input,select,textarea{font-family:inherit;color:inherit}
 .btn svg{width:18px;height:18px}
 
 /* ── 시트 · 알림 ── */
-.modal{position:fixed;inset:0;z-index:80;display:none;align-items:flex-end;justify-content:center;background:rgba(20,14,22,.42)}
+/* 바텀시트: 가장자리에서 띄운 카드(네 모서리 둥글게). 손잡이를 끌면 따라 내려오고, 놓으면 닫히거나 제자리로 돌아가요 */
+.modal{position:fixed;inset:0;z-index:80;display:none;flex-direction:column;align-items:center;justify-content:flex-end;padding:max(12px,env(safe-area-inset-top)) 10px max(10px,env(safe-area-inset-bottom));background:rgba(20,14,22,0);transition:background-color .3s ease}
 .modal.show{display:flex}
-.modal-c{width:100%;max-width:480px;max-height:88vh;overflow-y:auto;background:#fff;border-radius:22px 22px 0 0;padding:10px 20px max(20px,env(safe-area-inset-bottom));animation:up .28s cubic-bezier(.2,.8,.2,1)}
-.grab{width:38px;height:5px;border-radius:3px;background:#ddd9e0;margin:0 auto 12px}
-.sheet-h{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;gap:10px}
-.sheet-h b{font-size:19px;font-weight:800}
-.closex{border:none;background:none;color:var(--ink2);font-weight:700;font-size:14px;cursor:pointer;padding:10px 4px}
+.modal.in{background:rgba(20,14,22,calc(.42 * var(--dim,1)))}
+.modal.closing{pointer-events:none;transition-duration:.24s}
+.modal-c{position:relative;width:100%;max-width:480px;max-height:100%;display:flex;flex-direction:column;overflow:hidden;background:#fff;border-radius:28px;transform:translateY(calc(100% + 24px));transition:transform .42s cubic-bezier(.32,.72,0,1)}
+.modal.in .modal-c{transform:none}
+.modal.closing .modal-c{transition-duration:.26s;transition-timing-function:cubic-bezier(.4,0,.9,.6)}
+.modal.drag,.modal.drag .modal-c{transition:none}
+.sheet-top{flex-shrink:0;padding:8px 14px 0 20px;touch-action:none;cursor:grab;user-select:none;-webkit-user-select:none}
+.grab{width:36px;height:5px;border-radius:3px;background:#ddd9e0;margin:0 auto 4px}
+.sheet-h{display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:44px;margin-bottom:8px}
+.sheet-h b{font-size:20px;font-weight:800;letter-spacing:-.4px;line-height:1.3;min-width:0}
+.sheet-x{flex:none;width:34px;height:34px;border:none;border-radius:50%;background:var(--fill);color:var(--ink2);display:grid;place-items:center;cursor:pointer}
+.sheet-x svg{width:16px;height:16px}
+.sheet-x:active{background:var(--line)}
+.sheet-b{flex:0 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:2px 20px 4px}
+.sheet-b:last-child{padding-bottom:22px}
 .toast{position:fixed;left:50%;bottom:96px;z-index:90;transform:translate(-50%,12px);opacity:0;pointer-events:none;background:var(--ink);color:#fff;font-size:14px;font-weight:700;border-radius:99px;padding:11px 18px;max-width:calc(100% - 40px);text-align:center;transition:opacity .2s ease,transform .2s ease}
 .toast.show{opacity:1;transform:translate(-50%,0)}
 
@@ -247,14 +258,13 @@ textarea.fld{height:auto;min-height:88px;padding:12px 14px;resize:vertical;line-
 
 .spin{display:inline-block;width:20px;height:20px;border:3px solid #ece8ee;border-top-color:var(--acc);border-radius:50%;animation:rot .8s linear infinite}
 @keyframes rot{to{transform:rotate(360deg)}}
-@keyframes up{from{transform:translateY(24px);opacity:.6}to{transform:none;opacity:1}}
 @keyframes slideR{from{opacity:0;transform:translateX(18px)}to{opacity:1;transform:none}}
 @keyframes slideL{from{opacity:0;transform:translateX(-18px)}to{opacity:1;transform:none}}
 @keyframes fadeUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 .anim-r{animation:slideR .26s cubic-bezier(.22,.61,.36,1)}
 .anim-l{animation:slideL .26s cubic-bezier(.22,.61,.36,1)}
 .anim-f{animation:fadeUp .24s ease}
-@media (prefers-reduced-motion:reduce){.anim-r,.anim-l,.anim-f,.modal-c{animation:none}.toast{transition:none}}
+@media (prefers-reduced-motion:reduce){.anim-r,.anim-l,.anim-f{animation:none}.modal,.modal-c{transition:none}.toast{transition:none}}
 
 /* ── css/01-staff.css ── */
 /* 직원 페이지 공통: 위 바 · 아래 메뉴 · 스케줄 머리 · 페이지 제목 · 목록 줄 · 태그 · 시트 안쪽
@@ -362,7 +372,7 @@ button.lrow:active{background:var(--cell)}
 
 /* ── 시트 안쪽 ── */
 .sheet-b{display:flex;flex-direction:column;gap:12px}
-.sheet-a{display:flex;gap:8px;margin-top:18px}
+.sheet-a{display:flex;gap:8px;flex-shrink:0;padding:16px 20px 20px}
 .sheet-a .btn{flex:1;width:auto}
 .sheet-p{font-size:15px;font-weight:500;color:var(--ink2);line-height:1.55}
 .sheet-err{color:var(--red);font-size:13.5px;font-weight:700}
@@ -813,9 +823,9 @@ button.nt-p:focus-visible,button.nt-pb:focus-visible{outline:2px solid var(--ink
    넓은 표는 시트 안에서 가로·세로로 넘기고, 이름 칸과 날짜 줄은 붙어 있어요. 노랑·금색 없음 */
 
 /* ── 화면 높이 시트 ── */
-.modal-c.tl-sheet{height:94vh;height:94dvh;max-height:94dvh;display:flex;flex-direction:column;overflow:hidden}
+.modal-c.tl-sheet{height:100%}
 .tl-sheet .sheet-h{flex-shrink:0}
-.tl-sheet .sheet-b{flex:1;min-height:0;gap:10px}
+.tl-sheet .sheet-b{flex:1;min-height:0;gap:10px;overflow:hidden}
 .tl-sub{font-size:13.5px;font-weight:600;color:var(--ink2);margin-top:-6px;line-height:1.45}
 .tl-top{display:flex;flex-direction:column;gap:8px}
 .tl-top:empty{display:none}
@@ -1402,27 +1412,89 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
   // ── 시트·확인·입력·알림 ──
   let sheetSeq = 0;
+  // 바텀시트: 화면 가장자리에서 띄운 카드. 손잡이·제목 줄을 끌면 따라 내려오고, 충분히 내리거나 빠르게 튕기면 닫혀요.
+  // 내용은 맨 위에서 아래로 당길 때만 같이 끌려요 (안쪽 목록·입력칸에서는 안 끌림). close() 는 바로 정리하고 화면만 내려가며 사라져요.
+  const reduceMotion = () => window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
   function sheet({ title, html = '', actions = [], onOpen, onClose } = {}) {
     const id = 'sheet' + (++sheetSeq);
     const wrap = document.createElement('div');
     wrap.className = 'modal show'; wrap.id = id;
-    wrap.innerHTML = `<div class="modal-c" role="dialog" aria-modal="true" tabindex="-1" aria-label="${esc(title || '')}"><div class="grab"></div>
-      <div class="sheet-h"><b>${esc(title || '')}</b><button class="closex" data-x>닫기</button></div>
+    wrap.innerHTML = `<div class="modal-c" role="dialog" aria-modal="true" tabindex="-1" aria-label="${esc(title || '')}">
+      <div class="sheet-top"><div class="grab"></div><div class="sheet-h"><b>${esc(title || '')}</b><button class="sheet-x" data-x aria-label="닫기">${ICON.x}</button></div></div>
       <div class="sheet-b">${html}</div>${actions.length ? `<div class="sheet-a">${actions.map((a, i) => `<button class="btn lg ${a.kind || ''}" data-a="${i}">${esc(a.label)}</button>`).join('')}</div>` : ''}</div>`;
+    const c = wrap.querySelector('.modal-c'), body = wrap.querySelector('.sheet-b'), top = wrap.querySelector('.sheet-top');
     const back = document.activeElement;
-    let closed = false;
+    let closed = false, drag = null;
+    const remove = () => wrap.remove();
     const close = () => {
       if (closed) return; closed = true;
-      wrap.remove(); document.removeEventListener('keydown', onKey);
+      document.removeEventListener('keydown', onKey);
+      wrap.classList.add('closing'); wrap.classList.remove('in', 'drag');
+      c.style.transform = ''; wrap.style.removeProperty('--dim');
+      if (reduceMotion()) remove();
+      else { c.addEventListener('transitionend', e => { if (e.target === c) remove(); }); setTimeout(remove, 420); }
       if (onClose) { try { onClose(); } catch (e) { console.error(e); } }
       if (back && back.focus && document.contains(back)) back.focus({ preventScroll: true });
     };
-    const onKey = e => { if (e.key === 'Escape' && [...document.querySelectorAll('#app > .modal')].pop() === wrap) close(); };
+    const onKey = e => { if (e.key === 'Escape' && [...document.querySelectorAll('#app > .modal:not(.closing)')].pop() === wrap) close(); };
     wrap.addEventListener('click', e => { if (e.target === wrap || e.target.closest('[data-x]')) close(); });
     wrap.querySelectorAll('[data-a]').forEach(b => b.onclick = () => { const a = actions[+b.dataset.a]; if (a.onClick) a.onClick(close, wrap); else close(); });
+    // 뒤 화면이 같이 밀리지 않게 (어두운 바탕을 끌 때만)
+    wrap.addEventListener('touchmove', e => { if (e.target === wrap) e.preventDefault(); }, { passive: false });
+
+    // ── 끌어서 닫기 ──
+    const setY = y => { c.style.transform = `translateY(${y}px)`; wrap.style.setProperty('--dim', String(Math.max(0, 1 - Math.max(0, y) / drag.h))); };
+    const begin = y0 => { if (closed) return false; drag = { y0, y: 0, pts: [[performance.now(), 0]], h: c.getBoundingClientRect().height || 1 }; wrap.classList.add('drag'); return true; };
+    const move = yy => {
+      let dy = yy - drag.y0;
+      if (dy < 0) dy = -Math.min(18, Math.sqrt(-dy) * 2);    // 위로는 살짝만 늘어나요
+      drag.y = dy; drag.pts.push([performance.now(), dy]); if (drag.pts.length > 5) drag.pts.shift();
+      setY(dy);
+    };
+    const end = () => {
+      if (!drag) return;
+      const d = drag; drag = null; wrap.classList.remove('drag');
+      const [t0, y0] = d.pts[0], [t1, y1] = d.pts[d.pts.length - 1];
+      const v = t1 > t0 ? (y1 - y0) / (t1 - t0) : 0;        // px/ms, 아래로 +
+      if (d.y > Math.min(150, d.h * 0.3) || (v > 0.6 && d.y > 16)) close();
+      else { c.style.transform = ''; wrap.style.removeProperty('--dim'); }
+    };
+    top.addEventListener('pointerdown', e => {
+      if (e.button !== 0 || e.target.closest('button,a,input,select,textarea')) return;
+      if (!begin(e.clientY)) return;
+      drag.pid = e.pointerId;
+      try { top.setPointerCapture(e.pointerId); } catch (_) {}
+    });
+    top.addEventListener('pointermove', e => { if (drag && drag.pid === e.pointerId) move(e.clientY); });
+    top.addEventListener('pointerup', e => { if (drag && drag.pid === e.pointerId) end(); });
+    top.addEventListener('pointercancel', e => { if (drag && drag.pid === e.pointerId) end(); });
+    // 내용에서 당기기: 시트 본문이 맨 위이고, 손가락이 안쪽 스크롤 목록·입력칸·편집 캔버스 위가 아닐 때만
+    const NO_PULL = 'input,textarea,select,.spk-list,.pick-list,.tl-body,.crop-cv,[data-nopull]';
+    const nestedScroller = el => { for (let n = el; n && n !== body; n = n.parentElement) { if (n.scrollHeight > n.clientHeight + 1 && /(auto|scroll)/.test(getComputedStyle(n).overflowY)) return true; } return false; };
+    let t = null;
+    body.addEventListener('touchstart', e => {
+      t = null;
+      if (e.touches.length !== 1 || c.classList.contains('tl-sheet') || body.scrollTop > 0) return;
+      if (e.target.closest(NO_PULL) || nestedScroller(e.target)) return;
+      t = { x: e.touches[0].clientX, y: e.touches[0].clientY, lock: '' };
+    }, { passive: true });
+    body.addEventListener('touchmove', e => {
+      if (!t) return;
+      const p = e.touches[0], dx = p.clientX - t.x, dy = p.clientY - t.y;
+      if (!t.lock) {
+        if (Math.abs(dx) < 6 && Math.abs(dy) < 6) return;
+        t.lock = dy > 0 && Math.abs(dy) > Math.abs(dx) && body.scrollTop <= 0 && begin(p.clientY) ? 'sheet' : 'no';
+      }
+      if (t.lock === 'sheet' && drag) { e.preventDefault(); move(p.clientY); }
+    }, { passive: false });
+    const tEnd = () => { if (t && t.lock === 'sheet') end(); t = null; };
+    body.addEventListener('touchend', tEnd); body.addEventListener('touchcancel', tEnd);
+
     document.addEventListener('keydown', onKey);
     document.getElementById('app').appendChild(wrap);
-    wrap.querySelector('.modal-c').focus({ preventScroll: true });
+    void c.offsetHeight;                                      // 아래에 둔 채로 한 번 그린 뒤 올려요
+    wrap.classList.add('in');
+    c.focus({ preventScroll: true });
     if (onOpen) onOpen(wrap, close);
     return { el: wrap, close };
   }
@@ -1548,7 +1620,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
     const ptr = document.getElementById('ptr'), txt = document.getElementById('ptrTxt'), spin = document.getElementById('ptrSpin');
     const show = v => { if (ptr) ptr.style.opacity = String(Math.min(1, v / THRESH)); };
     container.addEventListener('touchstart', e => {
-      if (refreshing || e.touches.length !== 1 || document.querySelector('#app > .modal')) { mode = -1; return; }
+      if (refreshing || e.touches.length !== 1 || document.querySelector('#app > .modal:not(.closing)')) { mode = -1; return; }
       mode = 0; applied = 0; startY = e.touches[0].clientY;
     }, { passive: true });
     container.addEventListener('touchmove', e => {
@@ -2726,7 +2798,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
       if (!node) return;
       busy = true; btn.setAttribute('aria-busy', 'true');
       const label = btn.textContent; btn.textContent = '만드는 중…';
-      const box = el.querySelector('.modal-c'), top = box.scrollTop;
+      const box = el.querySelector('.sheet-b'), top = box.scrollTop;
       try {
         await Promise.all([...node.querySelectorAll('img')].map(i => i.complete ? null : new Promise(r => { i.onload = i.onerror = r; })));
         const mod = await import('https://esm.sh/html2canvas@1.4.1');

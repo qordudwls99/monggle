@@ -143,14 +143,22 @@ button{font-family:inherit;color:inherit}
 .wk-hint{font-size:12.5px;color:var(--muted);padding:12px 2px 0}
 
 /* calendar sheet */
-.modal{position:fixed;inset:0;z-index:80;display:none;align-items:flex-end;justify-content:center;background:rgba(20,14,22,.42)}
+/* 직원 페이지와 같은 바텀시트: 띄운 카드, 손잡이를 끌어서 닫기 */
+.modal{position:fixed;inset:0;z-index:80;display:none;flex-direction:column;align-items:center;justify-content:flex-end;padding:max(12px,env(safe-area-inset-top)) 10px max(10px,env(safe-area-inset-bottom));background:rgba(20,14,22,0);transition:background-color .3s ease}
 .modal.show{display:flex}
-.modal-c{width:100%;max-width:480px;background:#fff;border-radius:22px 22px 0 0;padding:10px 20px max(20px,env(safe-area-inset-bottom));animation:up .28s cubic-bezier(.2,.8,.2,1)}
-.grab{width:38px;height:5px;border-radius:3px;background:#ddd9e0;margin:0 auto 12px}
-@keyframes up{from{transform:translateY(24px);opacity:.6}to{transform:none;opacity:1}}
-.sheet-h{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
-.sheet-h b{font-size:19px;font-weight:800}
-.closex{border:none;background:none;color:var(--ink2);font-weight:700;font-size:14px;cursor:pointer;padding:10px 4px}
+.modal.in{background:rgba(20,14,22,calc(.42 * var(--dim,1)))}
+.modal.closing{pointer-events:none;transition-duration:.24s}
+.modal-c{width:100%;max-width:480px;max-height:100%;overflow-y:auto;overscroll-behavior:contain;background:#fff;border-radius:28px;padding:0 20px 22px;transform:translateY(calc(100% + 24px));transition:transform .42s cubic-bezier(.32,.72,0,1)}
+.modal.in .modal-c{transform:none}
+.modal.closing .modal-c{transition-duration:.26s;transition-timing-function:cubic-bezier(.4,0,.9,.6)}
+.modal.drag,.modal.drag .modal-c{transition:none}
+.sheet-top{padding-top:8px;margin-right:-6px;touch-action:none;cursor:grab;user-select:none;-webkit-user-select:none}
+.grab{width:36px;height:5px;border-radius:3px;background:#ddd9e0;margin:0 auto 4px}
+.sheet-h{display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:44px;margin-bottom:8px}
+.sheet-h b{font-size:20px;font-weight:800;letter-spacing:-.4px}
+.sheet-x{flex:none;width:34px;height:34px;border:none;border-radius:50%;background:var(--fill);color:var(--ink2);display:grid;place-items:center;cursor:pointer}
+.sheet-x svg{width:16px;height:16px}
+.sheet-x:active{background:var(--line)}
 .cal-h{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
 .cal-h .cal-t{font-weight:800;font-size:16.5px}
 .cal-h button{border:none;background:var(--fill);cursor:pointer;width:38px;height:38px;border-radius:50%;font-size:18px;font-weight:700;color:var(--ink)}
@@ -175,7 +183,7 @@ button{font-family:inherit;color:inherit}
 .anim-l{animation:slideL .26s cubic-bezier(.22,.61,.36,1)}
 .anim-f{animation:fadeUp .24s ease}
 .datebar .nav:active,.icon-btn:active{transform:scale(.92)}
-@media (prefers-reduced-motion:reduce){.anim-r,.anim-l,.anim-f,.modal-c{animation:none}}
+@media (prefers-reduced-motion:reduce){.anim-r,.anim-l,.anim-f{animation:none}.modal,.modal-c{transition:none}}
 
 .setup{padding:40px 22px;color:var(--ink)}
 .setup h1{font-size:24px;font-weight:800}
@@ -438,8 +446,8 @@ button{font-family:inherit;color:inherit}
 <!-- 달력 시트 -->
 <div class="modal" id="calModal">
   <div class="modal-c" role="dialog" aria-label="날짜 고르기">
-    <div class="grab"></div>
-    <div class="sheet-h"><b>날짜 고르기</b><button class="closex" id="calClose">닫기</button></div>
+    <div class="sheet-top"><div class="grab"></div>
+    <div class="sheet-h"><b>날짜 고르기</b><button class="sheet-x" id="calClose" aria-label="닫기"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div></div>
     <div class="cal">
       <div class="cal-h"><button id="calPrev" aria-label="이전 달">‹</button><div class="cal-t" id="calTitle"></div><button id="calNext" aria-label="다음 달">›</button></div>
       <div class="cal-dow"><span class="sun">일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span class="sat">토</span></div>
@@ -516,14 +524,52 @@ async function boot(){
   $('dateLabel').onclick = $('calBtn').onclick = openCalendar;
   $('calPrev').onclick = ()=>{ calM--; if(calM<0){ calM=11; calY--; } renderCal(); };
   $('calNext').onclick = ()=>{ calM++; if(calM>11){ calM=0; calY++; } renderCal(); };
-  $('calClose').onclick = ()=> $('calModal').classList.remove('show');
-  $('calModal').onclick = e=>{ if(e.target.id==='calModal') $('calModal').classList.remove('show'); };
+  calSheet = sheetCtl($('calModal'));
+  $('calClose').onclick = ()=> calSheet.close();
+  $('calModal').onclick = e=>{ if(e.target.id==='calModal') calSheet.close(); };
   render();
   setupPTR(document.querySelector('.body'), async()=>{ navDir=0; await loadBounds(); await loadDraftMonths(); render(); });
   // 자동 새로고침 제거: 당겨서 새로고침으로 갱신
 }
-let calY, calM;
-function openCalendar(){ calY=selectedDate.getFullYear(); calM=selectedDate.getMonth(); renderCal(); $('calModal').classList.add('show'); }
+let calY, calM, calSheet;
+// 바텀시트 열고 닫기: 올라오고 내려가는 움직임 + 손잡이·제목 줄을 끌어서 닫기 (직원 페이지 A.sheet 와 같은 기준)
+function sheetCtl(wrap){
+  const c = wrap.querySelector('.modal-c'), top = wrap.querySelector('.sheet-top');
+  let drag = null, timer = 0;
+  const reduce = () => window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const open = () => { clearTimeout(timer); wrap.classList.remove('closing'); wrap.classList.add('show'); void c.offsetHeight; wrap.classList.add('in'); };
+  const close = () => {
+    if (!wrap.classList.contains('in')) return;
+    wrap.classList.add('closing'); wrap.classList.remove('in', 'drag'); c.style.transform = ''; wrap.style.removeProperty('--dim'); drag = null;
+    const fin = () => { if (wrap.classList.contains('closing')) wrap.classList.remove('show', 'closing'); };
+    if (reduce()) fin(); else timer = setTimeout(fin, 320);
+  };
+  const end = () => {
+    if (!drag) return;
+    const d = drag; drag = null; wrap.classList.remove('drag');
+    const [t0, y0] = d.pts[0], [t1, y1] = d.pts[d.pts.length - 1], v = t1 > t0 ? (y1 - y0) / (t1 - t0) : 0;
+    if (d.y > Math.min(150, d.h * 0.3) || (v > 0.6 && d.y > 16)) close();
+    else { c.style.transform = ''; wrap.style.removeProperty('--dim'); }
+  };
+  top.addEventListener('pointerdown', e => {
+    if (e.button !== 0 || e.target.closest('button') || !wrap.classList.contains('in')) return;
+    drag = { pid: e.pointerId, y0: e.clientY, y: 0, pts: [[performance.now(), 0]], h: c.getBoundingClientRect().height || 1 };
+    wrap.classList.add('drag');
+    try { top.setPointerCapture(e.pointerId); } catch (_) {}
+  });
+  top.addEventListener('pointermove', e => {
+    if (!drag || drag.pid !== e.pointerId) return;
+    let dy = e.clientY - drag.y0; if (dy < 0) dy = -Math.min(18, Math.sqrt(-dy) * 2);
+    drag.y = dy; drag.pts.push([performance.now(), dy]); if (drag.pts.length > 5) drag.pts.shift();
+    c.style.transform = `translateY(${dy}px)`; wrap.style.setProperty('--dim', String(Math.max(0, 1 - Math.max(0, dy) / drag.h)));
+  });
+  top.addEventListener('pointerup', e => { if (drag && drag.pid === e.pointerId) end(); });
+  top.addEventListener('pointercancel', e => { if (drag && drag.pid === e.pointerId) end(); });
+  wrap.addEventListener('touchmove', e => { if (e.target === wrap) e.preventDefault(); }, { passive: false });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') close(); });
+  return { open, close };
+}
+function openCalendar(){ calY=selectedDate.getFullYear(); calM=selectedDate.getMonth(); renderCal(); calSheet.open(); }
 function renderCal(){
   $('calTitle').textContent = `${calY}년 ${calM+1}월`;
   const startDow=new Date(calY,calM,1).getDay(), days=new Date(calY,calM+1,0).getDate();
@@ -540,7 +586,7 @@ function renderCal(){
   $('calGrid').innerHTML=html;
   $('calGrid').querySelectorAll('[data-d]').forEach(b=>b.onclick=()=>{
     selectedDate=new Date(b.dataset.d+'T00:00:00'); navDir=0;
-    $('calModal').classList.remove('show'); clampSel(); render();
+    calSheet.close(); clampSel(); render();
   });
 }
 function setupPTR(container, onRefresh){

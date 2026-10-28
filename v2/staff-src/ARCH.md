@@ -266,3 +266,8 @@ The prototype source is `proto/js/admin.js` `staffSec()`/`staffRows()`. Preview 
 - Answers are cached per month for 60 s in 10-day.
 - The 희망자 floor-tool button is removed. The month view's ＋희망 still opens `A.adminTools.openHopes`.
 - In 관리, "출근표 짜기" is now 스케줄에서 짜기 plus 표로 한 번에 짜기. 근무 한 칸 추가 (`openShiftAdd`) is removed; it duplicated '+ 사람 넣기' in schedule edit.
+
+## Bottom sheet (core, 2026-10-28)
+- `A.sheet` DOM: `.modal` > `.modal-c` > `.sheet-top` (`.grab` + `.sheet-h` with `.sheet-x`) + `.sheet-b` (the scroller) + `.sheet-a` (pinned actions). Code that needs the sheet's scroll position reads `.sheet-b`, not `.modal-c`.
+- `close()` runs `onClose`, settles promises and restores focus synchronously. The element gets `.closing` (`pointer-events:none`) and is removed after the slide-out, so "is a sheet open?" checks must use `#app > .modal:not(.closing)`.
+- Drag to close: the `.sheet-top` pointer events always drag. A touch pull on `.sheet-b` works only at scrollTop 0, and never on `input, textarea, select, .spk-list, .pick-list, .tl-body, .crop-cv, [data-nopull]`, nested scrollers or `.tl-sheet`. Add `data-nopull` to any new gesture area.

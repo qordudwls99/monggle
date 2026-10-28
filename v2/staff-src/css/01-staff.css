@@ -103,7 +103,7 @@ button.lrow:active{background:var(--cell)}
 
 /* ── 시트 안쪽 ── */
 .sheet-b{display:flex;flex-direction:column;gap:12px}
-.sheet-a{display:flex;gap:8px;margin-top:18px}
+.sheet-a{display:flex;gap:8px;flex-shrink:0;padding:16px 20px 20px}
 .sheet-a .btn{flex:1;width:auto}
 .sheet-p{font-size:15px;font-weight:500;color:var(--ink2);line-height:1.55}
 .sheet-err{color:var(--red);font-size:13.5px;font-weight:700}

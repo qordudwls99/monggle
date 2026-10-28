@@ -2,9 +2,9 @@
    넓은 표는 시트 안에서 가로·세로로 넘기고, 이름 칸과 날짜 줄은 붙어 있어요. 노랑·금색 없음 */
 
 /* ── 화면 높이 시트 ── */
-.modal-c.tl-sheet{height:94vh;height:94dvh;max-height:94dvh;display:flex;flex-direction:column;overflow:hidden}
+.modal-c.tl-sheet{height:100%}
 .tl-sheet .sheet-h{flex-shrink:0}
-.tl-sheet .sheet-b{flex:1;min-height:0;gap:10px}
+.tl-sheet .sheet-b{flex:1;min-height:0;gap:10px;overflow:hidden}
 .tl-sub{font-size:13.5px;font-weight:600;color:var(--ink2);margin-top:-6px;line-height:1.45}
 .tl-top{display:flex;flex-direction:column;gap:8px}
 .tl-top:empty{display:none}

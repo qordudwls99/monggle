@@ -58,7 +58,7 @@
       if (!node) return;
       busy = true; btn.setAttribute('aria-busy', 'true');
       const label = btn.textContent; btn.textContent = '만드는 중…';
-      const box = el.querySelector('.modal-c'), top = box.scrollTop;
+      const box = el.querySelector('.sheet-b'), top = box.scrollTop;
       try {
         await Promise.all([...node.querySelectorAll('img')].map(i => i.complete ? null : new Promise(r => { i.onload = i.onerror = r; })));
         const mod = await import('https://esm.sh/html2canvas@1.4.1');

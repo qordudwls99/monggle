@@ -107,27 +107,89 @@
 
   // ── 시트·확인·입력·알림 ──
   let sheetSeq = 0;
+  // 바텀시트: 화면 가장자리에서 띄운 카드. 손잡이·제목 줄을 끌면 따라 내려오고, 충분히 내리거나 빠르게 튕기면 닫혀요.
+  // 내용은 맨 위에서 아래로 당길 때만 같이 끌려요 (안쪽 목록·입력칸에서는 안 끌림). close() 는 바로 정리하고 화면만 내려가며 사라져요.
+  const reduceMotion = () => window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
   function sheet({ title, html = '', actions = [], onOpen, onClose } = {}) {
     const id = 'sheet' + (++sheetSeq);
     const wrap = document.createElement('div');
     wrap.className = 'modal show'; wrap.id = id;
-    wrap.innerHTML = `<div class="modal-c" role="dialog" aria-modal="true" tabindex="-1" aria-label="${esc(title || '')}"><div class="grab"></div>
-      <div class="sheet-h"><b>${esc(title || '')}</b><button class="closex" data-x>닫기</button></div>
+    wrap.innerHTML = `<div class="modal-c" role="dialog" aria-modal="true" tabindex="-1" aria-label="${esc(title || '')}">
+      <div class="sheet-top"><div class="grab"></div><div class="sheet-h"><b>${esc(title || '')}</b><button class="sheet-x" data-x aria-label="닫기">${ICON.x}</button></div></div>
       <div class="sheet-b">${html}</div>${actions.length ? `<div class="sheet-a">${actions.map((a, i) => `<button class="btn lg ${a.kind || ''}" data-a="${i}">${esc(a.label)}</button>`).join('')}</div>` : ''}</div>`;
+    const c = wrap.querySelector('.modal-c'), body = wrap.querySelector('.sheet-b'), top = wrap.querySelector('.sheet-top');
     const back = document.activeElement;
-    let closed = false;
+    let closed = false, drag = null;
+    const remove = () => wrap.remove();
     const close = () => {
       if (closed) return; closed = true;
-      wrap.remove(); document.removeEventListener('keydown', onKey);
+      document.removeEventListener('keydown', onKey);
+      wrap.classList.add('closing'); wrap.classList.remove('in', 'drag');
+      c.style.transform = ''; wrap.style.removeProperty('--dim');
+      if (reduceMotion()) remove();
+      else { c.addEventListener('transitionend', e => { if (e.target === c) remove(); }); setTimeout(remove, 420); }
       if (onClose) { try { onClose(); } catch (e) { console.error(e); } }
       if (back && back.focus && document.contains(back)) back.focus({ preventScroll: true });
     };
-    const onKey = e => { if (e.key === 'Escape' && [...document.querySelectorAll('#app > .modal')].pop() === wrap) close(); };
+    const onKey = e => { if (e.key === 'Escape' && [...document.querySelectorAll('#app > .modal:not(.closing)')].pop() === wrap) close(); };
     wrap.addEventListener('click', e => { if (e.target === wrap || e.target.closest('[data-x]')) close(); });
     wrap.querySelectorAll('[data-a]').forEach(b => b.onclick = () => { const a = actions[+b.dataset.a]; if (a.onClick) a.onClick(close, wrap); else close(); });
+    // 뒤 화면이 같이 밀리지 않게 (어두운 바탕을 끌 때만)
+    wrap.addEventListener('touchmove', e => { if (e.target === wrap) e.preventDefault(); }, { passive: false });
+
+    // ── 끌어서 닫기 ──
+    const setY = y => { c.style.transform = `translateY(${y}px)`; wrap.style.setProperty('--dim', String(Math.max(0, 1 - Math.max(0, y) / drag.h))); };
+    const begin = y0 => { if (closed) return false; drag = { y0, y: 0, pts: [[performance.now(), 0]], h: c.getBoundingClientRect().height || 1 }; wrap.classList.add('drag'); return true; };
+    const move = yy => {
+      let dy = yy - drag.y0;
+      if (dy < 0) dy = -Math.min(18, Math.sqrt(-dy) * 2);    // 위로는 살짝만 늘어나요
+      drag.y = dy; drag.pts.push([performance.now(), dy]); if (drag.pts.length > 5) drag.pts.shift();
+      setY(dy);
+    };
+    const end = () => {
+      if (!drag) return;
+      const d = drag; drag = null; wrap.classList.remove('drag');
+      const [t0, y0] = d.pts[0], [t1, y1] = d.pts[d.pts.length - 1];
+      const v = t1 > t0 ? (y1 - y0) / (t1 - t0) : 0;        // px/ms, 아래로 +
+      if (d.y > Math.min(150, d.h * 0.3) || (v > 0.6 && d.y > 16)) close();
+      else { c.style.transform = ''; wrap.style.removeProperty('--dim'); }
+    };
+    top.addEventListener('pointerdown', e => {
+      if (e.button !== 0 || e.target.closest('button,a,input,select,textarea')) return;
+      if (!begin(e.clientY)) return;
+      drag.pid = e.pointerId;
+      try { top.setPointerCapture(e.pointerId); } catch (_) {}
+    });
+    top.addEventListener('pointermove', e => { if (drag && drag.pid === e.pointerId) move(e.clientY); });
+    top.addEventListener('pointerup', e => { if (drag && drag.pid === e.pointerId) end(); });
+    top.addEventListener('pointercancel', e => { if (drag && drag.pid === e.pointerId) end(); });
+    // 내용에서 당기기: 시트 본문이 맨 위이고, 손가락이 안쪽 스크롤 목록·입력칸·편집 캔버스 위가 아닐 때만
+    const NO_PULL = 'input,textarea,select,.spk-list,.pick-list,.tl-body,.crop-cv,[data-nopull]';
+    const nestedScroller = el => { for (let n = el; n && n !== body; n = n.parentElement) { if (n.scrollHeight > n.clientHeight + 1 && /(auto|scroll)/.test(getComputedStyle(n).overflowY)) return true; } return false; };
+    let t = null;
+    body.addEventListener('touchstart', e => {
+      t = null;
+      if (e.touches.length !== 1 || c.classList.contains('tl-sheet') || body.scrollTop > 0) return;
+      if (e.target.closest(NO_PULL) || nestedScroller(e.target)) return;
+      t = { x: e.touches[0].clientX, y: e.touches[0].clientY, lock: '' };
+    }, { passive: true });
+    body.addEventListener('touchmove', e => {
+      if (!t) return;
+      const p = e.touches[0], dx = p.clientX - t.x, dy = p.clientY - t.y;
+      if (!t.lock) {
+        if (Math.abs(dx) < 6 && Math.abs(dy) < 6) return;
+        t.lock = dy > 0 && Math.abs(dy) > Math.abs(dx) && body.scrollTop <= 0 && begin(p.clientY) ? 'sheet' : 'no';
+      }
+      if (t.lock === 'sheet' && drag) { e.preventDefault(); move(p.clientY); }
+    }, { passive: false });
+    const tEnd = () => { if (t && t.lock === 'sheet') end(); t = null; };
+    body.addEventListener('touchend', tEnd); body.addEventListener('touchcancel', tEnd);
+
     document.addEventListener('keydown', onKey);
     document.getElementById('app').appendChild(wrap);
-    wrap.querySelector('.modal-c').focus({ preventScroll: true });
+    void c.offsetHeight;                                      // 아래에 둔 채로 한 번 그린 뒤 올려요
+    wrap.classList.add('in');
+    c.focus({ preventScroll: true });
     if (onOpen) onOpen(wrap, close);
     return { el: wrap, close };
   }
@@ -253,7 +315,7 @@
     const ptr = document.getElementById('ptr'), txt = document.getElementById('ptrTxt'), spin = document.getElementById('ptrSpin');
     const show = v => { if (ptr) ptr.style.opacity = String(Math.min(1, v / THRESH)); };
     container.addEventListener('touchstart', e => {
-      if (refreshing || e.touches.length !== 1 || document.querySelector('#app > .modal')) { mode = -1; return; }
+      if (refreshing || e.touches.length !== 1 || document.querySelector('#app > .modal:not(.closing)')) { mode = -1; return; }
       mode = 0; applied = 0; startY = e.touches[0].clientY;
     }, { passive: true });
     container.addEventListener('touchmove', e => {
