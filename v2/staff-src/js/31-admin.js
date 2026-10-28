@@ -180,14 +180,13 @@
     });
   }
 
-  // ── 3. 편성 도구 (32-admin-tools.js) · 출근표 편집 · 근무 추가 ──
+  // ── 3. 편성 도구 (32-admin-tools.js) · 짜기는 스케줄 편집으로 (2026-10-28 합침) ──
   // 짜기(바꾸는 것)와 살펴보기(읽기만)를 나누고, 줄마다 무슨 일을 하는지 한 줄로
   function toolsSec(ym) {
     const m = +ym.slice(5), t = k => `data-tool="${k}"`;
     return `<section class="sec ad-sec"><div class="sec-h"><h2>${m}월 출근표 짜기</h2></div><div class="menu-list">
-      ${mrow('id="adEdit"', '출근표 편집하기', '날짜별 출근표에서 사람을 넣고 빼요')}
-      ${mrow(t('builder'), '표로 한 번에 짜기', '사람 × 날짜 표에서 칸마다 매장을 골라요. 고르면 바로 저장돼요')}
-      ${mrow('id="adShiftAdd"', '근무 한 칸 추가', '날짜와 매장을 골라 직원·게스트·빈 자리를 넣어요')}</div></section>
+      ${mrow('id="adEdit"', '스케줄에서 짜기', '날짜마다 희망한 사람이 보여요. 이름을 누르면 바로 들어가요')}
+      ${mrow(t('builder'), '표로 한 번에 짜기', '사람 × 날짜 표에서 칸마다 매장을 골라요. 큰 화면에서 쓰기 좋아요')}</div></section>
     <section class="sec ad-sec"><div class="sec-h"><h2>${m}월 살펴보기</h2><span class="aside">보기만 해요</span></div><div class="menu-list">
       ${mrow(t('matrix'), '제출 표', '직원들이 낸 희망을 사람 × 날짜 표로 봐요')}
       ${mrow(t('hopecal'), '매장별 희망 달력', '매장마다 날짜별로 누가 오고 싶어 하는지 봐요')}
@@ -201,44 +200,6 @@
       A.state.edit = true;
       A.go('schedule', { view: 'day', date: A.ymOf(t) === ym ? t : ym + '-01' });
     };
-    el.querySelector('#adShiftAdd').onclick = () => openShiftAdd(staff);
-  }
-  function openShiftAdd(staff) {
-    let kind = 'staff', busy = false;
-    const ds0 = A.ymd(A.state.date);
-    A.sheet({
-      title: '근무 추가',
-      html: `<div class="fld-row"><label class="fld-l">날짜<input class="fld" type="date" data-ds value="${ds0}"></label>
-        <label class="fld-l">매장<select class="fld" data-wp>${STORES.map(w => `<option>${esc(w)}</option>`).join('')}</select></label></div>
-        <div class="seg" role="group" aria-label="담당"><button type="button" class="on" data-k="staff" aria-pressed="true">직원</button><button type="button" data-k="guest" aria-pressed="false">게스트</button><button type="button" data-k="open" aria-pressed="false">빈 자리</button></div>
-        ${A.staffPick({ staff, attr: 'data-staff', wrap: 'data-for="staff"' })}
-        <label class="fld-l" data-for="guest" hidden>게스트 이름<input class="fld" data-guest maxlength="30" autocomplete="off" placeholder="게스트 이름"></label>
-        <label class="fld-l">메모 (선택)<input class="fld" data-memo maxlength="60" autocomplete="off" placeholder="예: 스포츠데이"></label><p class="sheet-err" hidden></p>`,
-      onOpen: el => {
-        A.bindStaffPick(el);
-        el.querySelectorAll('[data-k]').forEach(b => b.onclick = () => {
-          kind = b.dataset.k;
-          el.querySelectorAll('[data-k]').forEach(x => { x.classList.toggle('on', x === b); x.setAttribute('aria-pressed', String(x === b)); });
-          el.querySelectorAll('[data-for]').forEach(x => { x.hidden = x.dataset.for !== kind; });
-        });
-      },
-      actions: [{ label: '취소' }, { label: '추가', kind: 'primary', onClick: async (close, el) => {
-        if (busy) return;
-        const ds = el.querySelector('[data-ds]').value, wp = el.querySelector('[data-wp]').value, memo = el.querySelector('[data-memo]').value.trim(), err = el.querySelector('.sheet-err');
-        const sid = el.querySelector('[data-staff]').value, guest = el.querySelector('[data-guest]').value.trim();
-        const bad = !ds ? '날짜를 골라 주세요' : kind === 'staff' && !sid ? '직원을 골라 주세요' : kind === 'guest' && !guest ? '게스트 이름을 적어 주세요' : '';
-        if (bad) { err.hidden = false; err.textContent = bad; return; }
-        busy = true;
-        const r = await A.api.rpc('admin_add_shift', {
-          p_admin_id: me().id, p_work_date: ds, p_workplace: wp, p_start: '', p_end: '',
-          p_assignee: kind === 'staff' ? Number(sid) : null, p_memo: memo || null, p_guest: kind === 'guest' ? guest : null,
-        });
-        busy = false;
-        if (r === false) return;
-        close();
-        await after('근무를 추가했어요', ds);
-      } }],
-    });
   }
 
   // ── 4. 직원: 확인할 사람 먼저, 처음엔 8명만, 초성으로도 찾기 ──

@@ -259,3 +259,10 @@ The prototype source is `proto/js/admin.js` `staffSec()`/`staffRows()`. Preview 
 - `A.staffPick({staff, sel, attr, wrap, label})` returns a search field plus a scrolling list of staff (sorted 가나다, 초성 search). It replaces the `<select>` in 근무 넣기/고치기 (10-day) and 근무 추가 (31-admin).
 - The chosen id goes into a hidden input carrying `attr`, so callers still read `.value`. `wrap` lands on the outer div, for the `data-p`/`data-for` show and hide toggles.
 - Call `A.bindStaffPick(el)` in `onOpen`. `A.cho` and `A.nameHit(name, q)` are the shared 초성 helpers.
+
+## 출근표 짜기 merged into the schedule (2026-10-28)
+- In 일별 edit mode, each store section ends with a 희망 block: chips of people who chose that store and are not in it yet, then 상관없음 people (shown faded) who are not placed anywhere that day. This is the same rule as production 희망자 넣기.
+- A tap calls `admin_assign_from_submission` with one id, then `done()`. If the person already works in another store that day, that store's name is shown in small red text on the chip.
+- Answers are cached per month for 60 s in 10-day.
+- The 희망자 floor-tool button is removed. The month view's ＋희망 still opens `A.adminTools.openHopes`.
+- In 관리, "출근표 짜기" is now 스케줄에서 짜기 plus 표로 한 번에 짜기. 근무 한 칸 추가 (`openShiftAdd`) is removed; it duplicated '+ 사람 넣기' in schedule edit.

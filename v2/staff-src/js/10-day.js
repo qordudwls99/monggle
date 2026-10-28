@@ -144,7 +144,7 @@
     const b = (k, l) => `<button class="btn sm" data-tool="${k}" data-twp="${info.wp}">${l}</button>`;
     if (info.closed) return `<div class="ftools">${b('closed', '휴무 풀기')}</div>`;
     const add = info.night ? b('add', '+ 주간에 넣기') + b('nadd', '+ 야간에 넣기') : b('add', '+ 사람 넣기');
-    return `<div class="ftools">${add}${b('hopes', '희망자')}${b('event', info.event ? '이벤트 바꾸기' : '이벤트')}${info.wp === '데빌' ? b('night', info.night ? '야간 시간' : '야간 열기') : ''}${b('closed', '휴무로')}</div>`;
+    return `<div class="ftools">${add}${b('event', info.event ? '이벤트 바꾸기' : '이벤트')}${info.wp === '데빌' ? b('night', info.night ? '야간 시간' : '야간 열기') : ''}${b('closed', '휴무로')}</div>`;
   }
   // 영업시간 글은 그대로 보여 줘요. '주간 … · 야간 …' 모양이면 칸 머리에 나눠 싣고, 아니면 한 줄로 (손님 페이지와 같음)
   function dnHtml(info, ctx) {
@@ -159,6 +159,42 @@
     return `${(!dh && !nh) ? `<div class="hrs-line">${esc(hrs)}</div>` : ''}<div class="dn${sm ? '' : ' stack'}">${col('', '<b>주간</b>', dh, info.shifts.length, dayHtml, '없음')}${col(' night', `${I.moon}<b>야간</b>`, nh, people.length, nightHtml, '미정')}</div>`;
   }
 
+  // ── 편집 중 희망자 (출근표 짜기를 스케줄에 합침, 2026-10-28) ──
+  // 이 매장을 고른 사람(이 매장에 아직 없을 때) + 상관없음(그날 아무 데도 없을 때). 운영 희망자 넣기와 같은 기준
+  const ansCache = {};
+  async function hopeData(ds) {
+    const ym = A.ymOf(ds), c = ansCache[ym];
+    if (!c || Date.now() - c.at > 60000) ansCache[ym] = { at: Date.now(), list: await A.store.answers(ym) };
+    const placed = {};
+    A.FLOORS.forEach(([w]) => A.store.day(ds, w).shifts.forEach(x => { if (x.staffId != null) (placed[x.staffId] = placed[x.staffId] || new Set()).add(w); }));
+    const day = ansCache[ym].list.filter(a => a.qkey === 'd:' + ds), byName = (a, b) => String(a.staffName).localeCompare(String(b.staffName), 'ko');
+    // 다른 매장에 이미 있으면 칩에 그 매장을 작게 적어서 겹치는 걸 알 수 있게
+    const elsewhere = (a, w) => [...(placed[a.staffId] || [])].filter(x => x !== w).map(A.storeName).join('·');
+    return w => ({
+      p: day.filter(a => a.choice === w && !(placed[a.staffId] && placed[a.staffId].has(w))).map(a => ({ ...a, also: elsewhere(a, w) })).sort(byName),
+      any: day.filter(a => a.choice === '상관없음' && !placed[a.staffId]).sort(byName),
+      total: day.filter(a => a.choice === w || a.choice === '상관없음').length,
+    });
+  }
+  function hopeHtml(h, w) {
+    const chip = (a, any) => `<button class="hchip${any ? ' any' : ''}" data-hope="${esc(a.staffId)}" data-hwp="${esc(w)}" data-hn="${esc(a.staffName)}" aria-label="${esc(a.staffName)}님을 ${esc(w)}에 넣기${a.also ? ` (지금 ${esc(a.also)}에 있어요)` : ''}">${esc(a.staffName)}${a.also ? `<small>${esc(a.also)}</small>` : ''}${I.plus}</button>`;
+    const has = h.p.length || h.any.length;
+    const body = has ? `<div class="hchips">${h.p.map(a => chip(a, false)).join('')}${h.any.map(a => chip(a, true)).join('')}</div>`
+      : `<p class="hope-none">${h.total ? '희망한 사람은 모두 넣었어요' : '이 날 고른 사람이 없어요'}</p>`;
+    return `<div class="hope"><div class="hope-h"><b>희망</b>${has ? `<span>눌러서 넣어요${h.any.length ? ' · 흐린 이름은 상관없음' : ''}${h.p.some(a => a.also) ? ' · 빨간 글씨는 이미 들어간 매장' : ''}</span>` : ''}</div>${body}</div>`;
+  }
+  let hoping = false;
+  async function addHope(ds, b) {
+    if (hoping) return;
+    hoping = true; b.disabled = true; b.setAttribute('aria-busy', 'true');
+    try {
+      const wp = b.dataset.hwp, name = b.dataset.hn;
+      const r = await rpc('admin_assign_from_submission', { p_admin_id: adminId(), p_date: ds, p_workplace: wp, p_staff_ids: [Number(b.dataset.hope)] });
+      if (r === false) { b.disabled = false; b.removeAttribute('aria-busy'); return; }
+      await done(ds, `${name}님을 ${A.storeName(wp)}에 넣었어요`);
+    } finally { hoping = false; }
+  }
+
   async function renderDayList(list, { ds, wp, admin, edit }) {
     const ok = await A.store.ensure(ds, ds);
     if (A.store.isDraft(ds) && !admin) { list.innerHTML = A.lockedMonth(); return; }
@@ -166,6 +202,7 @@
     const all = wp === '전체';
     edit = !!(admin && edit);
     const ctx = { admin, edit };
+    const hopes = edit ? await hopeData(ds) : null;
     let html = admin && A.store.isDraft(ds) ? A.draftBar(ds) : '', shown = 0, closedAll = true;
     (all ? A.FLOORS.map(f => f[0]) : [wp]).forEach(w => {
       const info = A.store.day(ds, w);
@@ -180,6 +217,7 @@
         if (info.night) inner += dnHtml(info, ctx);
         else if (!empty) inner += info.shifts.map(p => memberRow(p, ctx, false)).join('') + info.slots.map(s => slotRow(s, ctx)).join('');
         else inner += '<div class="none">근무 없음</div>';
+        if (hopes) inner += hopeHtml(hopes(w), w);
       }
       const nightPeople = info.night ? info.night.members.filter(p => !p.short) : [];
       const guests = info.shifts.filter(p => p.guest).length + nightPeople.filter(p => p.guest).length;
@@ -214,6 +252,7 @@
     list.querySelectorAll('[data-more]').forEach(b => b.onclick = () => { const [k, id] = b.dataset.more.split(':');
       if (k === 'n') { const m = findNight(ds, id); if (m) nightMenu(m); } else { const s = findShift(ds, id); if (s) shiftMenu(s); } });
     list.querySelectorAll('[data-tool]').forEach(b => b.onclick = () => TOOLS[b.dataset.tool](ds, b.dataset.twp));
+    list.querySelectorAll('[data-hope]').forEach(b => b.onclick = () => addHope(ds, b));
   }
 
   // 빈 자리 신청 (관리자: 수락·거절 / 직원: 신청·취소)

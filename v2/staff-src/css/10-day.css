@@ -40,3 +40,17 @@
 .drag-trash.over{background:var(--red);color:#fff;transform:translateX(-50%) scale(1.06)}
 @media (prefers-reduced-motion:reduce){.drag-trash,.drag-trash.over{transition:none}.drag-trash.over{transform:translateX(-50%)}}
 .row.sm.me .nm{min-width:2em}
+
+/* 편집 중 희망자: 매장 칸 아래, 누르면 바로 넣기. 흐린 칩 = 상관없음 */
+.hope{margin-top:10px;padding-top:10px;border-top:1px dashed var(--line)}
+.hope-h{display:flex;align-items:baseline;gap:8px;margin-bottom:8px}
+.hope-h b{font-size:14px;font-weight:800}
+.hope-h span{font-size:12.5px;font-weight:600;color:var(--muted)}
+.hchips{display:flex;flex-wrap:wrap;gap:6px}
+.hchip{display:inline-flex;align-items:center;gap:4px;height:36px;padding:0 10px 0 13px;border:1px solid var(--line);border-radius:18px;background:#fff;font:inherit;font-size:14.5px;font-weight:700;color:var(--ink);cursor:pointer}
+.hchip svg{width:14px;height:14px;color:var(--ink2)}
+.hchip.any{background:var(--fill);border-color:transparent;font-weight:600;color:var(--ink2)}
+.hchip:active{background:var(--cell)}
+.hchip[aria-busy="true"]{opacity:.5}
+.hope-none{font-size:13.5px;font-weight:600;color:var(--muted)}
+.hchip small{font-size:11.5px;font-weight:700;color:var(--red);margin-left:1px}
