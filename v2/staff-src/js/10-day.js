@@ -365,11 +365,10 @@
     const edit = !!s;
     let kind = !s ? 'staff' : s.staffId != null ? 'staff' : s.guest ? 'guest' : 'open';
     const KINDS = [['staff', '직원'], ['guest', '게스트'], ['open', '빈 자리']];
-    const opts = `<option value="">직원을 골라 주세요</option>` + staff.map(x => `<option value="${x.id}"${s && s.staffId === x.id ? ' selected' : ''}>${esc(x.name)}</option>`).join('');
     const conv = edit && s.guest && A.guest && A.guest.convert ? `<div class="menu-list"><button class="menu-row" data-conv>직원으로 바꾸기${I.chev}</button></div>` : '';
     const html = `<p class="sheet-p">${esc(where(ds, wp))}</p>
       <div class="seg" role="radiogroup" aria-label="누가 들어가나요">${KINDS.map(([k, l]) => `<button data-k="${k}" role="radio" aria-checked="${kind === k}" class="${kind === k ? 'on' : ''}">${l}</button>`).join('')}</div>
-      <label class="fld-l" data-p="staff">직원<select class="fld" data-f="staff">${opts}</select></label>
+      ${A.staffPick({ staff, sel: s ? s.staffId : null, attr: 'data-f="staff"', wrap: 'data-p="staff"' })}
       <label class="fld-l" data-p="guest">게스트 이름<input class="fld" data-f="guest" maxlength="30" autocomplete="off" value="${esc(s && s.guest ? s.name : '')}" placeholder="예: 하루"></label>
       <p class="sheet-note" data-p="open">직원들이 이 빈 자리에 신청할 수 있어요.</p>
       <div class="fld-row"><label class="fld-l">시작 (선택)<input class="fld" data-f="start" maxlength="10" autocomplete="off" value="${esc(s ? s.start : '')}" placeholder="예: 18:00"></label><label class="fld-l">끝 (선택)<input class="fld" data-f="end" maxlength="10" autocomplete="off" value="${esc(s ? s.end : '')}" placeholder="예: 23:00"></label></div>
@@ -380,7 +379,7 @@
       const err = el.querySelector('.sheet-err'), show = m => { err.hidden = false; err.textContent = m; };
       const f = k => el.querySelector(`[data-f="${k}"]`);
       let assignee = null, guest = null;
-      if (kind === 'staff') { assignee = f('staff').value ? Number(f('staff').value) : null; if (!assignee) { show('직원을 골라 주세요'); f('staff').focus(); return; } }
+      if (kind === 'staff') { assignee = f('staff').value ? Number(f('staff').value) : null; if (!assignee) { show('직원을 골라 주세요'); return; } }
       else if (kind === 'guest') { guest = f('guest').value.trim(); if (!guest) { show('게스트 이름을 적어 주세요'); f('guest').focus(); return; } }
       const start = f('start').value.trim(), end = f('end').value.trim();
       busy = true; err.hidden = true;
@@ -401,6 +400,7 @@
       actions: edit ? [{ label: '지우기', kind: 'danger', onClick: del }, { label: '저장', kind: 'primary', onClick: save }]
                     : [{ label: '취소' }, { label: '넣기', kind: 'primary', onClick: save }],
       onOpen: (el, close) => {
+        A.bindStaffPick(el);
         const paint = () => {
           el.querySelectorAll('[data-k]').forEach(b => { const on = b.dataset.k === kind; b.classList.toggle('on', on); b.setAttribute('aria-checked', String(on)); });
           el.querySelectorAll('[data-p]').forEach(p => { p.hidden = p.dataset.p !== kind; });

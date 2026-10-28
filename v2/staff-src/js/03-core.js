@@ -55,6 +55,7 @@
     search: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></svg>',
     ig: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="3.5" width="17" height="17" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.3" cy="6.7" r=".6" fill="currentColor"/></svg>',
     x: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>',
+    check: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5.5 12.5l4 4 9-9"/></svg>',
   };
   const emptyBox = (ic, t, s) => `<div class="empty-box"><div class="e-ic">${ICON[ic] || ''}</div><div class="e-t">${esc(t)}</div>${s ? `<div class="e-s">${esc(s)}</div>` : ''}</div>`;
   // 사진 주소 안의 따옴표·괄호 등은 %인코딩 → style 밖으로 못 빠져나감 (운영 avStyle)
@@ -67,6 +68,42 @@
   const storeTag = (wp, cls = 'store-tag') => `<span class="${cls}"><img src="${logo(wp)}" alt=""><span>${esc(storeName(wp))}</span></span>`;
   const pageHead = (title, sub) => `<header class="page-h"><h1>${esc(title)}</h1>${sub ? `<p>${esc(sub)}</p>` : ''}</header>`;
   const isAdmin = () => !!(A.session && A.session.is_admin);
+
+  // ── 이름 찾기: 초성도 돼요 (ㄹㅇ → 레인) ──
+  const CHO = 'ㄱㄲㄴㄷㄸㄹㅁㅂㅃㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎ';
+  const cho = s => [...String(s)].map(c => { const k = c.charCodeAt(0) - 0xAC00; return k >= 0 && k < 11172 ? CHO[Math.floor(k / 588)] : c; }).join('');
+  const nameHit = (name, q) => { q = String(q || '').trim(); if (!q) return true; const n = String(name || ''); return n.toLowerCase().includes(q.toLowerCase()) || cho(n).includes(cho(q)); };
+
+  // ── 직원 고르기: 찾기 칸 + 목록. 고른 id 는 숨은 input(attr)에 담겨서 .value 로 읽어요 ──
+  // staffPick({ staff, sel, attr: 'data-f="staff"', wrap: 'data-p="staff"' }) → html, bindStaffPick(el) 로 연결
+  const koColl = new Intl.Collator('ko');
+  const staffPick = ({ staff = [], sel = null, attr = '', wrap = '', label = '직원' }) => {
+    const list = staff.slice().sort((a, b) => koColl.compare(String(a.name || ''), String(b.name || '')));
+    const cur = list.find(s => sel != null && String(s.id) === String(sel));
+    const rows = list.map(s => { const on = cur === s;
+      return `<button type="button" class="lrow spk-row${on ? ' on' : ''}" role="option" aria-selected="${on}" data-id="${esc(s.id)}" data-n="${esc(s.name)}">${avatar(s.name, 'av', s.avatar_url || s.avatar || null)}<span class="lm"><span class="lt">${esc(s.name)}</span></span><span class="spk-ck">${ICON.check}</span></button>`; }).join('');
+    return `<div class="spk" data-spk ${wrap}><input type="hidden" ${attr} value="${cur ? esc(cur.id) : ''}">
+      <div class="spk-h"><span>${esc(label)}</span><b data-spk-cur>${cur ? esc(cur.name) : ''}</b></div>
+      <input class="fld" type="search" data-spk-q placeholder="이름 찾기 (초성도 돼요)" aria-label="${esc(label)} 이름 찾기" autocomplete="off" enterkeyhint="done">
+      <div class="spk-list" role="listbox" aria-label="${esc(label)}">${rows}<div class="none" data-spk-none hidden></div></div></div>`;
+  };
+  const bindStaffPick = el => el.querySelectorAll('[data-spk]').forEach(w => {
+    const hid = w.querySelector('input[type=hidden]'), q = w.querySelector('[data-spk-q]'), box = w.querySelector('.spk-list');
+    const rows = [...w.querySelectorAll('.spk-row')], none = w.querySelector('[data-spk-none]'), curEl = w.querySelector('[data-spk-cur]');
+    const pick = r => {
+      rows.forEach(x => { const on = x === r; x.classList.toggle('on', on); x.setAttribute('aria-selected', String(on)); });
+      hid.value = r.dataset.id; curEl.textContent = r.dataset.n; q.blur();
+    };
+    rows.forEach(r => r.onclick = () => pick(r));
+    q.oninput = () => {
+      let n = 0;
+      rows.forEach(r => { const hit = nameHit(r.dataset.n, q.value); r.hidden = !hit; if (hit) n++; });
+      none.hidden = !!n; none.textContent = `'${q.value.trim()}' 이름이 없어요`; box.scrollTop = 0;
+    };
+    q.onkeydown = e => { if (e.key === 'Enter') { e.preventDefault(); const r = rows.find(x => !x.hidden); if (r) pick(r); } };
+    const on = rows.find(r => r.classList.contains('on'));
+    if (on) requestAnimationFrame(() => { box.scrollTop = on.offsetTop - box.clientHeight / 2 + on.offsetHeight / 2; });
+  });
 
   // ── 시트·확인·입력·알림 ──
   let sheetSeq = 0;
@@ -272,6 +309,7 @@
   Object.assign(A, {
     $, esc, pad, ymd, parse, DAYS, fmt, fmtShort, ymOf, firstSyl, today, sundayOf, ymShift, igUrl,
     FLOORS, THEMES, floorOf, themeKey, logo, storeName, josa, ICON, emptyBox, avatar, storeTag, pageHead, isAdmin,
+    cho, nameHit, staffPick, bindStaffPick,
     sheet, confirm: confirmBox, prompt: promptBox, toast,
     state, TABS, go, goDay, render, renderShell, screens, views,
     screen: (k, def) => { screens[ALIAS[k] || k] = def; },

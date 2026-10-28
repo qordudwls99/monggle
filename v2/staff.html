@@ -423,6 +423,20 @@ select.fld{appearance:none;-webkit-appearance:none}
 /* 알림(토스트) 오류 */
 .toast.err{background:var(--red)}
 
+/* 직원 고르기: 찾기 칸 + 목록 (드롭다운 대신, 사람이 많아도 이름으로 찾기) */
+.spk{display:flex;flex-direction:column;gap:6px}
+.spk-h{display:flex;align-items:baseline;gap:8px;font-size:13.5px;font-weight:700;color:var(--ink2)}
+.spk-h b{font-size:14.5px;font-weight:800;color:var(--ink)}
+.spk-list{position:relative;max-height:min(244px,32vh);overflow-y:auto;border:1px solid var(--line);border-radius:var(--r-md);padding:0 12px;overscroll-behavior:contain}
+.spk-row{min-height:48px;padding:6px 0;gap:10px}
+.spk-row .av{width:30px;height:30px;font-size:13px}
+.spk-row .lt{font-size:15.5px;font-weight:600}
+.spk-row.on .lt{font-weight:800}
+.spk-ck{flex:none;width:22px;height:22px;border-radius:50%;border:1.5px solid var(--line);display:grid;place-items:center;color:transparent}
+.spk-ck svg{width:13px;height:13px}
+.spk-row.on .spk-ck{background:var(--ink);border-color:var(--ink);color:#fff}
+.spk .none{padding:16px 0}
+
 /* ── css/10-day.css ── */
 /* 스케줄 일별 · 달력 시트 · 끌어 옮기기 (10-day.js, 13-drag.js). 공통 줄·칸은 00-moe-system.css / 01-staff.css */
 
@@ -1322,6 +1336,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
     search: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></svg>',
     ig: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="3.5" width="17" height="17" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.3" cy="6.7" r=".6" fill="currentColor"/></svg>',
     x: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>',
+    check: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5.5 12.5l4 4 9-9"/></svg>',
   };
   const emptyBox = (ic, t, s) => `<div class="empty-box"><div class="e-ic">${ICON[ic] || ''}</div><div class="e-t">${esc(t)}</div>${s ? `<div class="e-s">${esc(s)}</div>` : ''}</div>`;
   // 사진 주소 안의 따옴표·괄호 등은 %인코딩 → style 밖으로 못 빠져나감 (운영 avStyle)
@@ -1334,6 +1349,42 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
   const storeTag = (wp, cls = 'store-tag') => `<span class="${cls}"><img src="${logo(wp)}" alt=""><span>${esc(storeName(wp))}</span></span>`;
   const pageHead = (title, sub) => `<header class="page-h"><h1>${esc(title)}</h1>${sub ? `<p>${esc(sub)}</p>` : ''}</header>`;
   const isAdmin = () => !!(A.session && A.session.is_admin);
+
+  // ── 이름 찾기: 초성도 돼요 (ㄹㅇ → 레인) ──
+  const CHO = 'ㄱㄲㄴㄷㄸㄹㅁㅂㅃㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎ';
+  const cho = s => [...String(s)].map(c => { const k = c.charCodeAt(0) - 0xAC00; return k >= 0 && k < 11172 ? CHO[Math.floor(k / 588)] : c; }).join('');
+  const nameHit = (name, q) => { q = String(q || '').trim(); if (!q) return true; const n = String(name || ''); return n.toLowerCase().includes(q.toLowerCase()) || cho(n).includes(cho(q)); };
+
+  // ── 직원 고르기: 찾기 칸 + 목록. 고른 id 는 숨은 input(attr)에 담겨서 .value 로 읽어요 ──
+  // staffPick({ staff, sel, attr: 'data-f="staff"', wrap: 'data-p="staff"' }) → html, bindStaffPick(el) 로 연결
+  const koColl = new Intl.Collator('ko');
+  const staffPick = ({ staff = [], sel = null, attr = '', wrap = '', label = '직원' }) => {
+    const list = staff.slice().sort((a, b) => koColl.compare(String(a.name || ''), String(b.name || '')));
+    const cur = list.find(s => sel != null && String(s.id) === String(sel));
+    const rows = list.map(s => { const on = cur === s;
+      return `<button type="button" class="lrow spk-row${on ? ' on' : ''}" role="option" aria-selected="${on}" data-id="${esc(s.id)}" data-n="${esc(s.name)}">${avatar(s.name, 'av', s.avatar_url || s.avatar || null)}<span class="lm"><span class="lt">${esc(s.name)}</span></span><span class="spk-ck">${ICON.check}</span></button>`; }).join('');
+    return `<div class="spk" data-spk ${wrap}><input type="hidden" ${attr} value="${cur ? esc(cur.id) : ''}">
+      <div class="spk-h"><span>${esc(label)}</span><b data-spk-cur>${cur ? esc(cur.name) : ''}</b></div>
+      <input class="fld" type="search" data-spk-q placeholder="이름 찾기 (초성도 돼요)" aria-label="${esc(label)} 이름 찾기" autocomplete="off" enterkeyhint="done">
+      <div class="spk-list" role="listbox" aria-label="${esc(label)}">${rows}<div class="none" data-spk-none hidden></div></div></div>`;
+  };
+  const bindStaffPick = el => el.querySelectorAll('[data-spk]').forEach(w => {
+    const hid = w.querySelector('input[type=hidden]'), q = w.querySelector('[data-spk-q]'), box = w.querySelector('.spk-list');
+    const rows = [...w.querySelectorAll('.spk-row')], none = w.querySelector('[data-spk-none]'), curEl = w.querySelector('[data-spk-cur]');
+    const pick = r => {
+      rows.forEach(x => { const on = x === r; x.classList.toggle('on', on); x.setAttribute('aria-selected', String(on)); });
+      hid.value = r.dataset.id; curEl.textContent = r.dataset.n; q.blur();
+    };
+    rows.forEach(r => r.onclick = () => pick(r));
+    q.oninput = () => {
+      let n = 0;
+      rows.forEach(r => { const hit = nameHit(r.dataset.n, q.value); r.hidden = !hit; if (hit) n++; });
+      none.hidden = !!n; none.textContent = `'${q.value.trim()}' 이름이 없어요`; box.scrollTop = 0;
+    };
+    q.onkeydown = e => { if (e.key === 'Enter') { e.preventDefault(); const r = rows.find(x => !x.hidden); if (r) pick(r); } };
+    const on = rows.find(r => r.classList.contains('on'));
+    if (on) requestAnimationFrame(() => { box.scrollTop = on.offsetTop - box.clientHeight / 2 + on.offsetHeight / 2; });
+  });
 
   // ── 시트·확인·입력·알림 ──
   let sheetSeq = 0;
@@ -1539,6 +1590,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
   Object.assign(A, {
     $, esc, pad, ymd, parse, DAYS, fmt, fmtShort, ymOf, firstSyl, today, sundayOf, ymShift, igUrl,
     FLOORS, THEMES, floorOf, themeKey, logo, storeName, josa, ICON, emptyBox, avatar, storeTag, pageHead, isAdmin,
+    cho, nameHit, staffPick, bindStaffPick,
     sheet, confirm: confirmBox, prompt: promptBox, toast,
     state, TABS, go, goDay, render, renderShell, screens, views,
     screen: (k, def) => { screens[ALIAS[k] || k] = def; },
@@ -2109,11 +2161,10 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
     const edit = !!s;
     let kind = !s ? 'staff' : s.staffId != null ? 'staff' : s.guest ? 'guest' : 'open';
     const KINDS = [['staff', '직원'], ['guest', '게스트'], ['open', '빈 자리']];
-    const opts = `<option value="">직원을 골라 주세요</option>` + staff.map(x => `<option value="${x.id}"${s && s.staffId === x.id ? ' selected' : ''}>${esc(x.name)}</option>`).join('');
     const conv = edit && s.guest && A.guest && A.guest.convert ? `<div class="menu-list"><button class="menu-row" data-conv>직원으로 바꾸기${I.chev}</button></div>` : '';
     const html = `<p class="sheet-p">${esc(where(ds, wp))}</p>
       <div class="seg" role="radiogroup" aria-label="누가 들어가나요">${KINDS.map(([k, l]) => `<button data-k="${k}" role="radio" aria-checked="${kind === k}" class="${kind === k ? 'on' : ''}">${l}</button>`).join('')}</div>
-      <label class="fld-l" data-p="staff">직원<select class="fld" data-f="staff">${opts}</select></label>
+      ${A.staffPick({ staff, sel: s ? s.staffId : null, attr: 'data-f="staff"', wrap: 'data-p="staff"' })}
       <label class="fld-l" data-p="guest">게스트 이름<input class="fld" data-f="guest" maxlength="30" autocomplete="off" value="${esc(s && s.guest ? s.name : '')}" placeholder="예: 하루"></label>
       <p class="sheet-note" data-p="open">직원들이 이 빈 자리에 신청할 수 있어요.</p>
       <div class="fld-row"><label class="fld-l">시작 (선택)<input class="fld" data-f="start" maxlength="10" autocomplete="off" value="${esc(s ? s.start : '')}" placeholder="예: 18:00"></label><label class="fld-l">끝 (선택)<input class="fld" data-f="end" maxlength="10" autocomplete="off" value="${esc(s ? s.end : '')}" placeholder="예: 23:00"></label></div>
@@ -2124,7 +2175,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
       const err = el.querySelector('.sheet-err'), show = m => { err.hidden = false; err.textContent = m; };
       const f = k => el.querySelector(`[data-f="${k}"]`);
       let assignee = null, guest = null;
-      if (kind === 'staff') { assignee = f('staff').value ? Number(f('staff').value) : null; if (!assignee) { show('직원을 골라 주세요'); f('staff').focus(); return; } }
+      if (kind === 'staff') { assignee = f('staff').value ? Number(f('staff').value) : null; if (!assignee) { show('직원을 골라 주세요'); return; } }
       else if (kind === 'guest') { guest = f('guest').value.trim(); if (!guest) { show('게스트 이름을 적어 주세요'); f('guest').focus(); return; } }
       const start = f('start').value.trim(), end = f('end').value.trim();
       busy = true; err.hidden = true;
@@ -2145,6 +2196,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
       actions: edit ? [{ label: '지우기', kind: 'danger', onClick: del }, { label: '저장', kind: 'primary', onClick: save }]
                     : [{ label: '취소' }, { label: '넣기', kind: 'primary', onClick: save }],
       onOpen: (el, close) => {
+        A.bindStaffPick(el);
         const paint = () => {
           el.querySelectorAll('[data-k]').forEach(b => { const on = b.dataset.k === kind; b.classList.toggle('on', on); b.setAttribute('aria-checked', String(on)); });
           el.querySelectorAll('[data-p]').forEach(p => { p.hidden = p.dataset.p !== kind; });
@@ -3916,10 +3968,11 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
       html: `<div class="fld-row"><label class="fld-l">날짜<input class="fld" type="date" data-ds value="${ds0}"></label>
         <label class="fld-l">매장<select class="fld" data-wp>${STORES.map(w => `<option>${esc(w)}</option>`).join('')}</select></label></div>
         <div class="seg" role="group" aria-label="담당"><button type="button" class="on" data-k="staff" aria-pressed="true">직원</button><button type="button" data-k="guest" aria-pressed="false">게스트</button><button type="button" data-k="open" aria-pressed="false">빈 자리</button></div>
-        <label class="fld-l" data-for="staff">직원<select class="fld" data-staff><option value="">고르기</option>${staff.map(s => `<option value="${s.id}">${esc(s.name)}</option>`).join('')}</select></label>
+        ${A.staffPick({ staff, attr: 'data-staff', wrap: 'data-for="staff"' })}
         <label class="fld-l" data-for="guest" hidden>게스트 이름<input class="fld" data-guest maxlength="30" autocomplete="off" placeholder="게스트 이름"></label>
         <label class="fld-l">메모 (선택)<input class="fld" data-memo maxlength="60" autocomplete="off" placeholder="예: 스포츠데이"></label><p class="sheet-err" hidden></p>`,
       onOpen: el => {
+        A.bindStaffPick(el);
         el.querySelectorAll('[data-k]').forEach(b => b.onclick = () => {
           kind = b.dataset.k;
           el.querySelectorAll('[data-k]').forEach(x => { x.classList.toggle('on', x === b); x.setAttribute('aria-pressed', String(x === b)); });
@@ -3946,8 +3999,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
   }
 
   // ── 4. 직원: 확인할 사람 먼저, 처음엔 8명만, 초성으로도 찾기 ──
-  const CHO = 'ㄱㄲㄴㄷㄸㄹㅁㅂㅃㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎ';
-  const cho = s => [...String(s)].map(c => { const k = c.charCodeAt(0) - 0xAC00; return k >= 0 && k < 11172 ? CHO[Math.floor(k / 588)] : c; }).join('');
+  const cho = A.cho;
   // 확인 필요 = 잠김, PIN 없음 (admin_staff_directory 의 locked / has_pin). 임시 PIN 은 대부분이라 빼요 (사용자 2026-10-28)
   const need = s => !!(s.locked || s.has_pin === false);
   const FILTERS = [['all', '전체', () => true], ['need', '확인 필요', need], ['admin', '관리자', s => !!s.is_admin]];

@@ -211,10 +211,11 @@
       html: `<div class="fld-row"><label class="fld-l">날짜<input class="fld" type="date" data-ds value="${ds0}"></label>
         <label class="fld-l">매장<select class="fld" data-wp>${STORES.map(w => `<option>${esc(w)}</option>`).join('')}</select></label></div>
         <div class="seg" role="group" aria-label="담당"><button type="button" class="on" data-k="staff" aria-pressed="true">직원</button><button type="button" data-k="guest" aria-pressed="false">게스트</button><button type="button" data-k="open" aria-pressed="false">빈 자리</button></div>
-        <label class="fld-l" data-for="staff">직원<select class="fld" data-staff><option value="">고르기</option>${staff.map(s => `<option value="${s.id}">${esc(s.name)}</option>`).join('')}</select></label>
+        ${A.staffPick({ staff, attr: 'data-staff', wrap: 'data-for="staff"' })}
         <label class="fld-l" data-for="guest" hidden>게스트 이름<input class="fld" data-guest maxlength="30" autocomplete="off" placeholder="게스트 이름"></label>
         <label class="fld-l">메모 (선택)<input class="fld" data-memo maxlength="60" autocomplete="off" placeholder="예: 스포츠데이"></label><p class="sheet-err" hidden></p>`,
       onOpen: el => {
+        A.bindStaffPick(el);
         el.querySelectorAll('[data-k]').forEach(b => b.onclick = () => {
           kind = b.dataset.k;
           el.querySelectorAll('[data-k]').forEach(x => { x.classList.toggle('on', x === b); x.setAttribute('aria-pressed', String(x === b)); });
@@ -241,8 +242,7 @@
   }
 
   // ── 4. 직원: 확인할 사람 먼저, 처음엔 8명만, 초성으로도 찾기 ──
-  const CHO = 'ㄱㄲㄴㄷㄸㄹㅁㅂㅃㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎ';
-  const cho = s => [...String(s)].map(c => { const k = c.charCodeAt(0) - 0xAC00; return k >= 0 && k < 11172 ? CHO[Math.floor(k / 588)] : c; }).join('');
+  const cho = A.cho;
   // 확인 필요 = 잠김, PIN 없음 (admin_staff_directory 의 locked / has_pin). 임시 PIN 은 대부분이라 빼요 (사용자 2026-10-28)
   const need = s => !!(s.locked || s.has_pin === false);
   const FILTERS = [['all', '전체', () => true], ['need', '확인 필요', need], ['admin', '관리자', s => !!s.is_admin]];

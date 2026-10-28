@@ -254,3 +254,8 @@ The live directory has about 90 people. The 관리 staff list therefore uses:
 - Search by name or 초성.
 
 The prototype source is `proto/js/admin.js` `staffSec()`/`staffRows()`. Preview it with `?many=90`.
+
+## Staff picker (core, 2026-10-28)
+- `A.staffPick({staff, sel, attr, wrap, label})` returns a search field plus a scrolling list of staff (sorted 가나다, 초성 search). It replaces the `<select>` in 근무 넣기/고치기 (10-day) and 근무 추가 (31-admin).
+- The chosen id goes into a hidden input carrying `attr`, so callers still read `.value`. `wrap` lands on the outer div, for the `data-p`/`data-for` show and hide toggles.
+- Call `A.bindStaffPick(el)` in `onOpen`. `A.cho` and `A.nameHit(name, q)` are the shared 초성 helpers.
