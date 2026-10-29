@@ -408,6 +408,53 @@ button{font-family:inherit;color:inherit}
 /* 전체 탭과 매장 탭 사이 구분선 */
 .tab[data-w="전체"]{position:relative}
 .tab[data-w="전체"]::after{content:"";position:absolute;right:0;top:50%;width:1px;height:34px;transform:translateY(-50%);background:var(--line)}
+/* 근무자별 달력 (이름을 누르거나 '근무자 찾기'): 출근한 날은 매장 색으로 칠해요 */
+.who{display:flex;align-items:center;gap:13px;flex:1;min-width:0;border:none;background:none;padding:0;margin:0;font:inherit;color:inherit;text-align:left;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.who:active .nm{opacity:.6}
+.p-who{display:flex;align-items:center;gap:12px;min-width:0}
+.p-who .av{width:46px;height:46px;font-size:18px}
+.p-who b{display:block;font-size:20px;font-weight:800;letter-spacing:-.4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.p-who small{display:block;font-size:13px;font-weight:600;color:var(--ink2);margin-top:2px}
+.p-acts{display:flex;align-items:center;gap:6px;flex:none}
+.p-ig{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:var(--fill);color:var(--ink)}
+.p-ig svg{width:17px;height:17px}
+.p-sum{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 12px}
+.p-pill{display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 11px;border-radius:15px;background:var(--fill);font-size:13px;font-weight:700;color:var(--ink)}
+.p-pill i{width:9px;height:9px;border-radius:3px;background:var(--c)}
+.p-pill.total{background:var(--ink);color:#fff}
+.pc-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}
+.pc{min-width:0;min-height:60px;border:1px solid var(--line);border-radius:12px;background:#fff;padding:6px 2px 5px;display:flex;flex-direction:column;align-items:center;gap:2px;font:inherit;color:var(--ink);overflow:hidden}
+.pc.blank{border:none;background:none}
+.pc .d{font-size:13.5px;font-weight:800;line-height:1.2;font-variant-numeric:tabular-nums}
+.pc.sun .d{color:#d92d20}.pc.sat .d{color:#2e6be6}
+.pc.today{box-shadow:inset 0 0 0 2px var(--ink)}
+.pc.on{border-color:transparent;background:var(--c);color:#fff;cursor:pointer}
+.pc.on .d{color:#fff}
+.pc.on:active{opacity:.8}
+.pc .w{display:flex;align-items:center;gap:2px;font-size:10.5px;font-weight:800;line-height:1.2;white-space:nowrap}
+.pc .w svg{width:9px;height:9px}
+.pc .x{max-width:100%;font-size:9.5px;font-weight:700;line-height:1.2;opacity:.85;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 2px}
+.pc.on.today{box-shadow:inset 0 0 0 2px rgba(255,255,255,.9)}
+.p-note{margin-top:12px;font-size:12.5px;font-weight:600;color:var(--muted);text-align:center}
+.f-q{position:sticky;top:0;z-index:1;background:#fff;padding-bottom:10px}
+.f-q input{width:100%;height:46px;border:1px solid var(--line);background:#f7f6f8;border-radius:12px;padding:0 14px;font:inherit;font-size:16px;color:var(--ink)}
+.f-q input:focus{outline:none;border-color:var(--ink);background:#fff}
+.f-sub{font-size:13.5px;font-weight:600;color:var(--ink2);margin:-2px 0 10px}
+.f-row{display:flex;align-items:center;gap:12px;width:100%;min-height:56px;padding:6px 2px;border:none;border-bottom:1px solid var(--line);background:none;font:inherit;color:var(--ink);text-align:left;cursor:pointer}
+.f-row:last-child{border-bottom:none}
+.f-row:active{background:#f8f7f9}
+.f-row .av{width:36px;height:36px;font-size:14px}
+.f-row b{flex:1;min-width:0;font-size:16px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.f-row small{font-size:13px;font-weight:700;color:var(--ink2);font-variant-numeric:tabular-nums}
+.f-row svg{width:16px;height:16px;color:var(--muted)}
+/* 좁은 폰(≤374px): 머리 줄이 두 줄로 깨지지 않게. 날짜 고르기는 가운데 날짜를 눌러도 열려서 달력 아이콘은 숨겨요 */
+.brand,.seg button{white-space:nowrap}
+@media (max-width:374px){
+  .top{gap:4px;padding-left:16px}
+  .brand{font-size:16.5px}
+  .seg button{padding:7px 10px;font-size:13px}
+  #calBtn{display:none}
+}
 </style>
 </head>
 <body data-theme="maid">
@@ -426,6 +473,7 @@ button{font-family:inherit;color:inherit}
         <button data-v="week">주간</button>
         <button data-v="month">월간</button>
       </div>
+      <button class="icon-btn" id="findBtn" aria-label="근무자 찾기"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="8" r="3.6"/><path d="M3.5 20c.6-3.6 3.2-5.6 6.5-5.6 1.2 0 2.3.3 3.2.8"/><circle cx="17.2" cy="16.6" r="2.8"/><path d="M19.3 18.7l2 2"/></svg></button>
       <button class="icon-btn" id="calBtn" aria-label="날짜 고르기"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15.5" rx="3"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg></button>
     </header>
 
@@ -453,6 +501,26 @@ button{font-family:inherit;color:inherit}
       <div class="cal-dow"><span class="sun">일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span class="sat">토</span></div>
       <div class="cal-grid" id="calGrid"></div>
     </div>
+  </div>
+</div>
+
+<!-- 근무자 찾기 -->
+<div class="modal" id="fModal">
+  <div class="modal-c" role="dialog" aria-label="근무자 찾기">
+    <div class="sheet-top"><div class="grab"></div>
+    <div class="sheet-h"><b id="fTitle">근무자 찾기</b><button class="sheet-x" id="fClose" aria-label="닫기"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div></div>
+    <p class="f-sub" id="fSub"></p>
+    <div class="f-q"><input id="fQ" type="search" placeholder="이름 찾기 (초성도 돼요)" aria-label="근무자 이름 찾기" autocomplete="off" enterkeyhint="search"></div>
+    <div id="fList"></div>
+  </div>
+</div>
+<!-- 근무자 한 사람의 달력 -->
+<div class="modal" id="pModal">
+  <div class="modal-c" role="dialog" aria-label="근무자 달력">
+    <div class="sheet-top"><div class="grab"></div>
+    <div class="sheet-h"><span class="p-who" id="pWho"></span><span class="p-acts"><span id="pIg"></span><button class="sheet-x" id="pClose" aria-label="닫기"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button></span></div></div>
+    <div class="cal-h"><button id="pPrev" aria-label="이전 달">‹</button><div class="cal-t" id="pTitle"></div><button id="pNext" aria-label="다음 달">›</button></div>
+    <div id="pBody"></div>
   </div>
 </div>
 
@@ -525,6 +593,15 @@ async function boot(){
   $('calPrev').onclick = ()=>{ calM--; if(calM<0){ calM=11; calY--; } renderCal(); };
   $('calNext').onclick = ()=>{ calM++; if(calM>11){ calM=0; calY++; } renderCal(); };
   calSheet = sheetCtl($('calModal'));
+  fSheet = sheetCtl($('fModal')); pSheet = sheetCtl($('pModal'));
+  $('fClose').onclick = ()=> fSheet.close();
+  $('fModal').onclick = e=>{ if(e.target.id==='fModal') fSheet.close(); };
+  $('pClose').onclick = ()=> pSheet.close();
+  $('pModal').onclick = e=>{ if(e.target.id==='pModal') pSheet.close(); };
+  $('findBtn').onclick = openFinder;
+  $('fQ').oninput = drawFinder;
+  $('pPrev').onclick = ()=> stepPerson(-1);
+  $('pNext').onclick = ()=> stepPerson(1);
   $('calClose').onclick = ()=> calSheet.close();
   $('calModal').onclick = e=>{ if(e.target.id==='calModal') calSheet.close(); };
   render();
@@ -703,9 +780,12 @@ const avatarHtml = (cls, name, url) => url
 // 게스트 먼저, 그다음 가나다순
 const nameOf = s => s.display_name||s.staff_name||s.member_name||'';
 const byGuestFirst = (a,b)=> ((b.is_guest?1:0)-(a.is_guest?1:0)) || nameOf(a).localeCompare(nameOf(b),'ko');
-const memberRow = (name, guest, insta, avatar, sm) => {
+const memberRow = (name, guest, insta, avatar, sm, sid) => {
   const ig = !guest ? igUrl(insta) : null;
-  return `<div class="row${sm?' sm':''}${guest?' guest':''}">${avatarHtml('av', name, guest?null:avatar)}<span class="nm">${esc(name)}</span>${guest?`<span class="gbadge">게스트</span>`:''}${ig?`<a class="ig" href="${esc(ig)}" target="_blank" rel="noopener" aria-label="${esc(name)} 인스타그램"><span>${IG_SVG}</span></a>`:''}</div>`;
+  const who = `${avatarHtml('av', name, guest?null:avatar)}<span class="nm">${esc(name)}</span>`;
+  // 직원 이름을 누르면 그 사람의 한 달 달력 (게스트는 그대로)
+  const main = !guest && sid!=null ? `<button class="who" data-sid="${esc(sid)}" data-n="${esc(name)}" data-av="${esc(avatar||'')}" data-ig="${esc(insta||'')}" aria-label="${esc(name)} 출근 달력 보기">${who}</button>` : who;
+  return `<div class="row${sm?' sm':''}${guest?' guest':''}">${main}${guest?`<span class="gbadge">게스트</span>`:''}${ig?`<a class="ig" href="${esc(ig)}" target="_blank" rel="noopener" aria-label="${esc(name)} 인스타그램"><span>${IG_SVG}</span></a>`:''}</div>`;
 };
 const eventHtml = memo => `<div class="event"><span class="ev-tag">이벤트</span><span class="ev-name">${esc(memo)}</span></div>`;
 const guestPill = n => n ? `<span class="gcount">게스트 ${n}</span>` : '';
@@ -716,8 +796,8 @@ function dayNightHtml(named, mem, nightHrs){
   const dh = pick('주간'), nh = pick('야간');
   const col = (cls, head, hrs, list, empty) => `<div class="dn-col${cls}"><div class="dn-h">${head}<span>${list.length}명</span>${hrs?`<small>${esc(hrs)}</small>`:''}</div>${list.length?list.join(''):`<div class="none">${empty}</div>`}</div>`;
   return `${(!dh&&!nh)?`<div class="hrs-line">${esc(nightHrs)}</div>`:''}<div class="dn">`
-    + col('', '<b>주간</b>', dh, named.map(s=>memberRow(s.display_name||s.staff_name, s.is_guest, s.staff_instagram, s.staff_avatar, true)), '없음')
-    + col(' night', `${ICON.moon}<b>야간</b>`, nh, mem.map(m=>memberRow(m.member_name, m.is_guest, m.instagram, m.avatar, true)), '미정')
+    + col('', '<b>주간</b>', dh, named.map(s=>memberRow(s.display_name||s.staff_name, s.is_guest, s.staff_instagram, s.staff_avatar, true, s.staff_id)), '없음')
+    + col(' night', `${ICON.moon}<b>야간</b>`, nh, mem.map(m=>memberRow(m.member_name, m.is_guest, m.instagram, m.avatar, true, m.staff_id)), '미정')
     + `</div>`;
 }
 
@@ -754,7 +834,7 @@ async function renderDay(){
       if(memo) inner += eventHtml(memo);
       if(nightHrs) inner += dayNightHtml(named, mem, nightHrs);
       else if(named.length){
-        inner += named.map(s=>memberRow(s.display_name||s.staff_name, s.is_guest, s.staff_instagram, s.staff_avatar)).join('');
+        inner += named.map(s=>memberRow(s.display_name||s.staff_name, s.is_guest, s.staff_instagram, s.staff_avatar, false, s.staff_id)).join('');
       }
       else inner += `<div class="none">근무 없음</div>`;
     }
@@ -767,6 +847,7 @@ async function renderDay(){
   $('list').innerHTML = (total===0 || (all && !shown))
     ? (all && total>0 ? emptyBox('closed', '휴무일이에요', '이 날은 모든 매장이 쉬어요') : emptyBox('cal', '이 날은 등록된 근무가 없어요', '다른 날짜를 확인해 보세요'))
     : html;
+  bindWho($('list'));
   animList();
 }
 
@@ -916,6 +997,120 @@ function renderMonthDetail(ds, fromTap){
   box.innerHTML = `<div class="md-h"><b>${d.getMonth()+1}월 ${d.getDate()}일 (${DAYS[d.getDay()]})</b><button class="md-go" data-goday="${ds}">이 날 자세히 ${ICON.chev}</button></div>${body}`;
   goDay(box);
   if(fromTap) box.scrollIntoView({behavior:'smooth', block:'nearest'});
+}
+
+// ── 근무자별 달력 ──
+let fSheet, pSheet, fPeople = [], fSeq = 0, person = null, pSeq = 0;
+const CHO = 'ㄱㄲㄴㄷㄸㄹㅁㅂㅃㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎ';
+const cho = t => [...String(t)].map(c=>{ const k=c.charCodeAt(0)-0xAC00; return k>=0&&k<11172 ? CHO[Math.floor(k/588)] : c; }).join('');
+const nameHit = (n, q) => { q=q.trim(); if(!q) return true; n=String(n||''); return n.toLowerCase().includes(q.toLowerCase()) || cho(n).includes(cho(q)); };
+const monthRange = ym => { const [y,m]=ym.split('-').map(Number); return [ym+'-01', ymd(new Date(y, m, 0))]; };
+const ymLabel = ym => `${+ym.slice(0,4)}년 ${+ym.slice(5)}월`;
+const ymStep = (ym, k) => { const [y,m]=ym.split('-').map(Number); return ymOf(new Date(y, m-1+k, 1)); };
+const monthOk = ym => (!minDate || ym >= minDate.slice(0,7)) && (!maxDate || ym <= maxDate.slice(0,7));
+// 1000줄씩 끝까지 (한 달 출근표가 많아도 빠짐없이)
+async function fetchAll(mk){
+  const out=[]; for(let a=0;;a+=1000){ const { data, error } = await mk().range(a, a+999); if(error) return null; out.push(...(data||[])); if(!data || data.length<1000) return out; }
+}
+function bindWho(root){
+  root.querySelectorAll('.who[data-sid]').forEach(b=>b.onclick=()=>openPerson({ id:+b.dataset.sid, name:b.dataset.n, avatar:b.dataset.av||null, insta:b.dataset.ig||'' }));
+}
+
+// 근무자 찾기: 지금 보는 달에 출근하는 사람
+async function openFinder(){
+  const ym = ymOf(selectedDate), seq = ++fSeq;
+  $('fTitle').textContent = `${+ym.slice(5)}월 근무자`;
+  $('fQ').value = ''; fPeople = [];
+  $('fSub').textContent = '';
+  $('fList').innerHTML = '<div style="text-align:center;padding:24px"><span class="spin"></span></div>';
+  fSheet.open();
+  if(draftMonths.has(ym)){ $('fList').innerHTML = emptyBox('lock', '아직 공개되지 않은 달이에요', '스케줄이 확정되면 볼 수 있어요'); return; }
+  const [from, to] = monthRange(ym);
+  const [sh, nm] = await Promise.all([
+    fetchAll(()=>supa.from('shift_view').select('staff_id,staff_name,display_name,staff_avatar,staff_instagram,work_date').not('staff_id','is',null).gte('work_date',from).lte('work_date',to).order('id')),
+    fetchAll(()=>supa.from('night_member_view').select('staff_id,member_name,avatar,instagram,work_date').not('staff_id','is',null).gte('work_date',from).lte('work_date',to).order('id')),
+  ]);
+  if(seq !== fSeq) return;
+  if(sh===null || nm===null){ $('fList').innerHTML = emptyBox('alert', '불러오지 못했어요', '잠시 뒤 다시 해 주세요'); return; }
+  const by = {};
+  sh.forEach(r=>{ const p = by[r.staff_id] = by[r.staff_id] || { id:r.staff_id, name:r.display_name||r.staff_name, avatar:r.staff_avatar, insta:r.staff_instagram, days:new Set() }; p.days.add(r.work_date); });
+  nm.forEach(r=>{ const p = by[r.staff_id] = by[r.staff_id] || { id:r.staff_id, name:r.member_name, avatar:r.avatar, insta:r.instagram, days:new Set() }; p.days.add(r.work_date); });
+  fPeople = Object.values(by).sort((a,b)=>String(a.name).localeCompare(String(b.name),'ko'));
+  $('fSub').textContent = `${ymLabel(ym)}에 출근하는 ${fPeople.length}명이에요`;
+  drawFinder();
+}
+function drawFinder(){
+  const q = $('fQ').value, list = fPeople.filter(p=>nameHit(p.name, q));
+  if(!fPeople.length && !$('fSub').textContent) return;
+  $('fList').innerHTML = list.length ? list.map(p=>`<button class="f-row" data-fid="${esc(p.id)}">${avatarHtml('av', p.name, p.avatar)}<b>${esc(p.name)}</b><small>${p.days.size}일</small>${ICON.chev}</button>`).join('')
+    : `<div class="none">${q.trim() ? `'${esc(q.trim())}' 이름이 없어요` : '이 달에 출근하는 사람이 없어요'}</div>`;
+  $('fList').querySelectorAll('[data-fid]').forEach(b=>b.onclick=()=>{ const p=fPeople.find(x=>String(x.id)===b.dataset.fid); if(!p) return; fSheet.close(); openPerson(p); });
+}
+
+// 한 사람의 한 달: 출근한 날은 매장 색, 데빌 야간은 달 모양
+function openPerson(p){
+  const ym = ymOf(selectedDate);
+  person = { ...p, ym: monthOk(ym) ? ym : (maxDate ? maxDate.slice(0,7) : ym) };
+  $('pWho').innerHTML = `${avatarHtml('av', p.name, p.avatar)}<span style="min-width:0"><b>${esc(p.name)}</b><small>출근 달력</small></span>`;
+  const ig = igUrl(p.insta);
+  $('pIg').innerHTML = ig ? `<a class="p-ig" href="${esc(ig)}" target="_blank" rel="noopener" aria-label="${esc(p.name)} 인스타그램">${IG_SVG}</a>` : '';
+  pSheet.open();
+  drawPerson();
+}
+function stepPerson(k){
+  if(!person) return;
+  const ym = ymStep(person.ym, k);
+  if(!monthOk(ym)) return;
+  person.ym = ym; drawPerson();
+}
+async function drawPerson(){
+  const p = person, ym = p.ym, seq = ++pSeq;
+  $('pTitle').textContent = ymLabel(ym);
+  const prevOk = monthOk(ymStep(ym,-1)), nextOk = monthOk(ymStep(ym,1));
+  $('pPrev').disabled = !prevOk; $('pPrev').style.opacity = prevOk ? '' : '.3';
+  $('pNext').disabled = !nextOk; $('pNext').style.opacity = nextOk ? '' : '.3';
+  if(draftMonths.has(ym)){ $('pBody').innerHTML = emptyBox('lock', '아직 공개되지 않은 달이에요', '스케줄이 확정되면 볼 수 있어요'); return; }
+  $('pBody').innerHTML = '<div style="text-align:center;padding:24px"><span class="spin"></span></div>';
+  const [from, to] = monthRange(ym);
+  const [a, b, c] = await Promise.all([
+    supa.from('shift_view').select('work_date,workplace,start_time,end_time').eq('staff_id', p.id).gte('work_date',from).lte('work_date',to),
+    supa.from('night_member_view').select('work_date,workplace').eq('staff_id', p.id).gte('work_date',from).lte('work_date',to),
+    fetchAll(()=>supa.from('shift_view').select('work_date,workplace,memo').not('memo','is',null).gte('work_date',from).lte('work_date',to).order('id')),
+  ]);
+  if(seq !== pSeq) return;
+  if(a.error || b.error){ $('pBody').innerHTML = emptyBox('alert', '불러오지 못했어요', '잠시 뒤 다시 해 주세요'); return; }
+  const memo = {}; (c||[]).forEach(r=>{ if(r.memo) memo[r.work_date+'|'+r.workplace] = r.memo; });
+  const days = {};   // ds → [{wp, night, time}]
+  const add = (ds, wp, night, time) => { const l = days[ds] = days[ds] || []; let x = l.find(v=>v.wp===wp); if(!x) l.push(x = { wp, day:false, night:false, time:'' }); if(night) x.night = true; else { x.day = true; if(time) x.time = time; } };
+  (a.data||[]).forEach(r=>add(r.work_date, r.workplace, false, r.start_time ? `${r.start_time}${r.end_time?'–'+r.end_time:''}` : ''));
+  (b.data||[]).forEach(r=>add(r.work_date, r.workplace, true, ''));
+  const order = w => FLOORS.findIndex(f=>f[0]===w);
+  Object.values(days).forEach(l=>l.sort((x,y)=>order(x.wp)-order(y.wp)));
+  const count = {}; Object.values(days).forEach(l=>l.forEach(x=>{ count[x.wp]=(count[x.wp]||0)+1; }));
+  const total = Object.keys(days).length;
+  const pills = total
+    ? `<span class="p-pill total">${total}일 출근</span>` + FLOORS.filter(([w])=>count[w]).map(([w])=>`<span class="p-pill" style="--c:${THEMES[w].c}"><i></i>${w} ${count[w]}</span>`).join('')
+    : '<span class="p-pill">이 달에는 출근이 없어요</span>';
+  const [y, m] = ym.split('-').map(Number), first = new Date(y, m-1, 1).getDay(), n = new Date(y, m, 0).getDate(), today = ymd(new Date());
+  let cells = '<span class="pc blank"></span>'.repeat(first);
+  for(let d=1; d<=n; d++){
+    const dt = new Date(y, m-1, d), ds = ymd(dt), l = days[ds], cls = ['pc'] ;
+    if(dt.getDay()===0) cls.push('sun'); if(dt.getDay()===6) cls.push('sat'); if(ds===today) cls.push('today');
+    if(!l){ cells += `<span class="${cls.join(' ')}"><span class="d">${d}</span></span>`; continue; }
+    cls.push('on');
+    const main = l[0], ev = l.map(x=>memo[ds+'|'+x.wp]).find(Boolean);
+    const label = l.map(x=>`<span class="w">${x.day ? esc(x.wp) : ''}${x.night ? ICON.moon + (x.day ? '' : '야간') : ''}</span>`).join('');
+    const sub = main.time || ev || '';
+    const aria = `${m}월 ${d}일 ${l.map(x=>x.wp + (x.day && x.night ? ' 주간·야간' : x.night ? ' 야간' : '')).join(', ')}${ev ? ' · ' + ev : ''}`;
+    cells += `<button class="${cls.join(' ')}" style="--c:${THEMES[main.wp].c}" data-pday="${ds}" aria-label="${esc(aria)}"><span class="d">${d}</span>${label}${sub ? `<span class="x">${esc(sub)}</span>` : ''}</button>`;
+  }
+  $('pBody').innerHTML = `<div class="p-sum">${pills}</div><div class="cal-dow">${DAYS.map((x,i)=>`<span class="${i===0?'sun':i===6?'sat':''}">${x}</span>`).join('')}</div><div class="pc-grid">${cells}</div>${total ? '<p class="p-note">날짜를 누르면 그날 출근표로 가요</p>' : ''}`;
+  $('pBody').querySelectorAll('[data-pday]').forEach(b=>b.onclick=()=>{
+    pSheet.close();
+    selectedDate = new Date(b.dataset.pday+'T00:00:00'); viewMode='day'; navDir=0;
+    $('viewSeg').querySelectorAll('button').forEach(x=>x.classList.toggle('on', x.dataset.v==='day'));
+    render();
+  });
 }
 
 boot();
