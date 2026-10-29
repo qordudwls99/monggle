@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
+<!-- Lucide icons © Lucide Contributors (ISC License) — https://lucide.dev -->
 <meta charset="UTF-8" />
 <meta name="robots" content="noindex, nofollow" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
@@ -13,13 +14,16 @@
 <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
 <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
 <meta name="theme-color" content="#ffffff" />
+<script>
+/* 첫 화면 전에 밝기 모드를 정해요 (깜빡임 없음) */
+(function(){try{var m=localStorage.getItem('moe_appearance'),d=m==='dark'||(m!=='light'&&window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches);document.documentElement.setAttribute('data-appearance',d?'dark':'light');var t=document.querySelector('meta[name="theme-color"]');if(t)t.content=d?'#121214':'#ffffff';}catch(e){}})();
+</script>
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-title" content="모에 스케줄" />
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 :root{
   --ink:#17151a; --ink2:#615c66; --muted:#8f8a94; --line:#eeebef; --fill:#f4f2f5;
-  --gold-ink:#5c4204; --gold-soft:#fff5d9; --gold-line:#e5bd4f; --gold-av:#f6dc8c; --gold:#f2c230;
   /* 매장 색: 인스타 프로필 로고 기준 */
   --acc:#d94079; --acc-ink:#b8285f; --acc-soft:#fdedf3; --night:#1f1b1e;
   --chip-bg:#fde4ef; --chip-ink:#7d1a42; --av-bg:#fde4ef; --av-ink:#b8285f;
@@ -86,11 +90,9 @@ button{font-family:inherit;color:inherit}
 .av{width:40px;height:40px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;background:var(--av-bg) center/cover no-repeat;color:var(--av-ink);font-size:16px;font-weight:800}
 .av.photo{color:transparent}
 .nm{flex:1;min-width:0;font-size:18px;font-weight:700;letter-spacing:-.3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.gbadge{flex-shrink:0;display:inline-flex;align-items:center;gap:3px;font-size:12.5px;font-weight:800;color:var(--gold-ink);background:var(--gold);border-radius:99px;padding:3px 10px 3px 8px}
+.gbadge{flex-shrink:0;display:inline-flex;align-items:center;gap:3px;font-size:12.5px;font-weight:800;color:#fff;background:var(--acc);border-radius:99px;padding:3px 10px 3px 8px}
 .gbadge svg,.gcount svg,.wn svg{width:11px;height:11px;flex-shrink:0}
-.row.guest .av{background-color:var(--gold);color:#3d2c02}
-.gcount{display:inline-flex;align-items:center;gap:3px;font-size:13px;font-weight:800;color:var(--gold-ink);margin-right:8px}
-.gcount svg{color:#d9a400}
+.gcount{display:inline-flex;align-items:center;gap:3px;font-size:13px;font-weight:800;color:var(--ink2);margin-right:8px}
 .ig{width:44px;height:44px;margin:-6px -6px -6px 0;display:flex;align-items:center;justify-content:center;flex-shrink:0;border-radius:12px;transition:transform .12s ease}
 .ig span{width:30px;height:30px;border-radius:9px;display:flex;align-items:center;justify-content:center;color:#fff;background:linear-gradient(45deg,#f09433,#e6683c 25%,#dc2743 50%,#cc2366 75%,#bc1888)}
 .ig svg{width:19px;height:19px}
@@ -132,8 +134,6 @@ button{font-family:inherit;color:inherit}
 .wn .wa{width:22px;height:22px;border-radius:50%;background:rgba(255,255,255,.8) center/cover no-repeat;color:var(--av-ink);font-size:10.5px;font-weight:800;display:flex;align-items:center;justify-content:center}
 .wn .wa.photo{color:transparent}
 .wn.guest{padding-right:8px}
-.wn.guest .wa{background-color:var(--gold);color:#3d2c02}
-.wn.guest svg{color:#d9a400}
 .woff{font-size:15px;font-weight:600;color:var(--muted);padding-top:4px}
 .wtags{display:flex;gap:6px;flex-wrap:wrap}
 .wtag{font-size:12px;font-weight:800;border-radius:99px;padding:2px 9px;background:var(--acc-soft);color:var(--acc-ink)}
@@ -161,7 +161,8 @@ button{font-family:inherit;color:inherit}
 .sheet-x:active{background:var(--line)}
 .cal-h{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
 .cal-h .cal-t{font-weight:800;font-size:16.5px}
-.cal-h button{border:none;background:var(--fill);cursor:pointer;width:38px;height:38px;border-radius:50%;font-size:18px;font-weight:700;color:var(--ink)}
+.cal-h button{border:none;background:var(--fill);cursor:pointer;width:38px;height:38px;border-radius:50%;display:grid;place-items:center;color:var(--ink)}
+.cal-h button svg{width:18px;height:18px}
 .cal-dow{display:grid;grid-template-columns:repeat(7,1fr);margin-bottom:4px}
 .cal-dow span{text-align:center;font-size:12px;font-weight:700;color:var(--ink2);padding:6px 0}
 .cal-dow span.sun{color:#d92d20}.cal-dow span.sat{color:#2e6be6}
@@ -274,7 +275,6 @@ button{font-family:inherit;color:inherit}
 .mev{font-size:9px;font-weight:800;color:var(--acc-ink);white-space:nowrap;overflow:hidden;letter-spacing:-.4px}
 .mp{display:flex;align-items:center;justify-content:center;gap:1px;font-size:10.5px;font-weight:800;line-height:1.3;border-radius:5px;background:var(--chip-bg);color:var(--chip-ink);font-variant-numeric:tabular-nums}
 .mp svg{width:8px;height:8px}
-.mp .gs{display:flex;color:#e0a800}
 .mp > svg{color:#e0525c}
 .moff{font-size:10px;font-weight:600;color:var(--muted);margin-top:4px}
 .seg button{padding:7px 11px}
@@ -301,8 +301,7 @@ button{font-family:inherit;color:inherit}
 .wt-c:active{background:rgba(0,0,0,.04)}
 .wt-c.off{background:rgba(255,255,255,.55)}
 .wt-c .n{display:flex;align-items:center;gap:1px;max-width:100%;font-size:11.5px;font-weight:700;letter-spacing:-.5px;line-height:1.2;white-space:nowrap;overflow:hidden}
-.wt-c .n.g{color:#8a6100}
-.wt-c .n svg{width:8px;height:8px;flex-shrink:0;color:#e0a800}
+.wt-c .n svg{width:8px;height:8px;flex-shrink:0}
 .wt-c .no{font-size:11px;color:#c3bec7}
 .wt-c .nt{display:flex;align-items:center;gap:1px;font-size:9.5px;font-weight:800;color:var(--night)}
 .wt-c .nt svg{width:8px;height:8px;color:#e0525c}
@@ -310,8 +309,7 @@ button{font-family:inherit;color:inherit}
 /* 월간: 이름 전부 */
 .mg{display:flex;flex-direction:column;align-items:center;gap:1px;border-radius:6px;background:var(--band);padding:3px 1px}
 .mnm{display:flex;align-items:center;gap:1px;max-width:100%;font-size:10px;font-weight:700;letter-spacing:-.6px;line-height:1.25;color:var(--ink);white-space:nowrap;overflow:hidden}
-.mnm.g{color:#8a6100}
-.mnm svg{width:7px;height:7px;flex-shrink:0;color:#e0a800}
+.mnm svg{width:7px;height:7px;flex-shrink:0}
 .mnt{display:flex;align-items:center;gap:1px;font-size:9px;font-weight:800;color:var(--night)}
 .mnt svg{width:7px;height:7px;color:#e0525c}
 .mc{justify-content:flex-start}
@@ -322,14 +320,9 @@ button{font-family:inherit;color:inherit}
 .mev{margin:0 1px 2px;font-size:9.5px}
 [data-theme="devil"] .wt-c .ev,[data-theme="devil"] .mev{background:#b3262f}
 /* 게스트: 아이콘 없이 글자로만 (진한 금색 + 아주 굵게) */
-.wt-c .n.g,.mnm.g{color:#946300;font-weight:900}
 .wt-c .n,.mnm{white-space:normal;word-break:break-all;text-align:center;justify-content:center}
-.gcount{color:#946300;font-weight:900}
 .gbadge{padding:3px 10px}
 /* 층 띠 색 진하게 (구분 우선) */
-[data-theme="devil"]{--band:#2b2628;--band-ink:#fff;--band-sub:rgba(255,255,255,.55);--band-line:rgba(255,255,255,.12);--band-guest:#f5c542}
-[data-theme="maid"]{--band:#f8c6da;--band-ink:#2a1220;--band-sub:#8e5a6e;--band-line:rgba(80,10,40,.12);--band-guest:#6e4700}
-[data-theme="matsuri"]{--band:#ffc9a3;--band-ink:#2a1408;--band-sub:#8f5a3c;--band-line:rgba(90,30,0,.12);--band-guest:#6e4700}
 .wt-band{color:var(--band-ink)}
 .wt-label{color:var(--band-ink)}
 [data-theme="devil"] .wt-label i{background:#e0525c}
@@ -337,19 +330,17 @@ button{font-family:inherit;color:inherit}
 .wt-c+.wt-c{box-shadow:inset 1px 0 var(--band-line)}
 .wt-c.off{background:transparent}
 .wt-c .no{color:var(--band-sub)}
-.wt-c .n.g,.mnm.g{color:var(--band-guest)}
 .wt-c .nt,.mnt{color:var(--band-ink)}
 .mnm{color:var(--band-ink)}
 .mlegend i{box-shadow:none}
 /* 이름은 한 줄 (긴 이름은 JS가 글자 크기를 줄임) */
 .wt-c .n,.mnm{white-space:nowrap;word-break:normal;overflow:hidden;text-overflow:clip}
 /* 세 층 모두 같은 진하기의 단색 (데빌 검정에 맞춤) */
-[data-theme="devil"]{--band:#26211f;--band-ink:#fff;--band-sub:rgba(255,255,255,.6);--band-line:rgba(255,255,255,.14);--band-guest:#ffe45c}
-[data-theme="maid"]{--band:#d94079;--band-ink:#fff;--band-sub:rgba(255,255,255,.7);--band-line:rgba(255,255,255,.2);--band-guest:#ffe45c}
-[data-theme="matsuri"]{--band:#e0452e;--band-ink:#fff;--band-sub:rgba(255,255,255,.7);--band-line:rgba(255,255,255,.2);--band-guest:#ffe45c}
+[data-theme="devil"]{--band:#26211f;--band-ink:#fff;--band-sub:rgba(255,255,255,.6);--band-line:rgba(255,255,255,.14)}
+[data-theme="maid"]{--band:#d94079;--band-ink:#fff;--band-sub:rgba(255,255,255,.7);--band-line:rgba(255,255,255,.2)}
+[data-theme="matsuri"]{--band:#e0452e;--band-ink:#fff;--band-sub:rgba(255,255,255,.7);--band-line:rgba(255,255,255,.2)}
 .wt-label i{background:#fff}
 [data-theme="devil"] .wt-label i{background:#fff}
-.wt-c .nt svg,.mnt svg{color:#ffe45c}
 /* 이벤트 태그: 단색 띠 위에서는 흰 바탕 + 층 색 글자 */
 .wt-c .ev,.mev{background:#fff;color:var(--acc-ink)}
 [data-theme="devil"] .wt-c .ev,[data-theme="devil"] .mev{background:#fff;color:#b3262f}
@@ -452,12 +443,163 @@ a.p-ig:active{transform:scale(.92)}
 .f-row svg{width:16px;height:16px;color:var(--muted)}
 /* 좁은 폰(≤374px): 머리 줄이 두 줄로 깨지지 않게. 날짜 고르기는 가운데 날짜를 눌러도 열려서 달력 아이콘은 숨겨요 */
 .brand,.seg button{white-space:nowrap}
+.top{gap:4px;padding-right:6px}
+.top .icon-btn{width:40px}
 @media (max-width:374px){
-  .top{gap:4px;padding-left:16px}
+  .top{padding-left:14px}
   .brand{font-size:16.5px}
-  .seg button{padding:7px 10px;font-size:13px}
-  #calBtn{display:none}
+  .seg button{padding:7px 9px;font-size:13px}
 }
+@media (max-width:359px){.brand{display:none}.seg{margin-right:auto}.top{padding-left:10px}}
+/* ── 알림 ── */
+[hidden]{display:none!important}
+:root{--on:#1a9a52;--toast-bg:#17151a;--toast-fg:#fff}
+.toast{position:fixed;left:50%;top:max(64px,env(safe-area-inset-top));transform:translate(-50%,-8px);z-index:200;background:var(--toast-bg);color:var(--toast-fg);border-radius:16px;padding:11px 18px;font-size:14px;font-weight:700;max-width:calc(100% - 32px);width:max-content;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;text-align:center}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+
+/* ── 이번 주 이벤트 ── */
+.eb{margin:0 -16px 4px;padding:2px 0 12px;border-bottom:8px solid var(--fill)}
+.eb-h{display:flex;align-items:center;gap:8px;width:100%;border:none;background:none;font:inherit;color:var(--ink);padding:4px 16px 8px;cursor:pointer;text-align:left}
+.eb-h .ttl{display:flex;align-items:center;gap:6px;min-width:0;font-size:15px;font-weight:800}
+.eb-h .ttl svg{width:19px;height:19px;flex:none}
+.eb-h .more{margin-left:auto;display:flex;align-items:center;gap:2px;font-size:13px;font-weight:700;color:var(--ink2);white-space:nowrap}
+.eb-h .more svg{width:15px;height:15px;transition:transform .2s}
+.eb-h[aria-expanded=true] .more svg{transform:rotate(-90deg)}
+.cnt-pill{font-size:12px;font-weight:800;background:var(--fill);color:var(--ink2);border-radius:99px;padding:2px 9px;font-variant-numeric:tabular-nums}
+.eb-chips{display:flex;gap:8px;overflow-x:auto;padding:0 16px 2px;scrollbar-width:none;scroll-snap-type:x proximity;scroll-padding-left:16px}
+.eb-chips::-webkit-scrollbar{display:none}
+.eb-chip{flex:none;min-width:136px;max-width:190px;scroll-snap-align:start;border:none;background:#fff;box-shadow:inset 0 0 0 1px var(--line);border-radius:14px;padding:10px 12px;text-align:left;font:inherit;color:var(--ink);cursor:pointer;display:flex;flex-direction:column;gap:4px}
+.eb-chip small{font-size:12px;font-weight:700;color:var(--ink2)}
+.eb-chip b{font-size:16px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.eb-chip.cur{box-shadow:inset 0 0 0 2px var(--ink)}
+.eb-chip .eb-sw{margin-top:2px}
+.eb-sw{display:flex;align-items:center;gap:5px;min-width:0;font-size:12.5px;font-weight:700;color:var(--ink2)}
+.eb-sw i{width:9px;height:9px;border-radius:3px;background:var(--c);flex:none}
+.eb-sw i+i{margin-left:-2px}
+.eb-sw span{margin-left:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.eb-all{padding:0 16px}
+.eb-fold{display:flex;align-items:center;gap:6px;width:100%;border:none;background:var(--fill);border-radius:12px;padding:12px 14px;font:inherit;font-size:14px;font-weight:700;color:var(--ink2);cursor:pointer;margin-top:12px}
+.eb-fold svg{width:16px;height:16px;margin-left:auto;transition:transform .2s}
+.eb-fold[aria-expanded=true] svg{transform:rotate(90deg)}
+.eb-row{display:flex;align-items:center;gap:12px;width:100%;min-height:60px;padding:9px 2px;border:none;border-bottom:1px solid var(--line);background:none;text-align:left;font:inherit;color:var(--ink);cursor:pointer}
+.eb-row:active{background:var(--fill)}
+.eb-d{width:42px;text-align:center;flex:none}
+.eb-d small{display:block;font-size:11.5px;font-weight:700;color:var(--ink2)}
+.eb-d b{font-size:19px;font-weight:800;font-variant-numeric:tabular-nums;line-height:1.2}
+.eb-d.sat small{color:#2e6be6}.eb-d.sun small{color:#d92d20}
+.eb-m{min-width:0;flex:1}
+.eb-m b{display:block;font-size:16px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.eb-m .eb-sw{margin-top:3px;font-weight:600}
+.eb-rl{font-size:12px;font-weight:700;color:var(--muted);flex:none}
+.eb-row.past .eb-m b,.eb-row.past .eb-d b{color:var(--ink2)}
+.eb-row.past .eb-sw i{opacity:.55}
+.eb-mh{padding:14px 2px 2px;font-size:13px;font-weight:800;color:var(--ink2)}
+
+/* ── 근무 상태 (데빌, 오늘) ── */
+.dot{display:inline-block;width:7px;height:7px;border-radius:50%;flex-shrink:0;background:var(--on)}
+.dot.later{background:#fff;box-shadow:inset 0 0 0 2px var(--muted)}
+.dot.done{background:var(--line);box-shadow:none}
+.nmw{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;text-align:left}
+.nml{display:flex;align-items:center;gap:5px;min-width:0}
+.nml .nm{flex:0 1 auto}
+.stl{display:flex;align-items:center;gap:5px;font-size:12px;font-weight:700;color:var(--ink2);font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.stl.on{color:var(--on)}
+.dn-col.night .stl{color:rgba(255,255,255,.72)}
+.dn-col.night .stl.on{color:#6fe0a0}
+.dn-col.night .dot.later{background:transparent;box-shadow:inset 0 0 0 2px rgba(255,255,255,.6)}
+.row.sm .who{gap:9px}
+.row.sm .stl{font-size:11.5px;gap:4px}
+.row.sm:has(.stl) .ig{width:34px;margin-left:-2px}
+.row.done .av{filter:grayscale(1);opacity:.55}
+.row.done .nm,.row.done .stl{color:var(--muted)}
+.dn-col.night .row.done .nm{color:rgba(255,255,255,.5)}
+@media (max-width:359px){
+  .dn-col{padding-left:8px;padding-right:8px}
+  .row.sm{gap:7px}
+  .row.sm .av{width:28px;height:28px;font-size:12px}
+  .row.sm .ig{width:32px}
+  .row.sm .nm{font-size:15px}
+  .row.sm:has(.ig) .st-w{display:none}
+}
+
+/* ── 근무자 달력 공유 ── */
+.s-t{display:flex;align-items:center;gap:8px;font-size:18px;font-weight:800;min-width:0}
+.s-t svg{width:22px;height:22px;flex:none}
+.s-t span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.s-ym{font-size:13px;font-weight:700;color:var(--ink2);white-space:nowrap;margin-right:4px}
+.a-share{height:34px;border:none;border-radius:99px;background:var(--fill);color:var(--ink);display:flex;align-items:center;gap:5px;padding:0 12px 0 9px;font:inherit;font-size:13.5px;font-weight:800;cursor:pointer;white-space:nowrap}
+.a-share svg{width:17px;height:17px;flex:none}
+.a-share:active{background:var(--line)}
+.a-share:disabled{color:var(--muted);cursor:default}
+@media (max-width:359px){.a-share span{display:none}.a-share{width:34px;padding:0;justify-content:center}}
+.c-tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding-top:4px}
+.c-tile{border:1px solid var(--line);background:#fff;border-radius:14px;font:inherit;font-weight:700;color:var(--ink);display:flex;align-items:center;justify-content:center;cursor:pointer;white-space:nowrap;min-width:0;flex-direction:column;gap:6px;height:68px;font-size:13.5px;padding:0 4px}
+.c-tile svg{width:20px;height:20px}
+.c-tile:disabled{color:var(--muted);background:var(--fill);cursor:default}
+.c-tile:active:not(:disabled){background:var(--fill)}
+
+/* ── 다크 모드: html[data-appearance="dark"] 일 때만 ── */
+html[data-appearance="dark"]{color-scheme:dark;--ink:#f1eff3;--ink2:#b8b3bd;--muted:#8f8a95;--line:#2a2a2f;--fill:#25252a;--night:#050506;--bg:#121214;--sf:#1c1c20;--page:#08080a;--toast-bg:#f1eff3;--toast-fg:#17151a;--on:#4fd18a}
+html[data-appearance="dark"] body{background:var(--page)}
+html[data-appearance="dark"] .app,html[data-appearance="dark"] .top,html[data-appearance="dark"] .tabbar{background:var(--bg)}
+html[data-appearance="dark"] .seg button.on{background:#3a3a42;color:var(--ink);box-shadow:none}
+html[data-appearance="dark"] .today-btn{background:var(--bg);color:var(--ink2)}
+html[data-appearance="dark"] body[data-theme="all"] .today-tag,html[data-appearance="dark"] body[data-theme="all"] .wt-h.today .dn{color:#17151a}
+html[data-appearance="dark"] .modal-c{background:var(--sf)}
+html[data-appearance="dark"] .grab{background:#4a4a52}
+html[data-appearance="dark"] .modal.in{background:rgba(0,0,0,calc(.6 * var(--dim,1)))}
+html[data-appearance="dark"] .spin{border-color:var(--line);border-top-color:var(--acc)}
+html[data-appearance="dark"] .dn-col{background:var(--sf)}
+html[data-appearance="dark"] .night{background:var(--night)}
+html[data-appearance="dark"] .f-q{background:var(--sf)}
+html[data-appearance="dark"] .f-q input{background:var(--fill);color:var(--ink)}
+html[data-appearance="dark"] .f-row:active{background:var(--fill)}
+html[data-appearance="dark"] .pc{background:var(--sf)}
+html[data-appearance="dark"] .pc.blank{background:none}
+html[data-appearance="dark"] .pc.on{background:var(--c)}
+html[data-appearance="dark"] .p-pill.total{color:#17151a}
+html[data-appearance="dark"] .cal-dow span.sun,html[data-appearance="dark"] .cal-cell.sun,html[data-appearance="dark"] .pc.sun .d,html[data-appearance="dark"] .eb-d.sun small,html[data-appearance="dark"] .wt-h.sun .dow,html[data-appearance="dark"] .mdow .sun,html[data-appearance="dark"] .mc.sun .mn{color:#ff6b5e}
+html[data-appearance="dark"] .cal-dow span.sat,html[data-appearance="dark"] .cal-cell.sat,html[data-appearance="dark"] .pc.sat .d,html[data-appearance="dark"] .eb-d.sat small,html[data-appearance="dark"] .wt-h.sat .dow,html[data-appearance="dark"] .mdow .sat,html[data-appearance="dark"] .mc.sat .mn{color:#6f9bff}
+html[data-appearance="dark"] .pc.on .d{color:#fff}
+html[data-appearance="dark"] .cal-cell:disabled{color:#4a4a52}
+html[data-appearance="dark"] .cal-cell.sel{background:#ece9ee!important;color:#17151a!important}
+html[data-appearance="dark"] .cal-cell.today{box-shadow:inset 0 0 0 1.5px #ece9ee}
+html[data-appearance="dark"] .cal-h button{color:var(--ink)}
+html[data-appearance="dark"] .tab img,html[data-appearance="dark"] .floor-h img{box-shadow:0 0 0 1px rgba(255,255,255,.18)}
+html[data-appearance="dark"] .tab.on img,html[data-appearance="dark"] .tab.on .tab-ic{box-shadow:0 0 0 2px var(--bg),0 0 0 3.5px var(--c)}
+html[data-appearance="dark"] .tab[data-w="전체"]{--c:#ece9ee!important;--ci:#ece9ee!important}
+html[data-appearance="dark"] .tab[data-w="데빌"]{--c:#d8d3d8!important;--ci:#ffffff!important}
+html[data-appearance="dark"] .tab[data-w="메이드"]{--c:#d94079!important;--ci:#f58db4!important}
+html[data-appearance="dark"] .tab[data-w="마츠리"]{--c:#e0452e!important;--ci:#ff8a6e!important}
+html[data-appearance="dark"] [data-theme="all"]{--acc:#ece9ee;--acc-ink:#ece9ee;--acc-soft:#2a2a30;--chip-bg:#2a2a30;--chip-ink:#ece9ee;--av-bg:#2e2e34;--av-ink:#ece9ee}
+html[data-appearance="dark"] [data-theme="maid"]{--acc-ink:#f58db4;--acc-soft:#3a1c29;--chip-bg:#3a1c29;--chip-ink:#ffc4d8;--av-bg:#4a2335;--av-ink:#ffc4d8}
+html[data-appearance="dark"] [data-theme="matsuri"]{--acc-ink:#ff8a6e;--acc-soft:#3d2018;--chip-bg:#3d2018;--chip-ink:#ffc0ae;--av-bg:#4d281e;--av-ink:#ffc0ae}
+html[data-appearance="dark"] [data-theme="devil"]{--acc:#4a4246;--acc-ink:#e9e5e8;--acc-soft:#2e2a2c;--chip-bg:#3a3438;--chip-ink:#fff;--av-bg:#3a3438;--av-ink:#fff;--band:#4a4246}
+html[data-appearance="dark"] .dn-col.night,html[data-appearance="dark"] .night{box-shadow:inset 0 0 0 1.5px rgba(224,82,92,.7)}
+html[data-appearance="dark"] .event{box-shadow:inset 0 0 0 1px rgba(255,255,255,.1)}
+/* 주간·월간 */
+html[data-appearance="dark"] .mc{background:var(--sf)}
+html[data-appearance="dark"] .mc:active{background:var(--fill)}
+html[data-appearance="dark"] .mc.blank{background:none}
+html[data-appearance="dark"] .mc.sel{background:var(--bg);box-shadow:inset 0 0 0 2px #ece9ee}
+html[data-appearance="dark"] .mc.today:not(.sel){background:var(--sf)}
+html[data-appearance="dark"] .mc.today .mn{background:#ece9ee;color:#17151a}
+html[data-appearance="dark"] .evd,html[data-appearance="dark"] .mlegend i.evd{background:#ece9ee;box-shadow:0 0 0 1.5px var(--sf)}
+html[data-appearance="dark"] .mlegend .evd{box-shadow:none}
+html[data-appearance="dark"] [data-theme="maid"] .wt-c .ev,html[data-appearance="dark"] [data-theme="maid"] .mev,html[data-appearance="dark"] [data-theme="maid"] .dfh .dev{color:#b8285f}
+html[data-appearance="dark"] [data-theme="matsuri"] .wt-c .ev,html[data-appearance="dark"] [data-theme="matsuri"] .mev,html[data-appearance="dark"] [data-theme="matsuri"] .dfh .dev{color:#c2381f}
+html[data-appearance="dark"] [data-theme="devil"] .wt-c .ev,html[data-appearance="dark"] [data-theme="devil"] .mev,html[data-appearance="dark"] [data-theme="devil"] .dfh .dev{color:#b3262f}
+/* 더한 부품 */
+html[data-appearance="dark"] .eb-chip{background:var(--sf);box-shadow:inset 0 0 0 1px #34343b}
+html[data-appearance="dark"] .eb-chip.cur{box-shadow:inset 0 0 0 2px var(--ink)}
+html[data-appearance="dark"] .dot.later{background:transparent}
+html[data-appearance="dark"] .dot.done{background:#4a4a52}
+html[data-appearance="dark"] .c-tile{background:transparent;border-color:#34343b}
+html[data-appearance="dark"] .c-tile:disabled{background:var(--fill);border-color:var(--fill);color:#6f6a75}
+html[data-appearance="dark"] .a-share:active,html[data-appearance="dark"] .sheet-x:active{background:#34343b}
+/* 검은 데빌 색 표시: 어두운 바탕에서 묻히지 않게 한 톤 밝게 */
+html[data-appearance="dark"] .pc.on[style*="#26211f"],html[data-appearance="dark"] .p-pill i[style*="#26211f"],html[data-appearance="dark"] .eb-sw i[style*="#26211f"]{--c:#4a4246!important}
+html[data-appearance="dark"] .eb-sw i,html[data-appearance="dark"] .p-pill i{box-shadow:0 0 0 1px rgba(255,255,255,.28)}
 </style>
 </head>
 <body data-theme="maid">
@@ -476,18 +618,23 @@ a.p-ig:active{transform:scale(.92)}
         <button data-v="week">주간</button>
         <button data-v="month">월간</button>
       </div>
-      <button class="icon-btn" id="findBtn" aria-label="근무자 찾기"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="8" r="3.6"/><path d="M3.5 20c.6-3.6 3.2-5.6 6.5-5.6 1.2 0 2.3.3 3.2.8"/><circle cx="17.2" cy="16.6" r="2.8"/><path d="M19.3 18.7l2 2"/></svg></button>
-      <button class="icon-btn" id="calBtn" aria-label="날짜 고르기"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15.5" rx="3"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg></button>
+      <button class="icon-btn" id="findBtn" aria-label="근무자 찾기"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="10" cy="8" r="5"/><path d="M2 21a8 8 0 0 1 10.434-7.62"/><circle cx="18" cy="18" r="3"/><path d="m22 22-1.9-1.9"/></svg></button>
+      <button class="icon-btn" id="themeBtn" aria-label="화면 밝기"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2v2"/><path d="M14.837 16.385a6 6 0 1 1-7.223-7.222c.624-.147.97.66.715 1.248a4 4 0 0 0 5.26 5.259c.589-.255 1.396.09 1.248.715"/><path d="M16 12a4 4 0 0 0-4-4"/><path d="m19 5-1.256 1.256"/><path d="M20 12h2"/></svg></button>
     </header>
 
     <div class="body">
       <div class="ptr" id="ptr"><span class="spin" id="ptrSpin" style="display:none;width:15px;height:15px;border-width:2px"></span><span id="ptrTxt">↓ 당겨서 새로고침</span></div>
       <div class="datebar">
-        <button class="nav" id="prev" aria-label="이전"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button>
+        <button class="nav" id="prev" aria-label="이전"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg></button>
         <button class="dlabel" id="dateLabel" aria-label="날짜 고르기"></button>
-        <button class="nav" id="next" aria-label="다음"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg></button>
+        <button class="nav" id="next" aria-label="다음"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></button>
       </div>
       <div class="subline"><span class="today-tag" id="todayTag">오늘</span><button class="today-btn" id="todayBtn" hidden>오늘로</button></div>
+      <section class="eb" id="eb" aria-label="이번 주 이벤트" hidden>
+        <button class="eb-h" id="ebH" aria-expanded="false"><span class="ttl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z"/><path d="M20 2v4"/><path d="M22 4h-4"/><circle cx="4" cy="20" r="2"/></svg>이번 주 이벤트<span class="cnt-pill" id="ebN"></span></span><span class="more"><span id="ebMore">모두 보기</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></span></button>
+        <div class="eb-chips" id="ebChips"></div>
+        <div class="eb-all" id="ebAll" hidden></div>
+      </section>
       <div id="list"></div>
     </div>
     <nav class="tabbar" id="wpChips" aria-label="매장"></nav>
@@ -498,9 +645,9 @@ a.p-ig:active{transform:scale(.92)}
 <div class="modal" id="calModal">
   <div class="modal-c" role="dialog" aria-label="날짜 고르기">
     <div class="sheet-top"><div class="grab"></div>
-    <div class="sheet-h"><b>날짜 고르기</b><button class="sheet-x" id="calClose" aria-label="닫기"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div></div>
+    <div class="sheet-h"><b>날짜 고르기</b><button class="sheet-x" id="calClose" aria-label="닫기"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button></div></div>
     <div class="cal">
-      <div class="cal-h"><button id="calPrev" aria-label="이전 달">‹</button><div class="cal-t" id="calTitle"></div><button id="calNext" aria-label="다음 달">›</button></div>
+      <div class="cal-h"><button id="calPrev" aria-label="이전 달"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg></button><div class="cal-t" id="calTitle"></div><button id="calNext" aria-label="다음 달"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></button></div>
       <div class="cal-dow"><span class="sun">일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span class="sat">토</span></div>
       <div class="cal-grid" id="calGrid"></div>
     </div>
@@ -511,7 +658,7 @@ a.p-ig:active{transform:scale(.92)}
 <div class="modal" id="fModal">
   <div class="modal-c" role="dialog" aria-label="근무자 찾기">
     <div class="sheet-top"><div class="grab"></div>
-    <div class="sheet-h"><b id="fTitle">근무자 찾기</b><button class="sheet-x" id="fClose" aria-label="닫기"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div></div>
+    <div class="sheet-h"><b id="fTitle">근무자 찾기</b><button class="sheet-x" id="fClose" aria-label="닫기"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button></div></div>
     <p class="f-sub" id="fSub"></p>
     <div class="f-q"><input id="fQ" type="search" placeholder="이름 찾기 (초성도 돼요)" aria-label="근무자 이름 찾기" autocomplete="off" enterkeyhint="search"></div>
     <div id="fList"></div>
@@ -521,11 +668,24 @@ a.p-ig:active{transform:scale(.92)}
 <div class="modal" id="pModal">
   <div class="modal-c" role="dialog" aria-label="근무자 달력">
     <div class="sheet-top"><div class="grab"></div>
-    <div class="sheet-h"><span class="p-who" id="pWho"></span><span class="p-acts"><span id="pIg"></span><button class="sheet-x" id="pClose" aria-label="닫기"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button></span></div></div>
-    <div class="cal-h"><button id="pPrev" aria-label="이전 달">‹</button><div class="cal-t" id="pTitle"></div><button id="pNext" aria-label="다음 달">›</button></div>
+    <div class="sheet-h"><span class="p-who" id="pWho"></span><span class="p-acts"><button class="a-share" id="pShare" aria-label="달력 공유"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2v13"/><path d="m16 6-4-4-4 4"/><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/></svg><span>공유</span></button><span id="pIg"></span><button class="sheet-x" id="pClose" aria-label="닫기"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button></span></div></div>
+    <div class="cal-h"><button id="pPrev" aria-label="이전 달"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg></button><div class="cal-t" id="pTitle"></div><button id="pNext" aria-label="다음 달"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></button></div>
     <div id="pBody"></div>
   </div>
 </div>
+<!-- 달력 공유 -->
+<div class="modal" id="sModal" style="z-index:90">
+  <div class="modal-c" role="dialog" aria-label="달력 공유">
+    <div class="sheet-top"><div class="grab"></div>
+    <div class="sheet-h"><b class="s-t"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2v13"/><path d="m16 6-4-4-4 4"/><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/></svg><span id="sTitle"></span></b><span class="p-acts"><span class="s-ym" id="sYm"></span><button class="sheet-x" id="sClose" aria-label="닫기"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button></span></div></div>
+    <div class="c-tiles">
+      <button class="c-tile" id="cCopy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>링크 복사</button>
+      <button class="c-tile" id="cImg"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V3"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/></svg>이미지 저장</button>
+      <button class="c-tile" id="cSys"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2v13"/><path d="m16 6-4-4-4 4"/><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/></svg>다른 앱</button>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <script type="module">
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
@@ -543,11 +703,40 @@ const ymd = d => d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+
 const igUrl = h => { h=String(h||'').trim(); if(!h) return null; return /^https?:\/\//i.test(h)?h:'https://instagram.com/'+h.replace(/^@/,''); };
 const IG_SVG = '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1.2" fill="currentColor" stroke="none"/></svg>';
 const mondayOf = d => { const x=new Date(d); x.setDate(x.getDate()-((x.getDay()+6)%7)); x.setHours(0,0,0,0); return x; };
-const AV_DEFAULT = "background-image:url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22%3E%3Cpath fill=%22%23bfa6ab%22 d=%22M12 12.4a4.2 4.2 0 1 0 0-8.4 4.2 4.2 0 0 0 0 8.4Zm0 1.6c-4.7 0-8 2.5-8 5.5V21h16v-1.5c0-3-3.3-5.5-8-5.5Z%22/%3E%3C/svg%3E');background-size:74%;background-repeat:no-repeat;background-position:center 60%";
+const AV_DEFAULT = "background-image:url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23bfa6ab%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Ccircle cx=%2212%22 cy=%228%22 r=%225%22/%3E%3Cpath d=%22M20 21a8 8 0 0 0-16 0%22/%3E%3C/svg%3E');background-size:62%;background-repeat:no-repeat;background-position:center";
 // 주소 안의 따옴표·괄호 등은 %인코딩 → style 속성/CSS 밖으로 못 빠져나감
 const avStyle = url => url?`background-image:url('${String(url).replace(/["'()\\<>&\s]/g,c=>'%'+c.charCodeAt(0).toString(16).padStart(2,'0'))}')`:AV_DEFAULT;
 
-let supa=null, selectedDate=new Date(), wpFilter='전체', viewMode='day', navDir=0;
+// 화면 밝기: 기기 설정 → 밝게 → 어둡게 (처음 그리기 전 설정은 <head> 스크립트가 해요)
+const APP_KEY = 'moe_appearance', darkMQ = window.matchMedia ? matchMedia('(prefers-color-scheme: dark)') : null;
+let appMode = (()=>{ try{ const v=localStorage.getItem(APP_KEY); return v==='light'||v==='dark'?v:'device'; }catch(e){ return 'device'; } })();
+const isDark = () => appMode==='dark' || (appMode==='device' && !!(darkMQ&&darkMQ.matches));
+const themeColor = () => isDark() ? '#121214' : '#ffffff';
+function applyAppearance(){
+  document.documentElement.setAttribute('data-appearance', isDark()?'dark':'light');
+  const m=document.querySelector('meta[name="theme-color"]'); if(m) m.content=themeColor();
+}
+function cycleAppearance(){
+  appMode = appMode==='device' ? 'light' : appMode==='light' ? 'dark' : 'device';
+  try{ localStorage.setItem(APP_KEY, appMode); }catch(e){}
+  applyAppearance();
+  toast(appMode==='device' ? '기기 설정을 따라요' : appMode==='light' ? '밝게 볼게요' : '어둡게 볼게요');
+}
+if(darkMQ){ const onMQ=()=>{ if(appMode==='device') applyAppearance(); }; darkMQ.addEventListener ? darkMQ.addEventListener('change', onMQ) : darkMQ.addListener(onMQ); }
+let toastT=0;
+function toast(msg){ const e=$('toast'); e.textContent=msg; e.classList.add('on'); clearTimeout(toastT); toastT=setTimeout(()=>e.classList.remove('on'), 2200); }
+// 시계: 한국 시간(Asia/Seoul)으로 읽고, 테스트할 때는 window.__moeNow(ISO 문자열)를 따라요. 영업일은 새벽 6시에 넘어가요
+const moeNow = () => { const t = window.__moeNow ? new Date(window.__moeNow) : null; return t && !isNaN(t) ? t : new Date(); };
+function bizClock(){
+  const p = {}; new Intl.DateTimeFormat('en-GB', {timeZone:'Asia/Seoul', year:'numeric', month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit', hourCycle:'h23'}).formatToParts(moeNow()).forEach(x=>{ p[x.type]=x.value; });
+  const min = +p.hour*60 + +p.minute, early = min < 360, today = `${p.year}-${p.month}-${p.day}`;
+  const date = early ? new Date(Date.UTC(+p.year, +p.month-1, +p.day-1)).toISOString().slice(0,10) : today;
+  return { today, date, bm: early ? min+1440 : min };   // bm: 영업일 기준 분 (06:00=360 … 다음날 05:59=1799)
+}
+// 페이지의 '오늘'도 영업일 (새벽 6시 전엔 전날)
+const bizToday = () => new Date(bizClock().date+'T00:00:00');
+
+let supa=null, selectedDate=bizToday(), wpFilter='전체', viewMode='day', navDir=0;
 let minDate=null, maxDate=null;   // 손님이 볼 수 있는 범위 (1개월 전 ~ 마지막 등록일)
 let draftMonths=new Set();        // 아직 공개 안 된(작성중) 달 → 손님에게 숨김
 const ymOf = d => ymd(d).slice(0,7);
@@ -561,7 +750,7 @@ function isConfigured(){
          CONFIG.SUPABASE_ANON_KEY && !CONFIG.SUPABASE_ANON_KEY.startsWith('YOUR_');
 }
 async function loadBounds(){
-  const today=new Date(); const mn=new Date(today); mn.setMonth(mn.getMonth()-1);
+  const today=bizToday(); const mn=new Date(today); mn.setMonth(mn.getMonth()-1);
   minDate=ymd(mn);
   const [a,b]=await Promise.all([
     supa.from('shift_view').select('work_date').order('work_date',{ascending:false}).limit(1),
@@ -591,16 +780,21 @@ async function boot(){
   });
   $('prev').onclick = ()=>{ navDir=-1; step(-1); clampSel(); render(); };
   $('next').onclick = ()=>{ navDir=1; step(1); clampSel(); render(); };
-  $('todayBtn').onclick = ()=>{ navDir=0; selectedDate=new Date(); clampSel(); render(); };
-  $('dateLabel').onclick = $('calBtn').onclick = openCalendar;
+  $('todayBtn').onclick = ()=>{ navDir=0; selectedDate=bizToday(); clampSel(); render(); };
+  $('dateLabel').onclick = openCalendar;
+  $('themeBtn').onclick = cycleAppearance;
   $('calPrev').onclick = ()=>{ calM--; if(calM<0){ calM=11; calY--; } renderCal(); };
   $('calNext').onclick = ()=>{ calM++; if(calM>11){ calM=0; calY++; } renderCal(); };
   calSheet = sheetCtl($('calModal'));
-  fSheet = sheetCtl($('fModal')); pSheet = sheetCtl($('pModal'));
+  fSheet = sheetCtl($('fModal')); pSheet = sheetCtl($('pModal')); sSheet = sheetCtl($('sModal'));
   $('fClose').onclick = ()=> fSheet.close();
   $('fModal').onclick = e=>{ if(e.target.id==='fModal') fSheet.close(); };
   $('pClose').onclick = ()=> pSheet.close();
   $('pModal').onclick = e=>{ if(e.target.id==='pModal') pSheet.close(); };
+  $('sClose').onclick = ()=> sSheet.close();
+  $('sModal').onclick = e=>{ if(e.target.id==='sModal') sSheet.close(); };
+  $('pShare').onclick = openShare; $('cCopy').onclick = copyLink; $('cImg').onclick = saveImage; $('cSys').onclick = sendToApp;
+  $('eb').onclick = ebClick;
   $('findBtn').onclick = openFinder;
   $('fQ').oninput = drawFinder;
   $('pPrev').onclick = ()=> stepPerson(-1);
@@ -608,10 +802,14 @@ async function boot(){
   $('calClose').onclick = ()=> calSheet.close();
   $('calModal').onclick = e=>{ if(e.target.id==='calModal') calSheet.close(); };
   render();
-  setupPTR(document.querySelector('.body'), async()=>{ navDir=0; await loadBounds(); await loadDraftMonths(); render(); });
-  // 자동 새로고침 제거: 당겨서 새로고침으로 갱신
+  loadEvents().then(()=>{ if(viewMode==='day') drawEvents(); });
+  setupPTR(document.querySelector('.body'), async()=>{ navDir=0; await loadBounds(); await loadDraftMonths(); await loadEvents(); render(); });
+  // 자동 새로고침 제거: 당겨서 새로고침으로 갱신. 근무 상태만 1분마다 다시 따져요
+  setInterval(tick, 60000);
+  document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) tick(); });
+  openFromUrl().catch(()=>{});
 }
-let calY, calM, calSheet;
+let calY, calM, calSheet, sSheet;
 // 바텀시트 열고 닫기: 올라오고 내려가는 움직임 + 손잡이·제목 줄을 끌어서 닫기 (직원 페이지 A.sheet 와 같은 기준)
 function sheetCtl(wrap){
   const c = wrap.querySelector('.modal-c'), top = wrap.querySelector('.sheet-top');
@@ -653,7 +851,7 @@ function openCalendar(){ calY=selectedDate.getFullYear(); calM=selectedDate.getM
 function renderCal(){
   $('calTitle').textContent = `${calY}년 ${calM+1}월`;
   const startDow=new Date(calY,calM,1).getDay(), days=new Date(calY,calM+1,0).getDate();
-  const selStr=ymd(selectedDate), todayStr=ymd(new Date());
+  const selStr=ymd(selectedDate), todayStr=ymd(bizToday());
   let html='';
   for(let i=0;i<startDow;i++) html+=`<span class="cal-cell dim"></span>`;
   for(let d=1; d<=days; d++){
@@ -726,20 +924,21 @@ const THEMES = {
 // 실제 건물 층 순서: 위에서부터 3층 데빌 · 2층 메이드 · 1층 마츠리
 const FLOORS = [['데빌','3층'],['메이드','2층'],['마츠리','1층']];
 const floorOf = wp => (FLOORS.find(f=>f[0]===wp)||[])[1]||'';
+const LU = (inner, sw=2) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${inner}</svg>`;
 const ICON = {
-  alert:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7.5v5.5M12 16.5h.01"/></svg>',
-  closed:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5 12 4l8 6.5V20H4z"/><path d="M9.5 20v-5.5h5V20"/><path d="M3 21h18"/></svg>',
-  lock:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="10.5" width="14" height="10" rx="2.5"/><path d="M8.5 10.5V7.5a3.5 3.5 0 0 1 7 0v3"/></svg>',
-  cal:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15.5" rx="3"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>',
-  moon:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5Z"/></svg>',
-  chev:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg>',
+  alert:LU('<circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/>',1.5),
+  closed:LU('<path d="M15 21v-5a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v5"/><path d="M17.774 10.31a1.12 1.12 0 0 0-1.549 0 2.5 2.5 0 0 1-3.451 0 1.12 1.12 0 0 0-1.548 0 2.5 2.5 0 0 1-3.452 0 1.12 1.12 0 0 0-1.549 0 2.5 2.5 0 0 1-3.77-3.248l2.889-4.184A2 2 0 0 1 7 2h10a2 2 0 0 1 1.653.873l2.895 4.192a2.5 2.5 0 0 1-3.774 3.244"/><path d="M4 10.95V19a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8.05"/>',1.5),
+  lock:LU('<rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>',1.5),
+  cal:LU('<path d="M8 2v3"/><path d="M16 2v3"/><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/>',1.5),
+  moon:LU('<path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401"/>',2.5),
+  chev:LU('<path d="m9 18 6-6-6-6"/>'),
 };
 const emptyBox = (ic, t, s) => `<div class="empty-box"><div class="e-ic">${ICON[ic]}</div><div class="e-t">${t}</div>${s?`<div class="e-s">${s}</div>`:''}</div>`;
 
 function applyTheme(wp){
   const t = THEMES[wp] || THEMES['메이드'];
   document.body.setAttribute('data-theme', t.key);
-  const m=document.querySelector('meta[name="theme-color"]'); if(m) m.content='#ffffff';
+  const m=document.querySelector('meta[name="theme-color"]'); if(m) m.content=themeColor();
 }
 const BUILDING = '<svg viewBox="0 0 30 30" aria-hidden="true"><circle cx="15" cy="15" r="15" fill="#f3f1f4"/><rect x="8" y="8.4" width="14" height="4.2" rx="2.1" fill="#26211f"/><rect x="8" y="12.9" width="14" height="4.2" rx="2.1" fill="#d94079"/><rect x="8" y="17.4" width="14" height="4.2" rx="2.1" fill="#e0452e"/></svg>';
 function renderChips(){
@@ -775,7 +974,7 @@ function setTodayLine(isNow, tag, btn){
   $('todayTag').textContent=tag; $('todayTag').hidden=!isNow;
   $('todayBtn').textContent=btn; $('todayBtn').hidden=isNow;
 }
-const STAR = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.8l2.7 5.6 6.1.8-4.5 4.2 1.1 6.1L12 16.6l-5.4 2.9 1.1-6.1-4.5-4.2 6.1-.8z"/></svg>';
+const STAR = LU('<path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z"/>');
 const firstSyl = n => [...String(n||'').trim()][0] || '';
 const avatarHtml = (cls, name, url) => url
   ? `<span class="${cls} photo" style="${avStyle(url)}"></span>`
@@ -783,31 +982,64 @@ const avatarHtml = (cls, name, url) => url
 // 게스트 먼저, 그다음 가나다순
 const nameOf = s => s.display_name||s.staff_name||s.member_name||'';
 const byGuestFirst = (a,b)=> ((b.is_guest?1:0)-(a.is_guest?1:0)) || nameOf(a).localeCompare(nameOf(b),'ko');
-const memberRow = (name, guest, insta, avatar, sm, sid) => {
+const memberRow = (name, guest, insta, avatar, sm, sid, st) => {
   const ig = !guest ? igUrl(insta) : null;
-  const who = `${avatarHtml('av', name, guest?null:avatar)}<span class="nm">${esc(name)}</span>`;
+  const gb = guest ? `<span class="gbadge">게스트</span>` : '';
+  const av = avatarHtml('av', name, guest?null:avatar), nm = `<span class="nm">${esc(name)}</span>`;
+  // 근무 상태가 있는 줄: 이름 줄(게스트 뱃지 포함) 아래에 상태 한 줄
+  const stTxt = st ? (st.k==='on' ? '근무 중' : st.k==='later' ? `${st.start}<span class="st-w"> 출근</span>` : '퇴근') : '';
+  const who = st
+    ? `${av}<span class="nmw"><span class="nml">${nm}${gb}</span><span class="stl ${st.k}"><i class="dot ${st.k}"></i>${stTxt}</span></span>`
+    : `${av}${nm}`;
   // 직원 이름을 누르면 그 사람의 한 달 달력 (게스트는 그대로)
   const main = !guest && sid!=null ? `<button class="who" data-sid="${esc(sid)}" data-n="${esc(name)}" data-av="${esc(avatar||'')}" data-ig="${esc(insta||'')}" aria-label="${esc(name)} 출근 달력 보기">${who}</button>` : who;
-  return `<div class="row${sm?' sm':''}${guest?' guest':''}">${main}${guest?`<span class="gbadge">게스트</span>`:''}${ig?`<a class="ig" href="${esc(ig)}" target="_blank" rel="noopener" aria-label="${esc(name)} 인스타그램"><span>${IG_SVG}</span></a>`:''}</div>`;
+  return `<div class="row${sm?' sm':''}${guest?' guest':''}${st&&st.k==='done'?' done':''}">${main}${st?'':gb}${ig?`<a class="ig" href="${esc(ig)}" target="_blank" rel="noopener" aria-label="${esc(name)} 인스타그램"><span>${IG_SVG}</span></a>`:''}</div>`;
 };
 const eventHtml = memo => `<div class="event"><span class="ev-tag">이벤트</span><span class="ev-name">${esc(memo)}</span></div>`;
 const guestPill = n => n ? `<span class="gcount">게스트 ${n}</span>` : '';
 
-// 데빌 주간·야간: 세로로 쌓지 않고 두 칸으로 나란히
-function dayNightHtml(named, mem, nightHrs){
+// 근무 상태 (데빌만, 오늘만): 블록 시간("16:00~23:00", "23:00~익일 05:00")을 기본으로, 사람별 start_time/end_time 이 있으면 그걸 써요
+const ST_RANK = {on:0, later:1, done:2};
+const toBm = (h, m) => (h<6 ? h+24 : h)*60 + m;
+function parseHours(txt){
+  const t = String(txt||'').match(/(\d{1,2}):(\d{2})\s*[~\-–—]\s*(?:익일\s*)?(\d{1,2}):(\d{2})/); if(!t) return null;
+  const s0 = toBm(+t[1], +t[2]); let e0 = toBm(+t[3], +t[4]); if(e0<=s0) e0 += 1440;
+  return { s:s0, e:e0, start:t[1].padStart(2,'0')+':'+t[2] };
+}
+const hmOf = v => { const m=String(v||'').match(/^(\d{1,2}):(\d{2})/); return m ? [+m[1], +m[2]] : null; };
+function stateOf(blk, row, bm){
+  let s0=blk.s, e0=blk.e, start=blk.start;
+  const a=hmOf(row.start_time), b=hmOf(row.end_time);
+  if(a){ s0=toBm(a[0], a[1]); start=String(a[0]).padStart(2,'0')+':'+String(a[1]).padStart(2,'0'); }
+  if(b) e0=toBm(b[0], b[1]);
+  if(e0<=s0) e0 += 1440;
+  return { k: bm<s0 ? 'later' : bm>=e0 ? 'done' : 'on', start };
+}
+let statSig = '';   // 이번에 그린 상태들 (바뀌었을 때만 다시 그려요)
+
+// 데빌 주간·야간: 세로로 쌓지 않고 두 칸으로 나란히. clock 이 있으면 줄마다 근무 상태
+function dayNightHtml(named, mem, nightHrs, clock){
   const pick = k => (String(nightHrs).match(new RegExp(k+'\\s*([^·]+)'))||[])[1]?.trim()||'';
   const dh = pick('주간'), nh = pick('야간');
+  const withSt = (list, hrs) => { const blk = clock ? parseHours(hrs) : null;
+    const a = list.map((x,i)=>({x, i, st: blk ? stateOf(blk, x, clock.bm) : null}));
+    if(blk) a.sort((p,q)=>ST_RANK[p.st.k]-ST_RANK[q.st.k] || p.i-q.i);
+    statSig += a.map(r=>r.st ? r.st.k[0]+r.st.start : '-').join(','); return a; };
+  const dRows = withSt(named, dh), nRows = withSt(mem, nh);
   const col = (cls, head, hrs, list, empty) => `<div class="dn-col${cls}"><div class="dn-h">${head}<span>${list.length}명</span>${hrs?`<small>${esc(hrs)}</small>`:''}</div>${list.length?list.join(''):`<div class="none">${empty}</div>`}</div>`;
   return `${(!dh&&!nh)?`<div class="hrs-line">${esc(nightHrs)}</div>`:''}<div class="dn">`
-    + col('', '<b>주간</b>', dh, named.map(s=>memberRow(s.display_name||s.staff_name, s.is_guest, s.staff_instagram, s.staff_avatar, true, s.staff_id)), '없음')
-    + col(' night', `${ICON.moon}<b>야간</b>`, nh, mem.map(m=>memberRow(m.member_name, m.is_guest, m.instagram, m.avatar, true, m.staff_id)), '미정')
+    + col('', '<b>주간</b>', dh, dRows.map(({x,st})=>memberRow(x.display_name||x.staff_name, x.is_guest, x.staff_instagram, x.staff_avatar, true, x.staff_id, st)), '없음')
+    + col(' night', `${ICON.moon}<b>야간</b>`, nh, nRows.map(({x,st})=>memberRow(x.member_name, x.is_guest, x.instagram, x.avatar, true, x.staff_id, st)), '미정')
     + `</div>`;
 }
 
+let dayState = null, daySig = '';
 async function renderDay(){
-  const d=selectedDate, ds=ymd(d), isToday=ds===ymd(new Date());
+  const d=selectedDate, ds=ymd(d), isToday=ds===ymd(bizToday());
   $('dateLabel').textContent = `${d.getMonth()+1}월 ${d.getDate()}일 (${DAYS[d.getDay()]})`;
   setTodayLine(isToday, '오늘', '오늘로');
+  drawEvents();
+  dayState = null;
   if(draftMonths.has(ymOf(d))){
     $('list').innerHTML = emptyBox('lock', '아직 공개되지 않은 달이에요', '스케줄이 확정되면 볼 수 있어요');
     animList(); return;
@@ -817,6 +1049,15 @@ async function renderDay(){
   const closed = await fetchClosures(ds, ds);
   const night = await fetchNight(ds, ds);
   const nmem = await fetchNightMembers(ds);
+  dayState = { ds, shifts, closed, night, nmem };
+  $('list').innerHTML = buildDay(); daySig = statSig;
+  bindWho($('list'));
+  animList();
+}
+function buildDay(){
+  const { ds, shifts, closed, night, nmem } = dayState;
+  statSig = '';
+  const clock = bizClock(), live = ds===clock.date;   // 근무 상태는 영업일 기준 오늘만
   const all = wpFilter==='전체';
   const groups = all ? FLOORS.map(f=>f[0]) : [wpFilter];
   let html='', total=0, shown=0;
@@ -835,7 +1076,7 @@ async function renderDay(){
     if(isClosed) inner = all ? `<div class="none">휴무일이에요</div>` : emptyBox('closed', '휴무일이에요', `이 날은 ${wp} 매장이 쉬어요`);
     else {
       if(memo) inner += eventHtml(memo);
-      if(nightHrs) inner += dayNightHtml(named, mem, nightHrs);
+      if(nightHrs) inner += dayNightHtml(named, mem, nightHrs, live && wp==='데빌' ? clock : null);
       else if(named.length){
         inner += named.map(s=>memberRow(s.display_name||s.staff_name, s.is_guest, s.staff_instagram, s.staff_avatar, false, s.staff_id)).join('');
       }
@@ -847,11 +1088,71 @@ async function renderDay(){
     const head = `<a class="store" href="${t.ig}" target="_blank" rel="noopener" aria-label="${wp} 공식 인스타그램"><img src="assets/logo-${t.key}.jpg" alt="" onerror="this.remove()"><span class="fl">${floorOf(wp)}</span><b>${wp}</b><span class="ig-mini">${IG_SVG}</span></a>`;
     html += `<section class="floor" data-theme="${t.key}"><div class="floor-h">${head}<span class="cnt">${isClosed?'':guestPill(guests)}${cnt}</span></div>${inner}</section>`;
   });
-  $('list').innerHTML = (total===0 || (all && !shown))
+  return (total===0 || (all && !shown))
     ? (all && total>0 ? emptyBox('closed', '휴무일이에요', '이 날은 모든 매장이 쉬어요') : emptyBox('cal', '이 날은 등록된 근무가 없어요', '다른 날짜를 확인해 보세요'))
     : html;
-  bindWho($('list'));
-  animList();
+}
+// 1분마다: 근무 상태가 바뀐 때만 다시 그려요 (데이터는 다시 받지 않아요)
+function tick(){
+  if(document.hidden || viewMode!=='day') return;
+  if(bizClock().date!==evFor) drawEvents();
+  if(!dayState || dayState.ds!==ymd(selectedDate)) return;
+  const html = buildDay(); if(statSig===daySig) return;
+  daySig = statSig; $('list').innerHTML = html; bindWho($('list'));
+}
+
+// ── 이번 주 이벤트 (일별 화면 위 띠): 시프트 memo 를 날짜·이름으로 합쳐요. 휴무 매장·공개 전 달은 빼요 ──
+let evList = [], evOpen = false, evPastOpen = false, evFor = '';
+async function loadEvents(){
+  evList = [];
+  if(!minDate || !maxDate) return;
+  const [rows, cl] = await Promise.all([
+    fetchAll(()=>supa.from('shift_view').select('work_date,workplace,memo').not('memo','is',null).gte('work_date',minDate).lte('work_date',maxDate).order('id')),
+    supa.from('closure_view').select('work_date,workplace').gte('work_date',minDate).lte('work_date',maxDate),
+  ]);
+  if(!rows) return;
+  const closedSet = new Set(((cl&&cl.data)||[]).map(c=>c.work_date+'|'+c.workplace));
+  const m = new Map();
+  rows.forEach(r=>{
+    const t = String(r.memo||'').trim();
+    if(!t || closedSet.has(r.work_date+'|'+r.workplace) || draftMonths.has(r.work_date.slice(0,7))) return;
+    const k = r.work_date+'|'+t; if(!m.has(k)) m.set(k, { d:r.work_date, t, ws:new Set() });
+    m.get(k).ws.add(r.workplace);
+  });
+  evList = [...m.values()].map(g=>({ d:g.d, t:g.t, ws:FLOORS.map(f=>f[0]).filter(w=>g.ws.has(w)) }))
+    .filter(g=>g.ws.length).sort((a,b)=>a.d<b.d?-1:a.d>b.d?1:0);
+}
+const dayDiff = (a,b) => Math.round((Date.parse(a+'T00:00:00Z')-Date.parse(b+'T00:00:00Z'))/864e5);
+const addDays = (ds,n) => new Date(Date.parse(ds+'T00:00:00Z')+n*864e5).toISOString().slice(0,10);
+const relDay = (d,today) => { const n=dayDiff(d,today); return n===0?'오늘':n===1?'내일':n===2?'모레':n>0?n+'일 뒤':Math.abs(n)+'일 전'; };
+const dayLabel = ds => { const d=new Date(ds+'T00:00:00'); return `${d.getMonth()+1}월 ${d.getDate()}일 (${DAYS[d.getDay()]})`; };
+const evSwatch = (ws, txt) => `<span class="eb-sw">${ws.map(w=>`<i style="--c:${THEMES[w].c}"></i>`).join('')}<span>${esc(txt)}</span></span>`;
+function drawEvents(){
+  const eb = $('eb'); if(!eb) return;
+  const today = bizClock().date, wkEnd = addDays(today, 6);
+  evFor = today;
+  const up = evList.filter(g=>g.d>=today), past = evList.filter(g=>g.d<today).reverse(), wk = up.filter(g=>g.d<=wkEnd);
+  if(viewMode!=='day' || !wk.length){ eb.hidden = true; return; }
+  const cur = ymd(selectedDate), chips = $('ebChips'), keep = chips.scrollLeft;
+  eb.hidden = false;
+  $('ebN').textContent = wk.length;
+  $('ebH').setAttribute('aria-expanded', evOpen); $('ebMore').textContent = evOpen ? '접기' : '모두 보기';
+  chips.hidden = evOpen; $('ebAll').hidden = !evOpen;
+  chips.innerHTML = wk.map(g=>`<button class="eb-chip${g.d===cur?' cur':''}" data-d="${g.d}"><small>${dayLabel(g.d)} · ${relDay(g.d,today)}</small><b>${esc(g.t)}</b>${evSwatch(g.ws, g.ws.length===3?'모든 층':g.ws.join(' · '))}</button>`).join('');
+  chips.scrollLeft = keep;
+  if(!evOpen){ return; }
+  const row = (g, p) => { const d=new Date(g.d+'T00:00:00'), w=d.getDay();
+    return `<button class="eb-row${p?' past':''}" data-d="${g.d}"><span class="eb-d${w===6?' sat':w===0?' sun':''}"><small>${DAYS[w]}</small><b>${d.getDate()}</b></span><span class="eb-m"><b>${esc(g.t)}</b>${evSwatch(g.ws, g.ws.length===3?'모든 층':g.ws.map(x=>floorOf(x)+' '+x).join(' · '))}</span><span class="eb-rl">${relDay(g.d,today)}</span></button>`; };
+  let h = '', mm0 = '';
+  up.forEach(g=>{ const mm=g.d.slice(5,7); if(mm!==mm0){ mm0=mm; h += `<div class="eb-mh">${+mm}월</div>`; } h += row(g, false); });
+  if(past.length) h += `<button class="eb-fold" id="ebPast" aria-expanded="${evPastOpen}">지난 이벤트 ${past.length}개${ICON.chev}</button><div${evPastOpen?'':' hidden'}>${past.map(g=>row(g, true)).join('')}</div>`;
+  $('ebAll').innerHTML = h;
+}
+function ebClick(e){
+  const t = e.target.closest('[data-d]');
+  if(t){ selectedDate = new Date(t.dataset.d+'T00:00:00'); viewMode='day'; navDir=0; evOpen=false; clampSel(); render(); document.querySelector('.body').scrollTo({top:0}); return; }
+  if(e.target.closest('#ebPast')){ evPastOpen = !evPastOpen; drawEvents(); return; }
+  if(e.target.closest('#ebH')){ evOpen = !evOpen; drawEvents(); }
 }
 
 // 주간은 일요일 시작 (일월화수목금토)
@@ -880,7 +1181,7 @@ function updateNav(){
   $('prev').disabled=!cp; $('next').disabled=!cn;
   $('prev').style.opacity=cp?'':'.3'; $('next').style.opacity=cn?'':'.3';
 }
-function render(){ updateNav(); return viewMode==='week' ? renderWeek() : viewMode==='month' ? renderMonth() : renderDay(); }
+function render(){ updateNav(); if(viewMode!=='day') $('eb').hidden=true; return viewMode==='week' ? renderWeek() : viewMode==='month' ? renderMonth() : renderDay(); }
 function goDay(root){
   root.querySelectorAll('[data-goday]').forEach(c=>c.onclick=()=>{
     selectedDate=new Date(c.dataset.goday+'T00:00:00'); viewMode='day'; navDir=0;
@@ -914,13 +1215,13 @@ const cellBody = (p, cls, base, avail) => {
 async function renderWeek(){
   const mon=sundayOf(selectedDate); const sun=new Date(mon); sun.setDate(sun.getDate()+6);   // mon = 그 주 일요일
   $('dateLabel').textContent = `${mon.getMonth()+1}.${mon.getDate()} – ${sun.getMonth()+1}.${sun.getDate()}`;
-  setTodayLine(ymd(mon)===ymd(sundayOf(new Date())), '이번 주', '이번 주로');
+  setTodayLine(ymd(mon)===ymd(sundayOf(bizToday())), '이번 주', '이번 주로');
   $('list').innerHTML = `<div style="text-align:center;padding:30px"><span class="spin"></span></div>`;
   const shifts = await fetchRange(ymd(mon), ymd(sun)); if(shifts===null) return;
   const closed = await fetchClosures(ymd(mon), ymd(sun));
   const night = await fetchNight(ymd(mon), ymd(sun));
   const nmem = await fetchNightMembersRange(ymd(mon), ymd(sun));
-  const todayStr = ymd(new Date());
+  const todayStr = ymd(bizToday());
   const all = wpFilter==='전체';
   const groups = all ? FLOORS.map(f=>f[0]) : [wpFilter];
   const days = [...Array(7)].map((_,i)=>{ const day=new Date(mon); day.setDate(day.getDate()+i); const ds=ymd(day);
@@ -945,7 +1246,7 @@ async function renderMonth(){
   const y=selectedDate.getFullYear(), m=selectedDate.getMonth();
   const first=new Date(y,m,1), last=new Date(y,m+1,0);
   $('dateLabel').textContent = `${y}년 ${m+1}월`;
-  const now=new Date(); const thisMonth = y===now.getFullYear()&&m===now.getMonth();
+  const now=bizToday(); const thisMonth = y===now.getFullYear()&&m===now.getMonth();
   setTodayLine(thisMonth, '이번 달', '이번 달로');
   if(draftMonths.has(ymOf(first))){
     $('list').innerHTML = emptyBox('lock', '아직 공개되지 않은 달이에요', '스케줄이 확정되면 볼 수 있어요');
@@ -1051,8 +1352,8 @@ function drawFinder(){
 }
 
 // 한 사람의 한 달: 출근한 날은 매장 색, 데빌 야간은 달 모양
-function openPerson(p){
-  const ym = ymOf(selectedDate);
+function openPerson(p, ymArg){
+  const ym = ymArg || ymOf(selectedDate);
   person = { ...p, ym: monthOk(ym) ? ym : (maxDate ? maxDate.slice(0,7) : ym) };
   $('pWho').innerHTML = `${avatarHtml('av', p.name, p.avatar)}<span style="min-width:0"><b>${esc(p.name)}</b><small>출근 달력</small></span>`;
   const ig = igUrl(p.insta);
@@ -1066,22 +1367,15 @@ function stepPerson(k){
   if(!monthOk(ym)) return;
   person.ym = ym; drawPerson();
 }
-async function drawPerson(){
-  const p = person, ym = p.ym, seq = ++pSeq;
-  $('pTitle').textContent = ymLabel(ym);
-  const prevOk = monthOk(ymStep(ym,-1)), nextOk = monthOk(ymStep(ym,1));
-  $('pPrev').disabled = !prevOk; $('pPrev').style.opacity = prevOk ? '' : '.3';
-  $('pNext').disabled = !nextOk; $('pNext').style.opacity = nextOk ? '' : '.3';
-  if(draftMonths.has(ym)){ $('pBody').innerHTML = emptyBox('lock', '아직 공개되지 않은 달이에요', '스케줄이 확정되면 볼 수 있어요'); return; }
-  $('pBody').innerHTML = '<div style="text-align:center;padding:24px"><span class="spin"></span></div>';
+// 한 사람의 한 달 출근 (days: 날짜 → [{wp, day, night, time}], memo: '날짜|매장' → 이벤트 이름)
+async function loadPersonMonth(id, ym){
   const [from, to] = monthRange(ym);
   const [a, b, c] = await Promise.all([
-    supa.from('shift_view').select('work_date,workplace,start_time,end_time').eq('staff_id', p.id).gte('work_date',from).lte('work_date',to),
-    supa.from('night_member_view').select('work_date,workplace').eq('staff_id', p.id).gte('work_date',from).lte('work_date',to),
+    supa.from('shift_view').select('work_date,workplace,start_time,end_time').eq('staff_id', id).gte('work_date',from).lte('work_date',to),
+    supa.from('night_member_view').select('work_date,workplace').eq('staff_id', id).gte('work_date',from).lte('work_date',to),
     fetchAll(()=>supa.from('shift_view').select('work_date,workplace,memo').not('memo','is',null).gte('work_date',from).lte('work_date',to).order('id')),
   ]);
-  if(seq !== pSeq) return;
-  if(a.error || b.error){ $('pBody').innerHTML = emptyBox('alert', '불러오지 못했어요', '잠시 뒤 다시 해 주세요'); return; }
+  if(a.error || b.error) return null;
   const memo = {}; (c||[]).forEach(r=>{ if(r.memo) memo[r.work_date+'|'+r.workplace] = r.memo; });
   const days = {};   // ds → [{wp, night, time}]
   const add = (ds, wp, night, time) => { const l = days[ds] = days[ds] || []; let x = l.find(v=>v.wp===wp); if(!x) l.push(x = { wp, day:false, night:false, time:'' }); if(night) x.night = true; else { x.day = true; if(time) x.time = time; } };
@@ -1089,12 +1383,28 @@ async function drawPerson(){
   (b.data||[]).forEach(r=>add(r.work_date, r.workplace, true, ''));
   const order = w => FLOORS.findIndex(f=>f[0]===w);
   Object.values(days).forEach(l=>l.sort((x,y)=>order(x.wp)-order(y.wp)));
+  return { days, memo };
+}
+async function drawPerson(){
+  const p = person, ym = p.ym, seq = ++pSeq;
+  $('pTitle').textContent = ymLabel(ym);
+  const prevOk = monthOk(ymStep(ym,-1)), nextOk = monthOk(ymStep(ym,1));
+  $('pPrev').disabled = !prevOk; $('pPrev').style.opacity = prevOk ? '' : '.3';
+  $('pNext').disabled = !nextOk; $('pNext').style.opacity = nextOk ? '' : '.3';
+  $('pShare').disabled = draftMonths.has(ym);
+  if(draftMonths.has(ym)){ $('pBody').innerHTML = emptyBox('lock', '아직 공개되지 않은 달이에요', '스케줄이 확정되면 볼 수 있어요'); return; }
+  $('pBody').innerHTML = '<div style="text-align:center;padding:24px"><span class="spin"></span></div>';
+  const data = await loadPersonMonth(p.id, ym);
+  if(seq !== pSeq) return;
+  if(!data){ $('pBody').innerHTML = emptyBox('alert', '불러오지 못했어요', '잠시 뒤 다시 해 주세요'); return; }
+  p.cache = { ym, ...data };
+  const { days, memo } = data;
   const count = {}; Object.values(days).forEach(l=>l.forEach(x=>{ count[x.wp]=(count[x.wp]||0)+1; }));
   const total = Object.keys(days).length;
   const pills = total
     ? `<span class="p-pill total">${total}일 출근</span>` + FLOORS.filter(([w])=>count[w]).map(([w])=>`<span class="p-pill" style="--c:${THEMES[w].c}"><i></i>${w} ${count[w]}</span>`).join('')
     : '<span class="p-pill">이 달에는 출근이 없어요</span>';
-  const [y, m] = ym.split('-').map(Number), first = new Date(y, m-1, 1).getDay(), n = new Date(y, m, 0).getDate(), today = ymd(new Date());
+  const [y, m] = ym.split('-').map(Number), first = new Date(y, m-1, 1).getDay(), n = new Date(y, m, 0).getDate(), today = ymd(bizToday());
   let cells = '<span class="pc blank"></span>'.repeat(first);
   for(let d=1; d<=n; d++){
     const dt = new Date(y, m-1, d), ds = ymd(dt), l = days[ds], cls = ['pc'] ;
@@ -1114,6 +1424,113 @@ async function drawPerson(){
     $('viewSeg').querySelectorAll('button').forEach(x=>x.classList.toggle('on', x.dataset.v==='day'));
     render();
   });
+}
+
+// ── 근무자 달력 공유: 링크 복사 · 이미지 저장 · 다른 앱 (보내기만) ──
+let shareYm = '', shareFile = null, shareKey = '';
+const shareUrl = () => `https://www.moetable.com/v2/main.html?p=${encodeURIComponent(person.id)}&ym=${shareYm}`;
+function openShare(){
+  if(!person || draftMonths.has(person.ym)) return;
+  shareYm = person.ym;
+  $('sTitle').textContent = `${person.name} 달력 공유`;
+  $('sYm').textContent = `${+shareYm.slice(5)}월`;
+  const ok = !draftMonths.has(shareYm);
+  $('cCopy').disabled = !ok; $('cImg').disabled = !ok; $('cSys').disabled = !ok || !navigator.share;
+  sSheet.open();
+  if(ok) makeShareFile().catch(()=>{});   // 누르기 전에 그림을 미리 만들어 둬요 (iOS 는 누른 직후에 공유 창을 열어야 해요)
+}
+async function copyLink(){
+  const t = shareUrl();
+  let ok = false;
+  try{ await navigator.clipboard.writeText(t); ok = true; }catch(e){
+    try{ const ta=document.createElement('textarea'); ta.value=t; ta.setAttribute('readonly',''); ta.style.cssText='position:fixed;top:0;left:0;opacity:0'; document.body.appendChild(ta); ta.select(); ok=document.execCommand('copy'); ta.remove(); }catch(_){}
+  }
+  toast(ok ? '링크를 복사했어요' : '복사하지 못했어요');
+}
+async function sendToApp(){
+  if(!navigator.share) return;
+  try{ await navigator.share({ url:shareUrl(), title:`${person.name} ${+shareYm.slice(5)}월 출근 달력` }); }catch(e){}
+}
+async function makeShareFile(){
+  const key = person.id+'|'+shareYm;
+  if(shareFile && shareKey===key) return shareFile;
+  const data = person.cache && person.cache.ym===shareYm ? person.cache : await loadPersonMonth(person.id, shareYm);
+  if(!data) return null;
+  const blob = await new Promise(r=>monthCanvas(person.name, shareYm, data).toBlob(r, 'image/png'));
+  if(!blob) return null;
+  shareFile = new File([blob], `${person.name}_${shareYm}.png`, { type:'image/png' }); shareKey = key;
+  return shareFile;
+}
+async function saveImage(){
+  let f = shareFile && shareKey===person.id+'|'+shareYm ? shareFile : null;
+  if(!f){ try{ f = await makeShareFile(); }catch(e){} }
+  if(!f){ toast('이미지를 만들지 못했어요'); return; }
+  if(navigator.canShare && navigator.canShare({ files:[f] })){
+    try{ await navigator.share({ files:[f] }); return; }catch(e){ if(e && e.name==='AbortError') return; }
+  }
+  const a = document.createElement('a'); a.href = URL.createObjectURL(f); a.download = f.name;
+  document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(a.href), 4000);
+  toast('이미지를 저장했어요');
+}
+// 한 달 달력 그림: 이름·달·출근 일수, 출근한 날은 매장 색 칸 (+ 야간·이벤트 이름)
+function monthCanvas(name, ym, data){
+  const [y, m] = ym.split('-').map(Number), first = new Date(y, m-1, 1).getDay(), n = new Date(y, m, 0).getDate();
+  const W = 1080, PAD = 48, GAP = 8, CW = Math.floor((W-PAD*2-GAP*6)/7), CH = 150, rows = Math.ceil((first+n)/7);
+  const top = PAD + 190, H = top + rows*(CH+GAP) + 36 + PAD;
+  const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+  const c = cv.getContext('2d');
+  const F = "'Pretendard','Apple SD Gothic Neo','Noto Sans KR',-apple-system,system-ui,'Malgun Gothic',sans-serif";
+  const rr = (x, yy, w, h, r) => { c.beginPath(); c.moveTo(x+r, yy); c.arcTo(x+w, yy, x+w, yy+h, r); c.arcTo(x+w, yy+h, x, yy+h, r); c.arcTo(x, yy+h, x, yy, r); c.arcTo(x, yy, x+w, yy, r); c.closePath(); };
+  const fit = (t, w) => { if(c.measureText(t).width<=w) return t; const a=[...t]; while(a.length>1 && c.measureText(a.join('')+'…').width>w) a.pop(); return a.join('')+'…'; };
+  c.fillStyle = '#fff'; c.fillRect(0, 0, W, H);
+  c.textAlign = 'left'; c.textBaseline = 'alphabetic';
+  let fs = 64; c.font = `800 ${fs}px ${F}`; while(c.measureText(name).width > W-PAD*2 && fs > 30){ fs -= 2; c.font = `800 ${fs}px ${F}`; }
+  c.fillStyle = '#17151a'; c.fillText(name, PAD, PAD+62);
+  c.fillStyle = '#615c66'; c.font = `700 34px ${F}`;
+  c.fillText(`${y}년 ${m}월 · ${Object.keys(data.days).length}일 출근`, PAD, PAD+118);
+  c.textAlign = 'center'; c.font = `700 26px ${F}`;
+  DAYS.forEach((x, i)=>{ c.fillStyle = i===0 ? '#d92d20' : i===6 ? '#2e6be6' : '#615c66'; c.fillText(x, PAD+i*(CW+GAP)+CW/2, top-14); });
+  for(let d=1; d<=n; d++){
+    const idx = first+d-1, col = idx%7, row = Math.floor(idx/7), x = PAD+col*(CW+GAP), yy = top+row*(CH+GAP);
+    const ds = `${ym}-${String(d).padStart(2,'0')}`, l = data.days[ds];
+    c.textAlign = 'center';
+    if(!l){
+      rr(x, yy, CW, CH, 16); c.strokeStyle = '#eeebef'; c.lineWidth = 2; c.stroke();
+      c.fillStyle = col===0 ? '#d92d20' : col===6 ? '#2e6be6' : '#17151a'; c.font = `800 32px ${F}`; c.fillText(String(d), x+CW/2, yy+46);
+      continue;
+    }
+    rr(x, yy, CW, CH, 16); c.fillStyle = THEMES[l[0].wp].c; c.fill();
+    c.fillStyle = '#fff'; c.font = `800 34px ${F}`; c.fillText(String(d), x+CW/2, yy+46);
+    c.font = `800 24px ${F}`;
+    l.slice(0, 2).forEach((v, i)=>{ c.fillText(fit(`${v.day?v.wp:''}${v.night?(v.day?' 야간':'야간'):''}`, CW-12), x+CW/2, yy+78+i*28); });
+    const ev = l.map(v=>data.memo[ds+'|'+v.wp]).find(Boolean);
+    if(ev){ c.globalAlpha = .88; c.font = `700 21px ${F}`; c.fillText(fit(ev, CW-12), x+CW/2, yy+CH-14); c.globalAlpha = 1; }
+  }
+  c.textAlign = 'right'; c.fillStyle = '#8f8a94'; c.font = `700 26px ${F}`; c.fillText('모에 스케줄', W-PAD, H-PAD+8);
+  return cv;
+}
+
+// 주소로 바로 열기: ?p=<staff_id>&ym=<YYYY-MM> → 그 사람의 그 달 달력. 없는 사람·공개 전·볼 수 없는 달은 무시해요
+async function openFromUrl(){
+  const q = new URLSearchParams(location.search), pid = q.get('p');
+  if(pid===null) return;
+  const ymQ = q.get('ym');
+  try{ history.replaceState(null, '', location.pathname+location.hash); }catch(e){}
+  if(!/^\d{1,9}$/.test(pid) || +pid<=0) return;
+  const ym = ymQ===null ? ymOf(bizToday()) : ymQ;
+  if(!/^\d{4}-(0[1-9]|1[0-2])$/.test(ym) || draftMonths.has(ym) || !monthOk(ym)) return;
+  const id = +pid;
+  let p = null;
+  const a = await supa.from('shift_view').select('staff_id,staff_name,display_name,staff_avatar,staff_instagram').eq('staff_id', id).order('work_date', {ascending:false}).limit(1);
+  const r = a.data && a.data[0];
+  if(r) p = { id, name:r.display_name||r.staff_name, avatar:r.staff_avatar, insta:r.staff_instagram };
+  else {
+    const b = await supa.from('night_member_view').select('staff_id,member_name,avatar,instagram').eq('staff_id', id).limit(1);
+    const t = b.data && b.data[0];
+    if(t) p = { id, name:t.member_name, avatar:t.avatar, insta:t.instagram };
+  }
+  if(!p || !p.name) return;
+  openPerson(p, ym);
 }
 
 boot();
