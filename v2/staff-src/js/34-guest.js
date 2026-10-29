@@ -26,7 +26,7 @@
     ]);
     if (sh.error || nm.error) { A.toast('불러오지 못했어요. 다시 해 주세요', true); return false; }
     const shifts = (sh.data || []).filter(r => r.staff_id == null);
-    const nights = (nm.data || []).filter(r => r.staff_id == null && (r.is_guest == null || r.is_guest));
+    const nights = (nm.data || []).filter(r => r.staff_id == null);   // 게스트 표시를 꺼 둔 줄도 포함
     if (!shifts.length && !nights.length) { A.toast(`${g}님 이름으로 잡힌 게스트 근무가 없어요`, true); return false; }
 
     let st = A.store.staff().find(s => s.name === g);

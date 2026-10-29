@@ -302,20 +302,30 @@
   }
 
   // 두 번 부르는 옮기기: 넣기가 된 뒤에만 빼요. 하나라도 됐으면 다시 그려요
-  async function twoStep(ds, add, remove, msg) {
+  async function twoStep(ds, add, remove, msg, afterAdd) {
     if (await rpc(add[0], add[1]) === false) return;
+    if (afterAdd) await afterAdd();
     const r = await rpc(remove[0], remove[1]);
     await done(ds, r === false ? '' : msg);
   }
   const nightAddArgs = (ds, wp, p) => ({ p_admin_id: adminId(), p_date: ds, p_workplace: wp, p_staff_id: p.staffId ?? null, p_name: p.staffId != null ? null : (p.short ? '부족' : p.name) });
+  // 게스트 표시 (supabase-v2-guest-label.sql 적용 뒤에만 A.guestLabel): 그 날·매장·이름의 게스트 근무(주간·야간) 표시를 켜고 꺼요
+  const setGuestLabel = (ds, wp, name, show) => rpc('admin_set_guest_label', { p_admin_id: adminId(), p_date: ds, p_workplace: wp, p_name: name, p_show: !!show });
+  const labelRow = p => A.guestLabel && p.gname ? `<button class="menu-row" data-glabel>${p.showGuest === false ? "손님 페이지에 '게스트' 표시하기" : "'게스트' 표시 끄기"}${I.chev}</button>` : '';
+  const bindLabel = (el, close, p) => { const b = el.querySelector('[data-glabel]'); if (!b) return;
+    b.onclick = async () => { close(); const on = p.showGuest === false;
+      if (await setGuestLabel(p.date, p.wp, p.name, on) === false) return;
+      await done(p.date, on ? `${p.name}님을 다시 게스트로 표시해요` : `${p.name}님은 이제 게스트로 표시하지 않아요`); }; };
+  // 주간↔야간 옮기면 새 줄이 생겨서 표시가 기본(켜짐)으로 돌아가요 → 꺼 둔 표시를 새 자리에도 다시 꺼요
+  const keepLabel = (p, ds, wp) => A.guestLabel && p.gname && p.showGuest === false ? setGuestLabel(ds, wp, p.name, false) : null;
 
   // 줄 ⋯ (주간 근무·빈 자리): 수정 · 다른 층으로 · 야간으로 · 게스트→직원 · 빼기
   function shiftMenu(s) {
     const ds = s.date, wp = s.wp, info = A.store.day(ds, wp), label = s.empty ? '빈 자리' : s.name;
     const moves = A.FLOORS.filter(f => f[0] !== wp && !A.store.day(ds, f[0]).closed).map(([w]) => `<button class="menu-row" data-mv="${w}">${A.storeName(w)}로 옮기기${I.chev}</button>`).join('');
     const flip = info.night && !s.empty ? `<button class="menu-row" data-flip>야간으로 옮기기${I.chev}</button>` : '';
-    const conv = s.guest && A.guest && A.guest.convert ? `<button class="menu-row" data-conv>직원으로 바꾸기${I.chev}</button>` : '';
-    A.sheet({ title: `${label} · 주간`, html: `<p class="sheet-p">${esc(where(ds, wp))}</p><div class="menu-list"><button class="menu-row" data-edit>수정하기${I.chev}</button>${moves}${flip}${conv}</div>`,
+    const conv = s.gname && A.guest && A.guest.convert ? `<button class="menu-row" data-conv>직원으로 바꾸기${I.chev}</button>` : '';
+    A.sheet({ title: `${label} · 주간`, html: `<p class="sheet-p">${esc(where(ds, wp))}</p><div class="menu-list"><button class="menu-row" data-edit>수정하기${I.chev}</button>${moves}${flip}${labelRow(s)}${conv}</div>`,
       actions: [{ label: '이 날 근무에서 빼기', kind: 'danger', onClick: async c => { c();
         if (!await A.confirm({ title: s.empty ? '빈 자리를 지울까요?' : `${label}님을 뺄까요?`, text: `${where(ds, wp)} 주간 근무에서 빠져요.`, ok: '빼기', danger: true })) return;
         if (await rpc('admin_delete_shift', { p_admin_id: adminId(), p_shift_id: Number(s.id) }) === false) return;
@@ -327,7 +337,8 @@
           await done(ds, s.empty ? `빈 자리를 ${A.storeName(to)}로 옮겼어요` : `${label}님을 ${A.storeName(to)}로 옮겼어요`); });
         const f = el.querySelector('[data-flip]');
         if (f) f.onclick = () => { close();
-          twoStep(ds, ['admin_add_night_member', nightAddArgs(ds, wp, s)], ['admin_delete_shift', { p_admin_id: adminId(), p_shift_id: Number(s.id) }], `${label}님을 야간으로 옮겼어요`); };
+          twoStep(ds, ['admin_add_night_member', nightAddArgs(ds, wp, s)], ['admin_delete_shift', { p_admin_id: adminId(), p_shift_id: Number(s.id) }], `${label}님을 야간으로 옮겼어요`, () => keepLabel(s, ds, wp)); };
+        bindLabel(el, close, s);
         const cv = el.querySelector('[data-conv]');
         if (cv) cv.onclick = () => { close(); A.guest?.convert?.(s.name); };
       } });
@@ -336,16 +347,17 @@
   function nightMenu(m) {
     const ds = m.date, wp = m.wp, label = m.short ? '부족' : m.name;
     const moves = A.FLOORS.filter(f => f[0] !== wp && A.store.day(ds, f[0]).night).map(([w]) => `<button class="menu-row" data-mv="${w}">${A.storeName(w)} 야간으로 옮기기${I.chev}</button>`).join('');
-    const conv = m.guest && A.guest && A.guest.convert ? `<button class="menu-row" data-conv>직원으로 바꾸기${I.chev}</button>` : '';
-    A.sheet({ title: `${label} · 야간`, html: `<p class="sheet-p">${esc(where(ds, wp))}</p><div class="menu-list">${moves}<button class="menu-row" data-flip>${m.short ? '주간 빈 자리로 바꾸기' : '주간으로 옮기기'}${I.chev}</button>${conv}</div>`,
+    const conv = m.gname && A.guest && A.guest.convert ? `<button class="menu-row" data-conv>직원으로 바꾸기${I.chev}</button>` : '';
+    A.sheet({ title: `${label} · 야간`, html: `<p class="sheet-p">${esc(where(ds, wp))}</p><div class="menu-list">${moves}<button class="menu-row" data-flip>${m.short ? '주간 빈 자리로 바꾸기' : '주간으로 옮기기'}${I.chev}</button>${labelRow(m)}${conv}</div>`,
       actions: [{ label: '야간에서 빼기', kind: 'danger', onClick: c => { c();
         if (A.night && A.night.remove) A.night.remove(m); else A.toast('야간 멤버 빼기는 준비 중이에요'); } }],
       onOpen: (el, close) => {
         el.querySelectorAll('[data-mv]').forEach(x => x.onclick = () => { close(); const to = x.dataset.mv;
-          twoStep(ds, ['admin_add_night_member', nightAddArgs(ds, to, m)], ['admin_remove_night_member', { p_admin_id: adminId(), p_id: Number(m.id) }], `${label}${m.short ? '' : '님'}을 ${A.storeName(to)} 야간으로 옮겼어요`); });
+          twoStep(ds, ['admin_add_night_member', nightAddArgs(ds, to, m)], ['admin_remove_night_member', { p_admin_id: adminId(), p_id: Number(m.id) }], `${label}${m.short ? '' : '님'}을 ${A.storeName(to)} 야간으로 옮겼어요`, () => keepLabel(m, ds, to)); });
         el.querySelector('[data-flip]').onclick = () => { close();
           const add = { p_admin_id: adminId(), p_work_date: ds, p_workplace: wp, p_start: '', p_end: '', p_assignee: m.staffId ?? null, p_memo: null, p_guest: m.staffId != null || m.short ? null : m.name };
-          twoStep(ds, ['admin_add_shift', add], ['admin_remove_night_member', { p_admin_id: adminId(), p_id: Number(m.id) }], m.short ? '주간 빈 자리로 바꿨어요' : `${label}님을 주간으로 옮겼어요`); };
+          twoStep(ds, ['admin_add_shift', add], ['admin_remove_night_member', { p_admin_id: adminId(), p_id: Number(m.id) }], m.short ? '주간 빈 자리로 바꿨어요' : `${label}님을 주간으로 옮겼어요`, () => keepLabel(m, ds, wp)); };
+        bindLabel(el, close, m);
         const cv = el.querySelector('[data-conv]');
         if (cv) cv.onclick = () => { close(); A.guest?.convert?.(m.name); };
       } });
@@ -402,13 +414,14 @@
   async function shiftSheet(s, ds, wp) {
     const staff = A.store.staff().length ? A.store.staff() : await A.store.directory();
     const edit = !!s;
-    let kind = !s ? 'staff' : s.staffId != null ? 'staff' : s.guest ? 'guest' : 'open';
+    let kind = !s ? 'staff' : s.staffId != null ? 'staff' : s.gname ? 'guest' : 'open';
     const KINDS = [['staff', '직원'], ['guest', '게스트'], ['open', '빈 자리']];
-    const conv = edit && s.guest && A.guest && A.guest.convert ? `<div class="menu-list"><button class="menu-row" data-conv>직원으로 바꾸기${I.chev}</button></div>` : '';
+    const conv = edit && s.gname && A.guest && A.guest.convert ? `<div class="menu-list"><button class="menu-row" data-conv>직원으로 바꾸기${I.chev}</button></div>` : '';
     const html = `<p class="sheet-p">${esc(where(ds, wp))}</p>
       <div class="seg" role="radiogroup" aria-label="누가 들어가나요">${KINDS.map(([k, l]) => `<button data-k="${k}" role="radio" aria-checked="${kind === k}" class="${kind === k ? 'on' : ''}">${l}</button>`).join('')}</div>
       ${A.staffPick({ staff, sel: s ? s.staffId : null, attr: 'data-f="staff"', wrap: 'data-p="staff"' })}
-      <label class="fld-l" data-p="guest">게스트 이름<input class="fld" data-f="guest" maxlength="30" autocomplete="off" value="${esc(s && s.guest ? s.name : '')}" placeholder="예: 하루"></label>
+      <label class="fld-l" data-p="guest">게스트 이름<input class="fld" data-f="guest" maxlength="30" autocomplete="off" value="${esc(s && s.gname ? s.name : '')}" placeholder="예: 하루"></label>
+      ${A.guestLabel ? `<label class="chk-row" data-p="guest"><input type="checkbox" data-f="showGuest"${s && s.gname && s.showGuest === false ? '' : ' checked'}><span class="lm"><span class="lt">손님 페이지에 '게스트'로 표시</span><span class="ls">직원인데 명단에 아직 없으면 꺼 두세요</span></span></label>` : ''}
       <p class="sheet-note" data-p="open">직원들이 이 빈 자리에 신청할 수 있어요.</p>
       <div class="fld-row"><label class="fld-l">시작 (선택)<input class="fld" data-f="start" maxlength="10" autocomplete="off" value="${esc(s ? s.start : '')}" placeholder="예: 18:00"></label><label class="fld-l">끝 (선택)<input class="fld" data-f="end" maxlength="10" autocomplete="off" value="${esc(s ? s.end : '')}" placeholder="예: 23:00"></label></div>
       ${conv}<p class="sheet-err" hidden></p>`;
@@ -426,10 +439,14 @@
       const r = edit
         ? await rpc('admin_update_shift', { p_admin_id: adminId(), p_shift_id: Number(s.id), p_start: start, p_end: end, p_assignee: assignee, p_guest: guest })
         : await rpc('admin_add_shift', { p_admin_id: adminId(), p_work_date: ds, p_workplace: wp, p_start: start, p_end: end, p_assignee: assignee, p_memo: null, p_guest: guest });
+      // 게스트 표시: 넣을 때 끄거나, 고칠 때 바꿨으면 이름 기준으로 따로 저장 (새 줄은 켜짐으로 시작)
+      const lb = kind === 'guest' && A.guestLabel ? f('showGuest') : null, want = lb ? lb.checked : true;
+      const was = edit && s.gname ? s.showGuest !== false : true;
+      const lr = r !== false && lb && (!want || want !== was) ? await setGuestLabel(ds, wp, guest, want) : null;
       busy = false; if (btn) btn.removeAttribute('aria-busy');
       if (r === false) return;
       close();
-      await done(ds, edit ? '근무를 고쳤어요' : kind === 'open' ? '빈 자리를 만들었어요. 직원들이 신청할 수 있어요' : '근무를 넣었어요');
+      await done(ds, (edit ? '근무를 고쳤어요' : kind === 'open' ? '빈 자리를 만들었어요. 직원들이 신청할 수 있어요' : '근무를 넣었어요') + (lb && !want && lr !== false ? ' · 게스트 표시 없이' : ''));
     };
     const del = async c => { c();
       if (!await A.confirm({ title: '이 근무를 지울까요?', text: `${where(ds, wp)}${s.empty ? ' 빈 자리' : ` ${s.name}님`} 근무가 지워져요.`, ok: '지우기', danger: true })) return;

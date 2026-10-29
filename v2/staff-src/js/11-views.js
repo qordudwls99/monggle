@@ -294,7 +294,8 @@
   }
   let addBusy = false;
   // 넣기 전에 그날 야간이 꺼져 있으면 켜요. 켜기에 실패하면 멈춰요 (운영 ensureNightOn 은 결과를 안 봐서 고침)
-  async function addMember(ds, wp, { staffId = null, name = null }, who, close) {
+  // quiet: 명단에 없는 이름이지만 손님 페이지에 '게스트'로 표시하지 않기 (supabase-v2-guest-label.sql 적용 뒤에만)
+  async function addMember(ds, wp, { staffId = null, name = null, quiet = false }, who, close) {
     if (addBusy) return false;
     if (!A.session) { if (A.auth && A.auth.openLogin) A.auth.openLogin(); return false; }
     addBusy = true;
@@ -307,11 +308,12 @@
         opened = true;
       }
       const r = await A.api.rpc('admin_add_night_member', { p_admin_id: sid(), p_date: ds, p_workplace: wp, p_staff_id: staffId == null ? null : Number(staffId), p_name: name });
+      const lr = r !== false && quiet ? await A.api.rpc('admin_set_guest_label', { p_admin_id: sid(), p_date: ds, p_workplace: wp, p_name: name, p_show: false }) : null;
       if (r !== false && close) close();
       A.store.invalidate(ds, ds);
       await A.render({ keep: true });
       if (r === false) return false;
-      A.toast(who ? (opened ? `야간을 열고 ${who}님을 넣었어요` : `${who}님을 야간에 넣었어요`) : (opened ? '야간을 열고 부족 자리를 넣었어요' : '부족 자리를 넣었어요'));
+      A.toast((who ? (opened ? `야간을 열고 ${who}님을 넣었어요` : `${who}님을 야간에 넣었어요`) : (opened ? '야간을 열고 부족 자리를 넣었어요' : '부족 자리를 넣었어요')) + (quiet && lr !== false ? ' · 게스트 표시 없이' : ''));
       return true;
     } finally { addBusy = false; }
   }
@@ -330,7 +332,8 @@
         `<button class="lrow" data-staff="${s.id}" data-name="${esc(s.name)}">${A.avatar({ name: s.name, avatar: staffAvatar(s) })}<span class="lm"><span class="lt">${esc(s.name)}</span></span>${I.plus}</button>`).join('');
       const exact = (A.store.staff() || []).some(s => s.name === qv);
       const fresh = qv && !exact && !takenGuests.has(qv)
-        ? `<button class="lrow" data-guest="${esc(qv)}">${A.avatar(qv)}<span class="lm"><span class="lt">'${esc(qv)}' 게스트로 넣기</span><span class="ls">명단에 없는 이름이에요</span></span>${I.plus}</button>` : '';
+        ? `<button class="lrow" data-guest="${esc(qv)}">${A.avatar(qv)}<span class="lm"><span class="lt">'${esc(qv)}' 게스트로 넣기</span><span class="ls">명단에 없는 이름이에요</span></span>${I.plus}</button>`
+          + (A.guestLabel ? `<button class="lrow" data-guest="${esc(qv)}" data-quiet>${A.avatar(qv)}<span class="lm"><span class="lt">'${esc(qv)}' 게스트 표시 없이 넣기</span><span class="ls">직원인데 명단에 아직 없을 때</span></span>${I.plus}</button>` : '') : '';
       return (rows + fresh) || '<div class="none">넣을 수 있는 사람이 없어요</div>';
     };
     const note = info.night ? '' : `<br>아직 야간이 없는 날이에요. 멤버를 넣으면 야간이 열려요 (${esc(DEFAULT_HOURS)}).`;
@@ -345,7 +348,7 @@
         const q = el.querySelector('[data-q]'), pl = el.querySelector('[data-pl]');
         const bind = () => pl.querySelectorAll('[data-staff],[data-guest]').forEach(b => b.onclick = () => {
           if (b.dataset.staff) addMember(ds, wp, { staffId: Number(b.dataset.staff), name: null }, b.dataset.name, close);
-          else addMember(ds, wp, { staffId: null, name: b.dataset.guest }, b.dataset.guest, close);
+          else addMember(ds, wp, { staffId: null, name: b.dataset.guest, quiet: 'quiet' in b.dataset }, b.dataset.guest, close);
         });
         q.oninput = () => { pl.innerHTML = listHtml(q.value.trim()); bind(); };
         bind();

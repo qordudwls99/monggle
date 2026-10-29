@@ -184,3 +184,10 @@ body.gated #tabbar{display:none}
 .gate .empty-box{padding:0 0 24px}
 .gate-a{display:flex;flex-direction:column;align-items:center;gap:14px;width:100%;max-width:360px;margin:0 auto}
 .gate-guest{font-size:14px;font-weight:600;color:var(--ink2);text-decoration:underline;text-underline-offset:3px;padding:8px}
+
+/* 근무 시트: 게스트 표시 켜고 끄기 */
+.chk-row{display:flex;align-items:center;gap:12px;padding:12px 14px;margin-top:10px;border-radius:14px;background:var(--fill);cursor:pointer}
+.chk-row input{width:22px;height:22px;margin:0;flex-shrink:0;accent-color:var(--ink)}
+.chk-row .lm{flex:1;min-width:0}
+.chk-row .lt{display:block;font-size:15px;font-weight:700;letter-spacing:-.2px}
+.chk-row .ls{display:block;font-size:13px;font-weight:600;color:var(--ink2);margin-top:2px}

@@ -25,10 +25,14 @@
 
   // ── 모양 맞추기 ──
   // Shift: empty = 직원도 게스트도 없는 줄 (빈 자리 / 부족). status 'seeking_sub' = 대타 구하는 중
+  // gname = 명단에 없는 이름으로 넣은 줄. guest = 손님 페이지에 '게스트'로 보이는지 (표시를 끄면 gname 이어도 false)
+  // showGuest: DB 에 show_guest 칸이 있을 때만 true/false, 없으면 null (supabase-v2-guest-label.sql 적용 전)
+  const showGuestOf = r => { if (!('show_guest' in r)) return null; A.guestLabel = true; return r.show_guest !== false; };
   const toShift = r => {
     const guestName = r.guest_name || null;
     const empty = r.staff_id == null && !guestName;
     return {
+      gname: !empty && r.staff_id == null, showGuest: showGuestOf(r),
       id: r.id, date: r.work_date, wp: r.workplace,
       name: empty ? '' : (r.display_name || r.staff_name || guestName || ''),
       staffId: r.staff_id ?? null,
@@ -42,6 +46,7 @@
   const toNight = r => {
     const short = r.member_name === '부족' && r.staff_id == null;
     return {
+      gname: !short && r.staff_id == null, showGuest: showGuestOf(r),
       id: r.id, date: r.work_date, wp: r.workplace, name: r.member_name || '',
       staffId: r.staff_id ?? null, guest: !short && (r.is_guest != null ? !!r.is_guest : r.staff_id == null),
       insta: r.instagram || null, avatar: r.avatar || null, short,

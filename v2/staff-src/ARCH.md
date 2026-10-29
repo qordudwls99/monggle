@@ -283,3 +283,16 @@ The user asked for this: staff without a login can't enter at all.
 - **On boot** the login sheet opens automatically.
 - **The hash is kept** (for example `#swaps`), so that tab opens after login. Logout and an expired token both return to the gate.
 - **This is a screen gate only.** The public views (`swap_view`, `swap_requests`, `swap_comments`, `shift_view`) are still anon-readable at the DB.
+
+## Guest label option (2026-10-29, the SQL needs approval before it is applied)
+
+The user asked for this: a person typed in by name (because they aren't in the staff list yet) need not show as "게스트" on the guest page.
+
+- **SQL:** `supabase-v2-guest-label.sql`. It adds a `show_guest` column (default true) to `shifts` and `night_members`. Both views make `is_guest` respect it and append `show_guest`. A new RPC, `admin_set_guest_label(p_admin_id, p_pin, p_date, p_workplace, p_name, p_show)`, sets it by date, store and name, for both day shifts and night members. The existing add and update RPCs are unchanged.
+- **Client:** `02-store` maps `gname` (an entry typed in by name) and `showGuest`. It sets `A.guestLabel` once a row carries `show_guest`, so all of the UI below stays hidden until the SQL is applied.
+- **Where the UI appears:**
+  - The shift sheet has a checkbox in the 게스트 panel.
+  - The night add list has a "'X' 게스트 표시 없이 넣기" row.
+  - Row menus have a "'게스트' 표시 끄기/하기" item.
+  - Moving a hidden entry between day and night re-applies the hidden label (`keepLabel`).
+- **What uses `gname` instead of `guest`:** kind detection, 직원으로 바꾸기 and the convert flow, so hidden entries still behave as typed-in names.
