@@ -1115,6 +1115,8 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
   // gname = 명단에 없는 이름으로 넣은 줄. guest = 손님 페이지에 '게스트'로 보이는지 (표시를 끄면 gname 이어도 false)
   // showGuest: DB 에 show_guest 칸이 있을 때만 true/false, 없으면 null (supabase-v2-guest-label.sql 적용 전)
   const showGuestOf = r => { if (!('show_guest' in r)) return null; A.guestLabel = true; return r.show_guest !== false; };
+  // start_time 칸이 있을 때만 A.shiftTime (supabase-v2-shift-time.sql 적용 전엔 근무 시간 바꾸기를 숨겨요)
+  const shiftTimeOf = r => { if ('start_time' in r) A.shiftTime = true; return r; };
   const toShift = r => {
     const guestName = r.guest_name || null;
     const empty = r.staff_id == null && !guestName;
@@ -1137,6 +1139,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
       id: r.id, date: r.work_date, wp: r.workplace, name: r.member_name || '',
       staffId: r.staff_id ?? null, guest: !short && (r.is_guest != null ? !!r.is_guest : r.staff_id == null),
       insta: r.instagram || null, avatar: r.avatar || null, short,
+      start: shiftTimeOf(r).start_time || '', end: r.end_time || '',
     };
   };
   const toSwap = r => ({
@@ -1361,25 +1364,26 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
   // 받침에 따라 을/를 같은 조사 고르기
   const josa = (w, a, b) => { const c = String(w).charCodeAt(String(w).length - 1); return (c >= 0xAC00 && c <= 0xD7A3 && (c - 0xAC00) % 28) ? a : b; };
 
+  // Lucide icons © Lucide Contributors (ISC License) — https://lucide.dev (ig 는 브랜드 마크라 그대로)
   const ICON = {
-    cal: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15.5" rx="3"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>',
-    swap: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 19c.6-3.2 2.8-5 5.5-5s4.9 1.8 5.5 5"/><circle cx="16.5" cy="9" r="2.6"/><path d="M15.5 14.2c2.6-.3 4.5 1.4 5 4.3"/></svg>',
-    mine: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="4" width="14" height="17" rx="2.5"/><path d="M9 4.5V3h6v1.5M9 12.5l2 2 4-4"/></svg>',
-    submit: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3h7l4 4v14H7z"/><path d="M14 3v4h4M10 12h5M10 16h5"/></svg>',
-    admin: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2.8v2.4M12 18.8v2.4M2.8 12h2.4M18.8 12h2.4M5.5 5.5l1.7 1.7M16.8 16.8l1.7 1.7M5.5 18.5l1.7-1.7M16.8 7.2l1.7-1.7"/></svg>',
-    bell: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9a6 6 0 0 1 12 0c0 6 2.5 7.5 2.5 7.5h-17S6 15 6 9"/><path d="M10 20a2.2 2.2 0 0 0 4 0"/></svg>',
-    prev: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>',
-    next: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg>',
-    chev: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg>',
-    moon: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5Z"/></svg>',
-    more: '<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg>',
-    plus: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>',
-    lock: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="10.5" width="14" height="10" rx="2.5"/><path d="M8.5 10.5V7.5a3.5 3.5 0 0 1 7 0v3"/></svg>',
-    closed: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5 12 4l8 6.5V20H4z"/><path d="M9.5 20v-5.5h5V20"/><path d="M3 21h18"/></svg>',
-    search: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></svg>',
+    cal: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v3"/><path d="M16 2v3"/><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/></svg>',
+    swap: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3 4 7l4 4"/><path d="M4 7h16"/><path d="m16 21 4-4-4-4"/><path d="M20 17H4"/></svg>',
+    mine: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="m9 14 2 2 4-4"/></svg>',
+    submit: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z"/><path d="M14 2v5a1 1 0 0 0 1 1h5"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></svg>',
+    admin: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915"/><circle cx="12" cy="12" r="3"/></svg>',
+    bell: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.268 21a2 2 0 0 0 3.464 0"/><path d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326"/></svg>',
+    prev: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>',
+    next: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>',
+    chev: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>',
+    moon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401"/></svg>',
+    more: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>',
+    plus: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>',
+    lock: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>',
+    closed: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-6a2 2 0 0 1 2.582 0l7 6A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>',
+    search: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg>',
     ig: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="3.5" width="17" height="17" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.3" cy="6.7" r=".6" fill="currentColor"/></svg>',
-    x: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>',
-    check: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5.5 12.5l4 4 9-9"/></svg>',
+    x: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>',
+    check: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>',
   };
   const emptyBox = (ic, t, s) => `<div class="empty-box"><div class="e-ic">${ICON[ic] || ''}</div><div class="e-t">${esc(t)}</div>${s ? `<div class="e-s">${esc(s)}</div>` : ''}</div>`;
   // 사진 주소 안의 따옴표·괄호 등은 %인코딩 → style 밖으로 못 빠져나감 (운영 avStyle)
@@ -3262,7 +3266,12 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
     return t.join(' + ');
   }
   // 야간 시간은 night_view.hours 글자 그대로
-  const hoursHtml = (e, d) => e.night && d && d.night && d.night.hours ? `<div class="mn-hours">${esc(d.night.hours)}</div>` : '';
+  // 내가 직접 넣은 야간 시간(start~end)이 있으면 그걸 먼저 보여줘요
+  const ownTime = x => x && (x.start || x.end) ? `${x.start || ''}~${x.end || ''}` : '';
+  const hoursHtml = (e, d) => {
+    const t = e.night && (ownTime(e.night) || (d && d.night && d.night.hours));
+    return t ? `<div class="mn-hours">${esc(t)}</div>` : '';
+  };
   function withHtml(e, d) {
     if (!d) return '';
     const myId = me() && me().id;
@@ -3339,8 +3348,50 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
     const actions = [{ label: '출근표에서 보기', onClick: c => { c(); A.goDay(e.date, e.wp); } }];
     if (e.shift && !seeking(e) && remain(e.date)) actions.push({ label: '대타 구하기', kind: 'primary', onClick: c => { c(); seek(e); } });
     else if (seeking(e)) actions.push({ label: '대타 글 내리기', kind: 'danger', onClick: c => { c(); withdraw(e, sw); } });
+    if (A.shiftTime && e.wp === '데빌' && bizDay() <= e.date) {
+      const kinds = [e.shift && 'day', e.night && 'night'].filter(Boolean);
+      kinds.forEach((k, n) => actions.splice(1 + n, 0, { label: kinds.length > 1 ? (k === 'day' ? '주간 시간 바꾸기' : '야간 시간 바꾸기') : '시간 바꾸기', onClick: c => { c(); editTime(e, k, d); } }));
+    }
     A.sheet({ title: A.fmt(e.date), actions, html: `<div class="mn-sh-top">${A.storeTag(e.wp)}${nightTag(e)}${swapTag(e)}</div>
       <p class="mn-sh-what">${esc(whatText(e))}</p>${hoursHtml(e, d)}${withHtml(e, d)}<p class="sheet-p">${esc(info)}</p>` });
+  }
+
+  // 영업일: 한국 시간 06시 전이면 전날 (DB set_my_shift_time 과 같은 기준)
+  const bizDay = () => new Date(Date.now() + 3 * 3600000).toISOString().slice(0, 10);
+
+  // 근무 시간 바꾸기 (데빌 주간 shifts / 야간 night_members). 비우면 기본 시간으로 돌아가요
+  function editTime(e, kind, d) {
+    const x = kind === 'night' ? e.night : e.shift;
+    let st = x.start || '', en = x.end || '';
+    const own = !!(st || en);
+    if (!own && d && d.night && d.night.hours) {
+      // "주간 16:00~23:00 · 야간 23:00~익일 05:00" 에서 이 근무 쪽 시간만
+      const h = String(d.night.hours), part = (h.match(new RegExp((kind === 'night' ? '야간' : '주간') + '\\s*([^·]+)')) || [])[1] || (/주간|야간/.test(h) ? '' : h);
+      const m = part.match(/\b\d{1,2}:\d{2}\b/g) || [];
+      const pad = t => t.padStart(5, '0');
+      st = m[0] ? pad(m[0]) : ''; en = m[1] ? pad(m[1]) : '';
+    }
+    let busy = false;
+    const send = async (c, a, b, done) => {
+      if (busy) return;
+      if (!await A.auth.require()) return;
+      busy = true;
+      const r = await A.api.rpc('set_my_shift_time', { p_staff_id: me().id, p_kind: kind, p_id: x.id, p_start: a, p_end: b });
+      busy = false;
+      if (r === false) return;
+      c();
+      A.store.invalidate(e.date, e.date);
+      await A.render({ keep: true });
+      A.toast(done);
+    };
+    const actions = [{ label: '저장', kind: 'primary', onClick: (c, w) => {
+      const q = n => w.querySelector(`[data-tm="${n}"]`).value;
+      const a = q('s'), b = q('e');
+      if (!a || !b) { A.toast('출근과 퇴근을 넣어 주세요', true); return; }
+      send(c, a, b, '시간을 바꿨어요');
+    } }];
+    if (own) actions.push({ label: '기본 시간으로', onClick: c => send(c, '', '', '기본 시간으로 돌렸어요') });
+    A.sheet({ title: `${A.fmt(e.date)} 시간`, actions, html: `<div class="fld-row"><label class="fld-l">출근<input class="fld" type="time" data-tm="s" value="${esc(st)}"></label><label class="fld-l">퇴근<input class="fld" type="time" data-tm="e" value="${esc(en)}"></label></div>` });
   }
 
   // 대타 요청 취소: 열린 요청을 찾아 cancel_sub (운영 2452-2457)

@@ -28,6 +28,8 @@
   // gname = 명단에 없는 이름으로 넣은 줄. guest = 손님 페이지에 '게스트'로 보이는지 (표시를 끄면 gname 이어도 false)
   // showGuest: DB 에 show_guest 칸이 있을 때만 true/false, 없으면 null (supabase-v2-guest-label.sql 적용 전)
   const showGuestOf = r => { if (!('show_guest' in r)) return null; A.guestLabel = true; return r.show_guest !== false; };
+  // start_time 칸이 있을 때만 A.shiftTime (supabase-v2-shift-time.sql 적용 전엔 근무 시간 바꾸기를 숨겨요)
+  const shiftTimeOf = r => { if ('start_time' in r) A.shiftTime = true; return r; };
   const toShift = r => {
     const guestName = r.guest_name || null;
     const empty = r.staff_id == null && !guestName;
@@ -50,6 +52,7 @@
       id: r.id, date: r.work_date, wp: r.workplace, name: r.member_name || '',
       staffId: r.staff_id ?? null, guest: !short && (r.is_guest != null ? !!r.is_guest : r.staff_id == null),
       insta: r.instagram || null, avatar: r.avatar || null, short,
+      start: shiftTimeOf(r).start_time || '', end: r.end_time || '',
     };
   };
   const toSwap = r => ({

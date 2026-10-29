@@ -44,7 +44,12 @@
     return t.join(' + ');
   }
   // 야간 시간은 night_view.hours 글자 그대로
-  const hoursHtml = (e, d) => e.night && d && d.night && d.night.hours ? `<div class="mn-hours">${esc(d.night.hours)}</div>` : '';
+  // 내가 직접 넣은 야간 시간(start~end)이 있으면 그걸 먼저 보여줘요
+  const ownTime = x => x && (x.start || x.end) ? `${x.start || ''}~${x.end || ''}` : '';
+  const hoursHtml = (e, d) => {
+    const t = e.night && (ownTime(e.night) || (d && d.night && d.night.hours));
+    return t ? `<div class="mn-hours">${esc(t)}</div>` : '';
+  };
   function withHtml(e, d) {
     if (!d) return '';
     const myId = me() && me().id;
@@ -121,8 +126,50 @@
     const actions = [{ label: '출근표에서 보기', onClick: c => { c(); A.goDay(e.date, e.wp); } }];
     if (e.shift && !seeking(e) && remain(e.date)) actions.push({ label: '대타 구하기', kind: 'primary', onClick: c => { c(); seek(e); } });
     else if (seeking(e)) actions.push({ label: '대타 글 내리기', kind: 'danger', onClick: c => { c(); withdraw(e, sw); } });
+    if (A.shiftTime && e.wp === '데빌' && bizDay() <= e.date) {
+      const kinds = [e.shift && 'day', e.night && 'night'].filter(Boolean);
+      kinds.forEach((k, n) => actions.splice(1 + n, 0, { label: kinds.length > 1 ? (k === 'day' ? '주간 시간 바꾸기' : '야간 시간 바꾸기') : '시간 바꾸기', onClick: c => { c(); editTime(e, k, d); } }));
+    }
     A.sheet({ title: A.fmt(e.date), actions, html: `<div class="mn-sh-top">${A.storeTag(e.wp)}${nightTag(e)}${swapTag(e)}</div>
       <p class="mn-sh-what">${esc(whatText(e))}</p>${hoursHtml(e, d)}${withHtml(e, d)}<p class="sheet-p">${esc(info)}</p>` });
+  }
+
+  // 영업일: 한국 시간 06시 전이면 전날 (DB set_my_shift_time 과 같은 기준)
+  const bizDay = () => new Date(Date.now() + 3 * 3600000).toISOString().slice(0, 10);
+
+  // 근무 시간 바꾸기 (데빌 주간 shifts / 야간 night_members). 비우면 기본 시간으로 돌아가요
+  function editTime(e, kind, d) {
+    const x = kind === 'night' ? e.night : e.shift;
+    let st = x.start || '', en = x.end || '';
+    const own = !!(st || en);
+    if (!own && d && d.night && d.night.hours) {
+      // "주간 16:00~23:00 · 야간 23:00~익일 05:00" 에서 이 근무 쪽 시간만
+      const h = String(d.night.hours), part = (h.match(new RegExp((kind === 'night' ? '야간' : '주간') + '\\s*([^·]+)')) || [])[1] || (/주간|야간/.test(h) ? '' : h);
+      const m = part.match(/\b\d{1,2}:\d{2}\b/g) || [];
+      const pad = t => t.padStart(5, '0');
+      st = m[0] ? pad(m[0]) : ''; en = m[1] ? pad(m[1]) : '';
+    }
+    let busy = false;
+    const send = async (c, a, b, done) => {
+      if (busy) return;
+      if (!await A.auth.require()) return;
+      busy = true;
+      const r = await A.api.rpc('set_my_shift_time', { p_staff_id: me().id, p_kind: kind, p_id: x.id, p_start: a, p_end: b });
+      busy = false;
+      if (r === false) return;
+      c();
+      A.store.invalidate(e.date, e.date);
+      await A.render({ keep: true });
+      A.toast(done);
+    };
+    const actions = [{ label: '저장', kind: 'primary', onClick: (c, w) => {
+      const q = n => w.querySelector(`[data-tm="${n}"]`).value;
+      const a = q('s'), b = q('e');
+      if (!a || !b) { A.toast('출근과 퇴근을 넣어 주세요', true); return; }
+      send(c, a, b, '시간을 바꿨어요');
+    } }];
+    if (own) actions.push({ label: '기본 시간으로', onClick: c => send(c, '', '', '기본 시간으로 돌렸어요') });
+    A.sheet({ title: `${A.fmt(e.date)} 시간`, actions, html: `<div class="fld-row"><label class="fld-l">출근<input class="fld" type="time" data-tm="s" value="${esc(st)}"></label><label class="fld-l">퇴근<input class="fld" type="time" data-tm="e" value="${esc(en)}"></label></div>` });
   }
 
   // 대타 요청 취소: 열린 요청을 찾아 cancel_sub (운영 2452-2457)
