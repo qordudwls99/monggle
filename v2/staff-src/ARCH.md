@@ -271,3 +271,15 @@ The prototype source is `proto/js/admin.js` `staffSec()`/`staffRows()`. Preview 
 - `A.sheet` DOM: `.modal` > `.modal-c` > `.sheet-top` (`.grab` + `.sheet-h` with `.sheet-x`) + `.sheet-b` (the scroller) + `.sheet-a` (pinned actions). Code that needs the sheet's scroll position reads `.sheet-b`, not `.modal-c`.
 - `close()` runs `onClose`, settles promises and restores focus synchronously. The element gets `.closing` (`pointer-events:none`) and is removed after the slide-out, so "is a sheet open?" checks must use `#app > .modal:not(.closing)`.
 - Drag to close: the `.sheet-top` pointer events always drag. A touch pull on `.sheet-b` works only at scrollTop 0, and never on `input, textarea, select, .spk-list, .pick-list, .tl-body, .crop-cv, [data-nopull]`, nested scrollers or `.tl-sheet`. Add `data-nopull` to any new gesture area.
+
+## Login gate (core, 2026-10-29)
+
+The user asked for this: staff without a login can't enter at all.
+
+- **Logged out.** `render()` draws only `renderGate()`:
+  - a lock icon and "직원만 볼 수 있어요";
+  - a 로그인 button and a link to `/v2/main.html`;
+  - no tabs (`body.gated` hides `#tabbar`).
+- **On boot** the login sheet opens automatically.
+- **The hash is kept** (for example `#swaps`), so that tab opens after login. Logout and an expired token both return to the gate.
+- **This is a screen gate only.** The public views (`swap_view`, `swap_requests`, `swap_comments`, `shift_view`) are still anon-readable at the DB.

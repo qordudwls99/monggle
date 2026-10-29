@@ -177,3 +177,10 @@ select.fld{appearance:none;-webkit-appearance:none}
 .spk-ck svg{width:13px;height:13px}
 .spk-row.on .spk-ck{background:var(--ink);border-color:var(--ink);color:#fff}
 .spk .none{padding:16px 0}
+
+/* 로그인 전 입구: 탭 없이 로그인만 */
+body.gated #tabbar{display:none}
+.gate{display:flex;flex-direction:column;justify-content:center;min-height:100%;padding:0 24px 48px}
+.gate .empty-box{padding:0 0 24px}
+.gate-a{display:flex;flex-direction:column;align-items:center;gap:14px;width:100%;max-width:360px;margin:0 auto}
+.gate-guest{font-size:14px;font-weight:600;color:var(--ink2);text-decoration:underline;text-underline-offset:3px;padding:8px}

@@ -266,8 +266,25 @@
   // 그리기: 떼어 둔 화면(el)에 그린 뒤, 그 사이 더 새 그리기가 시작되지 않았을 때만 붙여요.
   // keep: 같은 화면에서 내용만 바뀔 때(쓰기 뒤) 스크롤 자리를 두고 움직임을 뺌. 붙였으면 true
   let seq = 0;
+  // 로그인 전: 탭도 화면도 없이 입구만 (직원 전용). 주소의 탭(#swaps 등)은 그대로 두고, 로그인하면 그 탭이 열려요.
+  function renderGate() {
+    document.body.classList.add('gated');
+    document.body.dataset.theme = 'all';
+    document.getElementById('top').innerHTML = `<span class="brand">모에 스케줄<em>직원</em></span>`;
+    document.getElementById('tabbar').innerHTML = '';
+    const host = document.getElementById('screen');
+    const root = document.createElement('div');
+    root.className = 'screen-root gate';
+    root.innerHTML = `${emptyBox('lock', '직원만 볼 수 있어요', '이름과 PIN으로 로그인해 주세요')}
+      <div class="gate-a"><button class="btn lg primary" id="gateLogin">로그인</button><a class="gate-guest" href="/v2/main.html">손님용 출근표 보기</a></div>`;
+    root.querySelector('#gateLogin').onclick = () => A.auth.openLogin();
+    host.replaceChildren(root);
+    host.removeAttribute('aria-busy');
+  }
   async function render({ keep = false } = {}) {
     const my = ++seq;
+    if (!A.session) { pendingRoot = null; renderGate(); return true; }
+    document.body.classList.remove('gated');
     if (state.tab === 'admin' && !isAdmin()) state.tab = 'schedule';
     syncHash();
     renderShell();
@@ -366,6 +383,7 @@
     if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(() => {});
     await render();
     if (A.auth) A.auth.afterBoot();
+    if (!A.session && A.auth) A.auth.openLogin();
   }
 
   Object.assign(A, {
