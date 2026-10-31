@@ -4665,7 +4665,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 {
   const A = window.App;
   const FONT_CSS = 'https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@500;700;800&family=Noto+Serif+KR:wght@700;900&display=swap';
-  // 글꼴 [이름, 굵기]. 제목은 제목판, 내용은 날짜 · 이름 · 이벤트 · 휴무
+  // 글꼴 [이름, 굵기]. 제목은 제목판, 내용은 층 이름 · 날짜 · 이름 · 이벤트 · 휴무
   const FONT = { title: ['Noto Serif KR', 900], body: ['Noto Sans KR', 700] };
   let F = FONT;
   const fontOf = ([name, weight], px) => `${weight} ${Math.round(px)}px "${name}","Apple SD Gothic Neo","Malgun Gothic",sans-serif`;
@@ -4677,9 +4677,10 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
     '마츠리': { ink: '#33140f', sub: '#8a4a3c', ac: '#d3261b', ev: '#d3261b', off: '휴무' },
   };
   const PANEL_INK = '#231318', PANEL_SUB = '#a08a91';
+  // 1주 · 1일 그림은 세 층 모두 연한 메이드 톤이라 글자를 진하게 써요
+  const pale = wp => ({ ...TH[wp], ink: PANEL_INK, sub: TH['메이드'].sub, ev: TH[wp].ac });
 
-  // title: [x, y, w, h, 글자색] · x/y: 칸 경계 (2주) · week: 매장별 칸 경계 (1주) · panels: 층 순서대로 [x, y, w, h] (1일)
-  const C7S = [98, 224, 350, 475, 601, 727, 853, 982], C7P = [72, 205, 338, 473, 607, 741, 876, 1008];
+  // title: [x, y, w, h, 글자색] · x/y: 칸 경계 (2주) · week: 매장별 칸 경계 (1주) · panels: 층 순서대로 [x, y, w, h] (1일) · labels: 층 이름판 [x, y, w, h]
   const LAYOUT = {
     'story-2w-devil': { title: [281, 260, 517, 105, LIGHT], x: [61, 183, 301, 421, 540, 659, 778, 898, 1020], y: [462, 1011, 1558], fs: 33 },
     'story-2w-maid': { title: [275, 266, 528, 107, DARK], x: [61, 198, 334, 472, 609, 746, 882, 1019], y: [464, 1011, 1563], fs: 36 },
@@ -4687,10 +4688,10 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
     'post-2w-devil': { title: [289, 82, 510, 91, LIGHT], x: [45, 167, 287, 413, 536, 659, 786, 911, 1035], y: [265, 707, 1157], fs: 33 },
     'post-2w-maid': { title: [289, 67, 505, 82, DARK], x: [53, 194, 333, 471, 609, 746, 886, 1026], y: [245, 717, 1182], fs: 36 },
     'post-2w-matsuri': { title: [272, 61, 537, 93, DARK], x: [52, 192, 331, 471, 610, 750, 890, 1029], y: [235, 752, 1234], fs: 36 },
-    'story-1w': { title: [275, 172, 534, 94, LIGHT], week: [[[100, 209, 319, 429, 539, 649, 759, 868, 980], 361, 669], [C7S, 866, 1188], [C7S, 1392, 1710]], fs: [25, 27, 27] },
-    'post-1w': { title: [287, 89, 452, 68, LIGHT], week: [[[48, 169, 293, 417, 540, 662, 786, 908, 1030], 236, 473], [C7P, 630, 858], [C7P, 986, 1204]], fs: [24, 25, 25] },
-    'story-1d': { title: [287, 172, 504, 80, DARK], panels: [[106, 310, 867, 376], [115, 833, 849, 369], [91, 1339, 896, 372]], fs: 58 },
-    'post-1d': { title: [311, 90, 398, 56, DARK], panels: [[96, 169, 832, 300], [115, 580, 849, 290], [95, 960, 890, 279]], fs: 50 },
+    'story-1w': { title: [267, 161, 546, 77, DARK], labels: [[415, 264, 249, 36], [415, 705, 249, 36], [415, 1189, 250, 40]], week: [[[56, 177, 300, 420, 541, 661, 782, 904, 1025], 384, 678], [[56, 195, 333, 471, 609, 748, 886, 1025], 828, 1161], [[56, 195, 332, 471, 609, 747, 886, 1025], 1315, 1649]], fs: 28 },
+    'post-1w': { title: [313, 92, 454, 64, DARK], labels: [[427, 180, 225, 24], [427, 547, 225, 25], [427, 896, 225, 25]], week: [[[53, 173, 296, 419, 540, 661, 784, 907, 1025], 279, 504], [[54, 191, 330, 471, 610, 750, 889, 1025], 646, 856], [[54, 191, 330, 470, 610, 750, 889, 1025], 996, 1202]], fs: 26 },
+    'story-1d': { title: [277, 198, 527, 82, DARK], labels: [[430, 313, 219, 37], [430, 754, 219, 37], [430, 1203, 219, 38]], panels: [[101, 379, 879, 333], [101, 820, 879, 343], [101, 1269, 879, 347]], fs: 58 },
+    'post-1d': { title: [311, 112, 457, 65, DARK], labels: [[427, 202, 224, 28], [427, 534, 224, 28], [427, 865, 224, 27]], panels: [[75, 251, 930, 256], [75, 585, 930, 254], [75, 913, 930, 256]], fs: 50 },
   };
 
   const WPS = () => A.FLOORS.map(f => f[0]);
@@ -4821,7 +4822,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
     });
   }
   function drawPanel(c, p, wp, ds, fs0) {
-    const th = TH[wp], d = A.store.day(ds, wp), night = nightOf(d);
+    const th = pale(wp), d = A.store.day(ds, wp), night = nightOf(d);
     const [px, py, pw, ph] = p, inX = px + 34, inW = pw - 68;
     let top = py + 22, h = ph - 44;
     if (!isOpen(d)) { if (hasMonth(ds)) { c.font = fontOf(F.body, fs0 * .8); c.fillStyle = PANEL_SUB; c.fillText(th.off, px + pw / 2, py + ph / 2); } return; }
@@ -4846,10 +4847,14 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
   }
   function drawWeek(c, L, from) {
     const days = span(from, 7), lh = 1.32;
-    WPS().forEach((wp, p) => {
-      const [x, y0, y1] = L.week[p], th = TH[wp], hasNight = x.length === 9;
-      const cells = days.map(ds => dayLines(ds, wp, A.parse(ds).getDate())), night = hasNight ? nightLines(days, wp) : [];
-      const fs = fitSize([...cells, night], y1 - y0, L.fs[p], lh), sq = squeeze([...cells, night], y1 - y0, fs, lh);
+    const floors = WPS().map((wp, p) => {
+      const [x, y0, y1] = L.week[p], cells = days.map(ds => dayLines(ds, wp, A.parse(ds).getDate()));
+      return { wp, x, y0, h: y1 - y0, cells, night: x.length === 9 ? nightLines(days, wp) : [] };
+    });
+    // 세 층 글자 크기는 같게, 빽빽한 칸은 줄 간격을 좁혀서 맞춰요
+    const fs = Math.min(...floors.map(f => fitSize([...f.cells, f.night], f.h, L.fs, 1.12)));
+    floors.forEach(({ wp, x, y0, h, cells, night }) => {
+      const th = pale(wp), sq = squeeze([...cells, night], h, fs, lh);
       cells.forEach((ls, i) => drawCell(c, x[i], y0, x[i + 1] - x[i], ls, th, fs, lh, sq));
       if (night.length) drawCell(c, x[7], y0, x[8] - x[7], night, th, fs, lh, sq);
     });
@@ -4861,7 +4866,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
     const days = span(from, Math.round((A.parse(to) - A.parse(from)) / 864e5) + 1);
     const names = days.flatMap(ds => WPS().flatMap(w => { const d = A.store.day(ds, w); return [...d.shifts.map(s => s.name), ...nightOf(d).map(m => m.name), d.event || '']; })).join('');
     const fonts = o.fonts || FONT;
-    const [img] = await Promise.all([imageOf(key), fontsFor(`${title}${names}휴무폐업게스트주간야간0123456789/`, fonts)]);
+    const [img] = await Promise.all([imageOf(key), fontsFor(`${title}${names}층데빌메이드마츠리휴무폐업게스트주간야간0123456789/`, fonts)]);
     F = fonts;
     const cv = document.createElement('canvas'); cv.width = W * SCALE; cv.height = H * SCALE;
     const c = cv.getContext('2d');
@@ -4872,6 +4877,10 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
     let tf = Math.min(54, Math.round(th * .62));
     do c.font = fontOf(F.title, tf); while (c.measureText(title).width > tw - 48 && --tf > 24);
     c.fillStyle = tc; c.fillText(title, tx + tw / 2, ty + th / 2, tw - 32);
+    if (L.labels) {
+      c.font = fontOf(F.body, L.labels[0][3] * .86);
+      WPS().forEach((wp, i) => { const [x, y, w, h] = L.labels[i]; c.fillStyle = TH[wp].ac; c.fillText(`${A.floorOf(wp)} ${wp}`, x + w / 2, y + h / 2, w - 12); });
+    }
     if (o.scope === '2w') drawTwoWeeks(c, L, o, from);
     else if (o.scope === '1w') drawWeek(c, L, from);
     else WPS().forEach((wp, i) => drawPanel(c, L.panels[i], wp, o.ds, L.fs));
