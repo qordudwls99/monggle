@@ -121,56 +121,61 @@
     });
   }
 
-  // ── 1일: 사람마다 이름표 한 장 ──
-  // 글자를 가장 크게 쓸 수 있는 줄 수를 골라요. 인원은 줄마다 고르게, 끝줄에 한 장만 남기지 않아요. 긴 이름은 그 이름표만 넓어져요
-  const TAG_H = 1.72;
-  function tagLayout(c, list, w, h, fs0) {
-    const n = list.length;
-    if (!n) return { lines: [], fs: Math.floor(fs0), tagH: 0, gap: 0, pad: 0 };
+  // ── 1일: 이름을 가운뎃점으로 이어요 ──
+  // 끝줄에 이름 하나만 남지 않게 줄 수는 그대로 두고 폭을 좁혀요
+  function wrapNames(c, list, w, fs) {
+    const gap = c.measureText(' · ').width, items = list.map(s => ({ s, iw: c.measureText(s.name).width + (s.guest ? fs * .6 : 0) }));
+    const wrap = lim => {
+      const rows = [[]];
+      let used = 0;
+      items.forEach(i => {
+        if (rows[rows.length - 1].length && used + gap + i.iw > lim) { rows.push([]); used = 0; }
+        used += (rows[rows.length - 1].length ? gap : 0) + i.iw;
+        rows[rows.length - 1].push(i);
+      });
+      return rows;
+    };
+    let rows = wrap(w);
+    for (let lim = w - fs; lim > 0; lim -= fs) { const r = wrap(lim); if (r.length > rows.length) break; rows = r; }
+    return { rows, gap };
+  }
+  const widthOf = (row, gap) => row.reduce((n, i) => n + i.iw, 0) + (row.length - 1) * gap;
+  function fitNames(c, list, w, h, fs0) {
     for (let fs = Math.floor(fs0); ; fs--) {
-      const tagH = fs * TAG_H, gap = fs * .3, pad = fs * .42;
       c.font = fontOf(F.body, fs);
-      const tags = list.map(s => ({ s, w: Math.min(w, Math.max(c.measureText(s.name).width + pad * 2, fs * 3.8)) }));
-      for (let rows = 1; rows <= n; rows++) {
-        const cols = Math.ceil(n / rows);
-        if (cols === 2 && n % rows) continue;
-        let i = 0;
-        const lines = Array.from({ length: rows }, (_, r) => { const k = r < (n % rows || rows) ? cols : cols - 1; return tags.slice(i, i += k); });
-        const wide = Math.max(...lines.map(l => l.reduce((a, t) => a + t.w, 0) + gap * (l.length - 1)));
-        if ((wide <= w || rows === n) && (rows * tagH + gap * (rows - 1) <= h || fs <= 16)) return { lines, fs, tagH, gap, pad };
-      }
+      const r = wrapNames(c, list, w, fs);
+      if (fs <= 16 || (r.rows.length * fs * 1.6 <= h && r.rows.every(row => widthOf(row, r.gap) <= w))) return { ...r, fs };
     }
   }
-  function nameTags(c, [x, y, w, h], list, th, fs0) {
-    const { lines, fs, tagH, gap, pad } = tagLayout(c, list, w, h, fs0);
+  function nameDots(c, [x, y, w, h], list, th, fs0) {
+    const { rows, gap, fs } = fitNames(c, list, w, h, fs0), lh = fs * 1.6, top = y + (h - rows.length * lh) / 2;
     c.font = fontOf(F.body, fs);
-    lines.forEach((row, r) => {
-      const ty = y + (h - lines.length * tagH - (lines.length - 1) * gap) / 2 + r * (tagH + gap);
-      let tx = x + (w - row.reduce((a, t) => a + t.w, 0) - (row.length - 1) * gap) / 2;
-      row.forEach(({ s, w: tagW }) => {
-        roundRect(c, tx, ty, tagW, tagH, fs * .28);
-        c.fillStyle = s.guest ? th.ac : '#fff'; c.fill();
-        if (!s.guest) { c.save(); c.globalAlpha = .55; c.strokeStyle = th.ac; c.lineWidth = 2; c.stroke(); c.restore(); }
-        c.fillStyle = s.guest ? '#fff' : PANEL_INK; c.fillText(s.name, tx + tagW / 2, ty + tagH / 2, tagW - pad);
-        tx += tagW + gap;
+    rows.forEach((row, r) => {
+      const cy = top + lh * (r + .5);
+      let px = x + (w - widthOf(row, gap)) / 2;
+      row.forEach(({ s, iw }, i) => {
+        if (s.guest) pill(c, px + iw / 2, cy, s.name, iw + fs * .1, fs, th);
+        else { c.fillStyle = PANEL_INK; c.fillText(s.name, px + iw / 2, cy); }
+        px += iw;
+        if (i < row.length - 1) { c.fillStyle = th.ac; c.fillText('·', px + gap / 2, cy); px += gap; }
       });
     });
   }
   function drawPanel(c, p, wp, ds, fs0) {
     const th = pale(wp), d = A.store.day(ds, wp), night = nightOf(d);
-    const [px, py, pw, ph] = p, inX = px + 34, inW = pw - 68, tag = fs0 * .82;
+    const [px, py, pw, ph] = p, inX = px + 34, inW = pw - 68, name = fs0 * .64;
     // 흰 패널을 1주 칸과 같은 연분홍으로 물들여요. 곱하기라 틀의 구슬은 그대로예요
     c.save(); c.globalCompositeOperation = 'multiply'; c.fillStyle = PANEL_TINT; c.fillRect(px - 4, py - 4, pw + 8, ph + 8); c.restore();
     let top = py + 22, h = ph - 44;
     if (!isOpen(d)) { if (hasMonth(ds)) { c.font = fontOf(F.body, fs0 * .8); c.fillStyle = th.sub; c.fillText(th.off, px + pw / 2, py + ph / 2); } return; }
     if (d.event) { c.font = fontOf(F.body, fs0 * .56); c.fillStyle = th.ev; c.fillText(d.event, px + pw / 2, top + fs0 * .4); top += fs0 * .8; h -= fs0 * .8; }
-    if (!night.length) { nameTags(c, [inX, top, inW, h], d.shifts, th, tag); return; }
+    if (!night.length) { nameDots(c, [inX, top, inW, h], d.shifts, th, name); return; }
     const colW = (inW - 44) / 2, labelH = fs0 * .86, listH = h - labelH;
-    // 주간 · 야간 이름표는 같은 크기로 맞춰요
-    const fs = Math.min(...[d.shifts, night].map(l => tagLayout(c, l, colW, listH, tag * .78).fs));
+    // 주간 · 야간 글자는 같은 크기로 맞춰요
+    const fs = Math.min(...[d.shifts, night].map(l => fitNames(c, l, colW, listH, name * .78).fs));
     [['주간', d.shifts, inX], ['야간', night, inX + colW + 44]].forEach(([label, list, x]) => {
       c.font = fontOf(F.body, fs0 * .56); c.fillStyle = th.ac; c.fillText(label, x + colW / 2, top + labelH / 2);
-      nameTags(c, [x, top + labelH, colW, listH], list, th, fs);
+      nameDots(c, [x, top + labelH, colW, listH], list, th, fs);
     });
     c.fillStyle = PANEL_LINE; c.fillRect(px + pw / 2 - 1, top + 6, 2, h - 12);
   }
@@ -205,7 +210,7 @@
     const days = span(from, Math.round((A.parse(to) - A.parse(from)) / 864e5) + 1);
     const names = days.flatMap(ds => WPS().flatMap(w => { const d = A.store.day(ds, w); return [...d.shifts.map(s => s.name), ...nightOf(d).map(m => m.name), d.event || '']; })).join('');
     const fonts = o.fonts || FONT;
-    const [img] = await Promise.all([imageOf(key), fontsFor(`${title}${names}층데빌메이드마츠리휴무폐업게스트주간야간0123456789/`, fonts)]);
+    const [img] = await Promise.all([imageOf(key), fontsFor(`${title}${names}층데빌메이드마츠리휴무폐업게스트주간야간0123456789/·`, fonts)]);
     F = fonts;
     const cv = document.createElement('canvas'); cv.width = W * SCALE; cv.height = H * SCALE;
     const c = cv.getContext('2d');
