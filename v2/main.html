@@ -377,6 +377,8 @@ button{font-family:inherit;color:inherit}
 .mb .gsep{height:1px;margin:2px 3px;background:var(--band-line)}
 .mb .mnm{font-size:11px;line-height:14px}
 .mb .ntl{line-height:1}
+.mfoot{display:flex;align-items:center;justify-content:center;gap:4px;height:11px}
+.mb .mmore svg{display:block;width:10px;height:10px}
 .mb .nsep{margin:3px 3px 2px;height:1px}
 #mdetail{margin-top:14px;scroll-margin-bottom:12px}
 .md-h{display:flex;align-items:center;justify-content:space-between;padding:4px 2px 10px}
@@ -1235,14 +1237,15 @@ async function renderWeek(){
   animList(); goDay($('list'));
 }
 
-// 월간 칸의 층 띠: 전체는 이벤트와 세 명만 (게스트 먼저), 한 층을 고르면 이름을 다 보여줘요
+// 월간 칸의 층 띠: 전체는 이벤트와 세 명만 (게스트 먼저, 더 있으면 + 표시), 한 층을 고르면 이름을 다 보여줘요
+const PLUS_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>';
 const monthBar = (x, all, w) => {
   const key = THEMES[x.wp].key, ev = x.memo ? `<span class="mev"${fitName(x.memo, 9.5, w-2)}>${esc(x.memo)}</span>` : '';
   if(!all) return `<span class="mb full" data-theme="${key}">${ev}${cellBody(x, 'mnm', 11, w)}</span>`;
-  const ppl = [...x.filled, ...x.nightList], top = [...new Map([...ppl.filter(s=>s.is_guest), ...ppl.filter(s=>!s.is_guest)].map(s=>[nameOf(s), s])).values()].slice(0, 3);
-  const moon = x.night ? `<span class="ntl">${ICON.moon}</span>` : '';
-  const body = ev + cellNames(top, 'mnm', 10, w);
-  return body ? `<span class="mb full" data-theme="${key}">${body}${moon}</span>` : `<span class="mb${moon?'':' thin'}" data-theme="${key}">${moon}</span>`;
+  const ppl = [...x.filled, ...x.nightList], uniq = [...new Map([...ppl.filter(s=>s.is_guest), ...ppl.filter(s=>!s.is_guest)].map(s=>[nameOf(s), s])).values()];
+  const moon = x.night ? ICON.moon : '', more = uniq.length>3 ? `<span class="mmore" role="img" aria-label="더 있어요">${PLUS_SVG}</span>` : '';
+  const body = ev + cellNames(uniq.slice(0, 3), 'mnm', 10, w);
+  return body ? `<span class="mb full" data-theme="${key}">${body}${more||moon?`<span class="mfoot">${more}${moon}</span>`:''}</span>` : `<span class="mb${moon?'':' thin'}" data-theme="${key}">${moon}</span>`;
 };
 // 월간: 작은 달력 + 아래 상세 (날짜를 누르면 그날 층별 이름)
 let monthData=null;
