@@ -4673,9 +4673,9 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
   let F = FONT;
   const fontOf = ([name, weight], px) => `${weight} ${Math.round(px)}px "${name}","Apple SD Gothic Neo","Malgun Gothic",sans-serif`;
   const SIZE = { story: [1080, 1920], post: [1080, 1350] }, SCALE = 2;
-  const LIGHT = '#fff3f7', DARK = '#2a1418';
+  const LIGHT = '#f4f4f6', DARK = '#2a1418';
   const TH = {
-    '데빌': { ink: LIGHT, sub: '#e5bcc4', ac: '#d4202f', ev: '#ff8796', off: '폐업' },
+    '데빌': { ink: LIGHT, sub: '#c4c7cf', ac: '#d4202f', ev: '#ff6f7a', off: '폐업' },
     '메이드': { ink: '#231318', sub: '#7d5563', ac: '#e0407f', ev: '#e0407f', off: '휴무' },
     '마츠리': { ink: '#33140f', sub: '#8a4a3c', ac: '#d3261b', ev: '#d3261b', off: '휴무' },
   };
@@ -4685,10 +4685,10 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
   // title: [x, y, w, h, 글자색] · x/y: 칸 경계 (2주) · week: 매장별 칸 경계 (1주) · panels: 층 순서대로 [x, y, w, h] (1일) · labels: 층 이름판 [x, y, w, h]
   const LAYOUT = {
-    'story-2w-devil': { title: [283, 265, 512, 95, LIGHT], x: [61, 182, 300, 420, 539, 658, 778, 898, 1019], y: [463, 1010, 1557], fs: 33 },
+    'story-2w-devil': { title: [275, 263, 529, 113, LIGHT], x: [61, 181, 301, 421, 541, 661, 780, 900, 1020], y: [462, 1010, 1560], fs: 33 },
     'story-2w-maid': { title: [275, 266, 528, 107, DARK], x: [61, 198, 334, 472, 609, 746, 882, 1019], y: [464, 1011, 1563], fs: 36 },
     'story-2w-matsuri': { title: [275, 264, 523, 113, DARK], x: [61, 197, 336, 470, 609, 745, 883, 1019], y: [461, 1012, 1561], fs: 36 },
-    'post-2w-devil': { title: [304, 116, 482, 81, LIGHT], x: [44, 166, 286, 411, 535, 658, 786, 910, 1034], y: [295, 706, 1128], fs: 33 },
+    'post-2w-devil': { title: [275, 162, 529, 95, LIGHT], x: [54, 175, 297, 419, 540, 661, 783, 904, 1026], y: [339, 720, 1125], fs: 33 },
     'post-2w-maid': { title: [289, 67, 505, 82, DARK], x: [53, 194, 333, 471, 609, 746, 886, 1026], y: [245, 717, 1182], fs: 36 },
     'post-2w-matsuri': { title: [272, 67, 534, 86, DARK], x: [52, 191, 330, 471, 609, 749, 889, 1028], y: [235, 708, 1180], fs: 36 },
     'story-1w': { title: [267, 161, 546, 77, DARK], labels: [[415, 264, 249, 36], [415, 705, 249, 36], [415, 1189, 250, 40]], week: [[[56, 177, 300, 420, 541, 661, 782, 904, 1025], 384, 678], [[56, 195, 333, 471, 609, 748, 886, 1025], 828, 1161], [[56, 195, 332, 471, 609, 747, 886, 1025], 1315, 1649]], fs: 28 },
