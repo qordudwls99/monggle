@@ -9,7 +9,7 @@
     const file = new File([blob], name, { type: 'image/png' });
     // 휴대폰: 공유 시트 → '이미지 저장' 또는 단톡방
     if (navigator.canShare && navigator.canShare({ files: [file] })) {
-      try { await navigator.share({ files: [file], title: name }); return; }
+      try { await navigator.share({ files: [file] }); return; }
       catch (e) { if (e && e.name === 'AbortError') return; }
     }
     // 컴퓨터: 바로 내려받기
