@@ -49,7 +49,7 @@
       ? `<button class="btn sm edit-tg${S.edit ? ' on' : ''}" data-edit-tg aria-pressed="${S.edit}">${S.edit ? '완료' : '편집'}</button>` : '';
     el.innerHTML = `<div class="sched-h"><div class="seg" role="tablist" aria-label="보기">${VIEWS.map(([k, l]) => `<button data-v="${k}" role="tab" aria-selected="${S.view === k}" class="${S.view === k ? 'on' : ''}">${l}</button>`).join('')}</div>${editBtn}</div>
       ${v && v.chips === false ? '' : chipsHtml()}
-      <div class="datebar"><button class="nav" data-step="-1" aria-label="이전">${I.prev}</button><button class="dlabel" data-cal></button><button class="nav" data-step="1" aria-label="다음">${I.next}</button></div>
+      <div class="datebar sched-date"><button class="nav" data-step="-1" aria-label="이전">${I.prev}</button><button class="dlabel" data-cal></button><button class="nav" data-step="1" aria-label="다음">${I.next}</button></div>
       <div class="subline"><span class="today-tag" data-today-tag hidden></span><button class="today-btn" data-today hidden></button></div>
       <div id="list"></div>`;
     const q = s => el.querySelector(s);
