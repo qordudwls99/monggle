@@ -1235,13 +1235,13 @@ async function renderWeek(){
   animList(); goDay($('list'));
 }
 
-// 월간 칸의 층 띠: 전체는 이벤트·게스트만 요약하고, 한 층을 고르면 이름까지 보여줘요
+// 월간 칸의 층 띠: 전체는 이벤트와 세 명만 (게스트 먼저), 한 층을 고르면 이름을 다 보여줘요
 const monthBar = (x, all, w) => {
   const key = THEMES[x.wp].key, ev = x.memo ? `<span class="mev"${fitName(x.memo, 9.5, w-2)}>${esc(x.memo)}</span>` : '';
   if(!all) return `<span class="mb full" data-theme="${key}">${ev}${cellBody(x, 'mnm', 11, w)}</span>`;
-  const gs = [...new Map([...x.filled, ...x.nightList].filter(s=>s.is_guest).map(s=>[nameOf(s), s])).values()];
+  const ppl = [...x.filled, ...x.nightList], top = [...new Map([...ppl.filter(s=>s.is_guest), ...ppl.filter(s=>!s.is_guest)].map(s=>[nameOf(s), s])).values()].slice(0, 3);
   const moon = x.night ? `<span class="ntl">${ICON.moon}</span>` : '';
-  const body = ev + cellNames(gs, 'mnm', 10, w);
+  const body = ev + cellNames(top, 'mnm', 10, w);
   return body ? `<span class="mb full" data-theme="${key}">${body}${moon}</span>` : `<span class="mb${moon?'':' thin'}" data-theme="${key}">${moon}</span>`;
 };
 // 월간: 작은 달력 + 아래 상세 (날짜를 누르면 그날 층별 이름)
