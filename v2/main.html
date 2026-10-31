@@ -415,7 +415,6 @@ a.p-ig:active{transform:scale(.92)}
 .p-sum{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 12px}
 .p-pill{display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 11px;border-radius:15px;background:var(--fill);font-size:13px;font-weight:700;color:var(--ink)}
 .p-pill i{width:9px;height:9px;border-radius:3px;background:var(--c)}
-.p-pill.total{background:var(--ink);color:#fff}
 .pc-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}
 .pc{min-width:0;min-height:60px;border:1px solid var(--line);border-radius:12px;background:#fff;padding:6px 2px 5px;display:flex;flex-direction:column;align-items:center;gap:2px;font:inherit;color:var(--ink);overflow:hidden}
 .pc.blank{border:none;background:none}
@@ -439,7 +438,6 @@ a.p-ig:active{transform:scale(.92)}
 .f-row:active{background:#f8f7f9}
 .f-row .av{width:36px;height:36px;font-size:14px}
 .f-row b{flex:1;min-width:0;font-size:16px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.f-row small{font-size:13px;font-weight:700;color:var(--ink2);font-variant-numeric:tabular-nums}
 .f-row svg{width:16px;height:16px;color:var(--muted)}
 /* 좁은 폰(≤374px): 머리 줄이 두 줄로 깨지지 않게. 날짜 고르기는 가운데 날짜를 눌러도 열려서 달력 아이콘은 숨겨요 */
 .brand,.seg button{white-space:nowrap}
@@ -557,7 +555,6 @@ html[data-appearance="dark"] .f-row:active{background:var(--fill)}
 html[data-appearance="dark"] .pc{background:var(--sf)}
 html[data-appearance="dark"] .pc.blank{background:none}
 html[data-appearance="dark"] .pc.on{background:var(--c)}
-html[data-appearance="dark"] .p-pill.total{color:#17151a}
 html[data-appearance="dark"] .cal-dow span.sun,html[data-appearance="dark"] .cal-cell.sun,html[data-appearance="dark"] .pc.sun .d,html[data-appearance="dark"] .eb-d.sun small,html[data-appearance="dark"] .wt-h.sun .dow,html[data-appearance="dark"] .mdow .sun,html[data-appearance="dark"] .mc.sun .mn{color:#ff6b5e}
 html[data-appearance="dark"] .cal-dow span.sat,html[data-appearance="dark"] .cal-cell.sat,html[data-appearance="dark"] .pc.sat .d,html[data-appearance="dark"] .eb-d.sat small,html[data-appearance="dark"] .wt-h.sat .dow,html[data-appearance="dark"] .mdow .sat,html[data-appearance="dark"] .mc.sat .mn{color:#6f9bff}
 html[data-appearance="dark"] .pc.on .d{color:#fff}
@@ -737,7 +734,7 @@ function bizClock(){
 const bizToday = () => new Date(bizClock().date+'T00:00:00');
 
 let supa=null, selectedDate=bizToday(), wpFilter='전체', viewMode='day', navDir=0;
-let minDate=null, maxDate=null;   // 손님이 볼 수 있는 범위 (1개월 전 ~ 마지막 등록일)
+let minDate=null, maxDate=null;   // 손님이 볼 수 있는 범위 (직원 출근표가 있는 첫 달 ~ 마지막 등록일)
 let draftMonths=new Set();        // 아직 공개 안 된(작성중) 달 → 손님에게 숨김
 const ymOf = d => ymd(d).slice(0,7);
 async function loadDraftMonths(){
@@ -750,12 +747,13 @@ function isConfigured(){
          CONFIG.SUPABASE_ANON_KEY && !CONFIG.SUPABASE_ANON_KEY.startsWith('YOUR_');
 }
 async function loadBounds(){
-  const today=bizToday(); const mn=new Date(today); mn.setMonth(mn.getMonth()-1);
-  minDate=ymd(mn);
-  const [a,b]=await Promise.all([
+  const today=bizToday();
+  const [a,b,c]=await Promise.all([
     supa.from('shift_view').select('work_date').order('work_date',{ascending:false}).limit(1),
-    supa.from('closure_view').select('work_date').order('work_date',{ascending:false}).limit(1)
+    supa.from('closure_view').select('work_date').order('work_date',{ascending:false}).limit(1),
+    supa.from('shift_view').select('work_date').not('staff_id','is',null).order('work_date',{ascending:true}).limit(1)
   ]);
+  minDate = c.data&&c.data[0] ? c.data[0].work_date.slice(0,7)+'-01' : ymd(new Date(today.getFullYear(), today.getMonth()-1, 1));
   let m=null;
   if(a.data&&a.data[0]) m=a.data[0].work_date;
   if(b.data&&b.data[0] && (!m||b.data[0].work_date>m)) m=b.data[0].work_date;
@@ -1346,7 +1344,7 @@ async function openFinder(){
 function drawFinder(){
   const q = $('fQ').value, list = fPeople.filter(p=>nameHit(p.name, q));
   if(!fPeople.length && !$('fSub').textContent) return;
-  $('fList').innerHTML = list.length ? list.map(p=>`<button class="f-row" data-fid="${esc(p.id)}">${avatarHtml('av', p.name, p.avatar)}<b>${esc(p.name)}</b><small>${p.days.size}일</small>${ICON.chev}</button>`).join('')
+  $('fList').innerHTML = list.length ? list.map(p=>`<button class="f-row" data-fid="${esc(p.id)}">${avatarHtml('av', p.name, p.avatar)}<b>${esc(p.name)}</b>${ICON.chev}</button>`).join('')
     : `<div class="none">${q.trim() ? `'${esc(q.trim())}' 이름이 없어요` : '이 달에 출근하는 사람이 없어요'}</div>`;
   $('fList').querySelectorAll('[data-fid]').forEach(b=>b.onclick=()=>{ const p=fPeople.find(x=>String(x.id)===b.dataset.fid); if(!p) return; fSheet.close(); openPerson(p); });
 }
@@ -1402,7 +1400,7 @@ async function drawPerson(){
   const count = {}; Object.values(days).forEach(l=>l.forEach(x=>{ count[x.wp]=(count[x.wp]||0)+1; }));
   const total = Object.keys(days).length;
   const pills = total
-    ? `<span class="p-pill total">${total}일 출근</span>` + FLOORS.filter(([w])=>count[w]).map(([w])=>`<span class="p-pill" style="--c:${THEMES[w].c}"><i></i>${w} ${count[w]}</span>`).join('')
+    ? FLOORS.filter(([w])=>count[w]).map(([w])=>`<span class="p-pill" style="--c:${THEMES[w].c}"><i></i>${w}</span>`).join('')
     : '<span class="p-pill">이 달에는 출근이 없어요</span>';
   const [y, m] = ym.split('-').map(Number), first = new Date(y, m-1, 1).getDay(), n = new Date(y, m, 0).getDate(), today = ymd(bizToday());
   let cells = '<span class="pc blank"></span>'.repeat(first);
@@ -1487,7 +1485,7 @@ function monthCanvas(name, ym, data){
   let fs = 64; c.font = `800 ${fs}px ${F}`; while(c.measureText(name).width > W-PAD*2 && fs > 30){ fs -= 2; c.font = `800 ${fs}px ${F}`; }
   c.fillStyle = '#17151a'; c.fillText(name, PAD, PAD+62);
   c.fillStyle = '#615c66'; c.font = `700 34px ${F}`;
-  c.fillText(`${y}년 ${m}월 · ${Object.keys(data.days).length}일 출근`, PAD, PAD+118);
+  c.fillText(`${y}년 ${m}월`, PAD, PAD+118);
   c.textAlign = 'center'; c.font = `700 26px ${F}`;
   DAYS.forEach((x, i)=>{ c.fillStyle = i===0 ? '#d92d20' : i===6 ? '#2e6be6' : '#615c66'; c.fillText(x, PAD+i*(CW+GAP)+CW/2, top-14); });
   for(let d=1; d<=n; d++){
