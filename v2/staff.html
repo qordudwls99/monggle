@@ -4664,9 +4664,9 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 // 배경은 assets/export-*.jpg, 칸과 패널 자리는 LAYOUT 표 (1080 기준 px) 에 있어요.
 {
   const A = window.App;
-  const FONT_CSS = 'https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@500;700;800&family=Noto+Serif+KR:wght@700;900&display=swap';
+  const FONT_CSS = ['https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@700&display=swap', 'https://hangeul.pstatic.net/hangeul_static/css/maru-buri.css'];
   // 글꼴 [이름, 굵기]. 제목은 제목판, 내용은 층 이름 · 날짜 · 이름 · 이벤트 · 휴무
-  const FONT = { title: ['Noto Serif KR', 900], body: ['Noto Sans KR', 700] };
+  const FONT = { title: ['Gowun Batang', 700], body: ['MaruBuriBold', 400] };
   let F = FONT;
   const fontOf = ([name, weight], px) => `${weight} ${Math.round(px)}px "${name}","Apple SD Gothic Neo","Malgun Gothic",sans-serif`;
   const SIZE = { story: [1080, 1920], post: [1080, 1350] }, SCALE = 2;
@@ -4729,7 +4729,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
   let cssP = null;
   const withTimeout = (p, ms) => Promise.race([p, new Promise(r => setTimeout(r, ms))]);
   const fontsFor = async (text, fonts) => {
-    cssP = cssP || new Promise(r => { const l = document.createElement('link'); l.rel = 'stylesheet'; l.href = FONT_CSS; l.onload = l.onerror = r; document.head.appendChild(l); });
+    cssP = cssP || Promise.all(FONT_CSS.map(href => new Promise(r => { const l = document.createElement('link'); l.rel = 'stylesheet'; l.href = href; l.onload = l.onerror = r; document.head.appendChild(l); })));
     const spec = [fonts.title, fonts.body].map(f => fontOf(f, 30));
     await withTimeout(cssP.then(() => Promise.all(spec.map(s => document.fonts.load(s, text)))).catch(() => {}), 6000);
   };
