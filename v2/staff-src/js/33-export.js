@@ -15,7 +15,7 @@
     '메이드': { ink: '#231318', sub: '#7d5563', ac: '#e0407f', ev: '#e0407f', off: '휴무' },
     '마츠리': { ink: '#33140f', sub: '#8a4a3c', ac: '#d3261b', ev: '#d3261b', off: '휴무' },
   };
-  const PANEL_INK = '#231318', PANEL_SUB = '#a08a91';
+  const PANEL_INK = '#231318', PANEL_TINT = '#fbe1e8', PANEL_LINE = '#e3b7c3';
   // 1주 · 1일 그림은 세 층 모두 연한 메이드 톤이라 글자를 진하게 써요
   const pale = wp => ({ ...TH[wp], ink: PANEL_INK, sub: TH['메이드'].sub, ev: TH[wp].ac });
 
@@ -121,58 +121,58 @@
     });
   }
 
-  // ── 1일: 이름이 패널 안에서 흘러요 ──
-  function wrapNames(c, list, w, fs) {
-    const gap = fs * .62, items = list.map(s => ({ s, iw: c.measureText(s.name).width + (s.guest ? fs * .6 : 0) }));
-    const wrap = lim => {
-      const rows = [[]];
-      let used = 0;
-      items.forEach(i => {
-        if (rows[rows.length - 1].length && used + gap + i.iw > lim) { rows.push([]); used = 0; }
-        used += (rows[rows.length - 1].length ? gap : 0) + i.iw;
-        rows[rows.length - 1].push(i);
-      });
-      return rows;
-    };
-    // 줄 수는 그대로 두고 폭을 좁혀서 끝줄에 이름 하나만 남지 않게 해요
-    let rows = wrap(w);
-    for (let lim = w - fs; lim > 0; lim -= fs) { const r = wrap(lim); if (r.length > rows.length) break; rows = r; }
-    return { rows, gap };
-  }
-  function flow(c, box, list, th, fs0) {
-    const [x, y, w, h] = box;
-    let fs = fs0, r;
-    for (; fs >= 24; fs -= 2) {
+  // ── 1일: 사람마다 이름표 한 장 ──
+  // 글자를 가장 크게 쓸 수 있는 줄 수를 골라요. 인원은 줄마다 고르게, 끝줄에 한 장만 남기지 않아요. 긴 이름은 그 이름표만 넓어져요
+  const TAG_H = 1.72;
+  function tagLayout(c, list, w, h, fs0) {
+    const n = list.length;
+    if (!n) return { lines: [], fs: Math.floor(fs0), tagH: 0, gap: 0, pad: 0 };
+    for (let fs = Math.floor(fs0); ; fs--) {
+      const tagH = fs * TAG_H, gap = fs * .3, pad = fs * .42;
       c.font = fontOf(F.body, fs);
-      r = wrapNames(c, list, w, fs);
-      if (r.rows.length * fs * 1.5 <= h && r.rows.every(row => row.reduce((n, i) => n + i.iw, 0) + (row.length - 1) * r.gap <= w)) break;
+      const tags = list.map(s => ({ s, w: Math.min(w, Math.max(c.measureText(s.name).width + pad * 2, fs * 3.8)) }));
+      for (let rows = 1; rows <= n; rows++) {
+        const cols = Math.ceil(n / rows);
+        if (cols === 2 && n % rows) continue;
+        let i = 0;
+        const lines = Array.from({ length: rows }, (_, r) => { const k = r < (n % rows || rows) ? cols : cols - 1; return tags.slice(i, i += k); });
+        const wide = Math.max(...lines.map(l => l.reduce((a, t) => a + t.w, 0) + gap * (l.length - 1)));
+        if ((wide <= w || rows === n) && (rows * tagH + gap * (rows - 1) <= h || fs <= 16)) return { lines, fs, tagH, gap, pad };
+      }
     }
-    fs = Math.max(fs, 24);
-    const lh = fs * 1.5, top = y + (h - r.rows.length * lh) / 2;
-    r.rows.forEach((row, i) => {
-      const total = row.reduce((n, a) => n + a.iw, 0) + (row.length - 1) * r.gap;
-      let px = x + (w - total) / 2;
-      row.forEach(({ s, iw }) => {
-        const cx = px + iw / 2, cy = top + lh * (i + .5);
-        if (s.guest) pill(c, cx, cy, s.name, iw + fs * .1, fs, th);
-        else { c.fillStyle = PANEL_INK; c.fillText(s.name, cx, cy); }
-        px += iw + r.gap;
+  }
+  function nameTags(c, [x, y, w, h], list, th, fs0) {
+    const { lines, fs, tagH, gap, pad } = tagLayout(c, list, w, h, fs0);
+    c.font = fontOf(F.body, fs);
+    lines.forEach((row, r) => {
+      const ty = y + (h - lines.length * tagH - (lines.length - 1) * gap) / 2 + r * (tagH + gap);
+      let tx = x + (w - row.reduce((a, t) => a + t.w, 0) - (row.length - 1) * gap) / 2;
+      row.forEach(({ s, w: tagW }) => {
+        roundRect(c, tx, ty, tagW, tagH, fs * .28);
+        c.fillStyle = s.guest ? th.ac : '#fff'; c.fill();
+        if (!s.guest) { c.save(); c.globalAlpha = .55; c.strokeStyle = th.ac; c.lineWidth = 2; c.stroke(); c.restore(); }
+        c.fillStyle = s.guest ? '#fff' : PANEL_INK; c.fillText(s.name, tx + tagW / 2, ty + tagH / 2, tagW - pad);
+        tx += tagW + gap;
       });
     });
   }
   function drawPanel(c, p, wp, ds, fs0) {
     const th = pale(wp), d = A.store.day(ds, wp), night = nightOf(d);
-    const [px, py, pw, ph] = p, inX = px + 34, inW = pw - 68;
+    const [px, py, pw, ph] = p, inX = px + 34, inW = pw - 68, tag = fs0 * .82;
+    // 흰 패널을 1주 칸과 같은 연분홍으로 물들여요. 곱하기라 틀의 구슬은 그대로예요
+    c.save(); c.globalCompositeOperation = 'multiply'; c.fillStyle = PANEL_TINT; c.fillRect(px - 4, py - 4, pw + 8, ph + 8); c.restore();
     let top = py + 22, h = ph - 44;
-    if (!isOpen(d)) { if (hasMonth(ds)) { c.font = fontOf(F.body, fs0 * .8); c.fillStyle = PANEL_SUB; c.fillText(th.off, px + pw / 2, py + ph / 2); } return; }
+    if (!isOpen(d)) { if (hasMonth(ds)) { c.font = fontOf(F.body, fs0 * .8); c.fillStyle = th.sub; c.fillText(th.off, px + pw / 2, py + ph / 2); } return; }
     if (d.event) { c.font = fontOf(F.body, fs0 * .56); c.fillStyle = th.ev; c.fillText(d.event, px + pw / 2, top + fs0 * .4); top += fs0 * .8; h -= fs0 * .8; }
-    if (!night.length) { flow(c, [inX, top, inW, h], d.shifts, th, fs0); return; }
-    const colW = (inW - 44) / 2, labelH = fs0 * .86, fs = Math.round(fs0 * .78);
+    if (!night.length) { nameTags(c, [inX, top, inW, h], d.shifts, th, tag); return; }
+    const colW = (inW - 44) / 2, labelH = fs0 * .86, listH = h - labelH;
+    // 주간 · 야간 이름표는 같은 크기로 맞춰요
+    const fs = Math.min(...[d.shifts, night].map(l => tagLayout(c, l, colW, listH, tag * .78).fs));
     [['주간', d.shifts, inX], ['야간', night, inX + colW + 44]].forEach(([label, list, x]) => {
       c.font = fontOf(F.body, fs0 * .56); c.fillStyle = th.ac; c.fillText(label, x + colW / 2, top + labelH / 2);
-      flow(c, [x, top + labelH, colW, h - labelH], list, th, fs);
+      nameTags(c, [x, top + labelH, colW, listH], list, th, fs);
     });
-    c.fillStyle = '#e7c9cf'; c.fillRect(px + pw / 2 - 1, top + 6, 2, h - 12);
+    c.fillStyle = PANEL_LINE; c.fillRect(px + pw / 2 - 1, top + 6, 2, h - 12);
   }
 
   function drawTwoWeeks(c, L, o, from) {
