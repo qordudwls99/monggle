@@ -44,6 +44,7 @@ v2/
 | `30-submit.js` | 시프트 제출 |
 | `31-admin.js` | 관리: month status (submit open/close, publish), night questions with tallies, submission status, staff management, add staff, 근무 추가 form, bulk temp PIN |
 | `32-admin-tools.js` | builder matrix, submission matrix, hope calendar, 근무일수, 야간 list, per-person answers, 희망자 배정 sheet |
+| `33-export.js` | admin 출근표 이미지: 2주 per store, 1주 and 1일 combined, story and post |
 | `34-guest.js` | guest → staff conversion |
 
 ## Session and auth (must match production exactly)
@@ -196,7 +197,8 @@ Each name below is owned by exactly one file. Callers must guard every call (`A.
 | `A.account.open({focus:'pin'})`, `A.onTempPin` | 23-account.js | 내 정보: photo crop and upload, IG, PIN (6 digits), push, logout. |
 | `A.adminTools.open(kind, ym)`, `A.adminTools.openHopes(ds, wp)` | 32-admin-tools.js | `kind` is one of `builder`, `matrix`, `hopecal`, `counts`, `nights` or `person:<staffId>`. |
 | `A.guest.convert(name)` | 34-guest.js | Guest → staff conversion. |
-| `A.capture.open(ym, wp)` | 12-capture.js | Schedule image sheet. |
+| `A.capture.open(ym, wp)`, `A.capture.deliver(blob, name)` | 12-capture.js | Monthly schedule image sheet; `deliver` shares on phones and downloads elsewhere. |
+| `A.exportImg.open()`, `A.exportImg.render(o)` | 33-export.js | Admin 출근표 이미지: draws live data on `assets/export-*.jpg` to a canvas. Backgrounds and slots are in its `LAYOUT` table. |
 | `A.drag.bind(root)` | 13-drag.js | Desktop drag to another floor or to the trash. |
 
 ### Data rule for writes

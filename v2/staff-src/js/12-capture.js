@@ -5,6 +5,21 @@
   const WPS = () => A.FLOORS.map(f => f[0]);
   const monthDays = ym => { const [y, m] = ym.split('-').map(Number); const n = new Date(y, m, 0).getDate(); return Array.from({ length: n }, (_, i) => `${ym}-${A.pad(i + 1)}`); };
 
+  async function deliver(blob, name) {
+    const file = new File([blob], name, { type: 'image/png' });
+    // 휴대폰: 공유 시트 → '이미지 저장' 또는 단톡방
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      try { await navigator.share({ files: [file], title: name }); return; }
+      catch (e) { if (e && e.name === 'AbortError') return; }
+    }
+    // 컴퓨터: 바로 내려받기
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href = url; a.download = name;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 4000);
+    A.toast('이미지를 저장했어요');
+  }
+
   function open(ym, wp) {
     ym = ym || A.ymOf(A.today());
     const [y, m] = ym.split('-').map(Number);
@@ -69,18 +84,7 @@
         const name = `${cur}_${ym.split('-')[1]}월_스케줄.png`;
         const blob = await new Promise(r => canvas.toBlob(r, 'image/png'));
         if (!blob) throw new Error('이미지를 만들지 못했어요');
-        const file = new File([blob], name, { type: 'image/png' });
-        // 휴대폰: 공유 시트 → '이미지 저장' 또는 단톡방
-        if (navigator.canShare && navigator.canShare({ files: [file] })) {
-          try { await navigator.share({ files: [file], title: name }); return; }
-          catch (e) { if (e && e.name === 'AbortError') return; }
-        }
-        // 컴퓨터: 바로 내려받기
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a'); a.href = url; a.download = name;
-        document.body.appendChild(a); a.click(); a.remove();
-        setTimeout(() => URL.revokeObjectURL(url), 4000);
-        A.toast('이미지를 저장했어요');
+        await deliver(blob, name);
       } catch (e) {
         A.toast('이미지를 저장하지 못했어요: ' + ((e && e.message) || e), true);
       } finally {
@@ -99,5 +103,5 @@
     return s;
   }
 
-  A.capture = { open };
+  A.capture = { open, deliver };
 }

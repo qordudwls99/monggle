@@ -191,10 +191,13 @@
       ${mrow(t('matrix'), '제출 표', '직원들이 낸 희망을 사람 × 날짜 표로 봐요')}
       ${mrow(t('hopecal'), '매장별 희망 달력', '매장마다 날짜별로 누가 오고 싶어 하는지 봐요')}
       ${mrow(t('counts'), '근무일수', '사람마다 이 달에 몇 번 일하는지 봐요 (야간 포함)')}
-      ${mrow(t('nights'), '데빌 야간 목록', '야간이 있는 날과 멤버를 한눈에 봐요')}</div></section>`;
+      ${mrow(t('nights'), '데빌 야간 목록', '야간이 있는 날과 멤버를 한눈에 봐요')}</div></section>
+    <section class="sec ad-sec"><div class="sec-h"><h2>인스타 올리기</h2></div><div class="menu-list">
+      ${mrow('id="adExport"', '출근표 이미지', '2주 · 1주 · 1일')}</div></section>`;
   }
   function bindTools(el, ym, staff) {
     el.querySelectorAll('[data-tool]').forEach(b => b.onclick = () => tool(b.dataset.tool, ym));
+    el.querySelector('#adExport').onclick = () => { if (A.exportImg && A.exportImg.open) A.exportImg.open(); else A.toast('준비 중이에요'); };
     el.querySelector('#adEdit').onclick = () => {
       const t = A.today();
       A.state.edit = true;

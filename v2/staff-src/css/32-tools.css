@@ -109,3 +109,11 @@
 .cp-nt{align-self:stretch;display:flex;flex-direction:column;align-items:center;margin:2px 1px 0;padding:2px 1px 3px;border-radius:4px;background:var(--night);color:#fff;font-size:10px;font-weight:700;line-height:1.25}
 .cp-nt b{font-size:8.5px;font-weight:800;color:var(--moon)}
 .cp-nt span{max-width:100%;white-space:nowrap;overflow:hidden;letter-spacing:-.5px}
+.ex-ctl{display:flex;flex-direction:column;gap:8px;padding-bottom:10px}
+.ex-date{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:44px}
+.ex-date b{font-size:14.5px;font-weight:800}
+.ex-nav{width:44px;height:44px;border:none;background:var(--fill);border-radius:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--ink)}
+.ex-nav svg{width:18px;height:18px}
+.ex-nav.prev svg{transform:rotate(180deg)}
+.ex-prev{display:flex;justify-content:center;min-height:200px}
+.ex-prev canvas{display:block;max-width:100%;max-height:58vh;width:auto;height:auto;border-radius:10px}
