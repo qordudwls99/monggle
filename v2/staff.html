@@ -3,7 +3,7 @@
 <html lang="ko">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="robots" content="noindex, nofollow">
 <title>모에 스케줄 · 직원용</title>
 <meta name="description" content="이번 달 시프트를 제출하고 근무표를 확인하세요.">
@@ -17,7 +17,7 @@
 /* 모에 스케줄 디자인 시스템 — 손님 페이지(.ui-design/build/parts/style.css)에서 확정된 최종 값만 정리
    규칙 설명: .ui-design/system/DESIGN.md */
 
-*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
 :root{
   /* 글자·면 */
   --ink:#17151a; --ink2:#615c66; --muted:#8f8a94; --line:#eeebef; --fill:#f4f2f5; --cell:#f8f7f9;
@@ -41,7 +41,7 @@
   --band:#e0452e;--band-ink:#fff;--band-sub:rgba(255,255,255,.7);--band-line:rgba(255,255,255,.2)}
 
 html,body{height:100%}
-html{-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
+html{-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;-webkit-text-size-adjust:100%;text-size-adjust:100%}
 body{font-family:var(--font);color:var(--ink);background:var(--fill);letter-spacing:-0.2px}
 button,input,select,textarea{font-family:inherit;color:inherit}
 :focus-visible{outline:2px solid var(--acc);outline-offset:2px;border-radius:8px}
