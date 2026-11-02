@@ -171,9 +171,9 @@
       return `<section class="vm-floor" data-theme="${A.themeKey(g)}"><div class="vm-h">${A.storeTag(g)}</div>${dow}<div class="mgrid">${cells}</div></section>`;
     }).join('');
     const bar = admin && draft ? draftBar(first) : '';
-    listEl.innerHTML = `${bar}<button class="btn vm-capture" data-act="capture">스케줄 이미지</button>${grids}${admin ? '' : '<p class="wk-hint">날짜를 누르면 그날 출근표로 가요</p>'}`;
+    listEl.innerHTML = `${bar}<button class="btn vm-capture" data-act="capture">출근표 이미지</button>${grids}${admin ? '' : '<p class="wk-hint">날짜를 누르면 그날 출근표로 가요</p>'}`;
     bindTap(listEl, '.vm-c[data-goday]', c => admin ? A.dayEdit(c.dataset.goday, c.dataset.dropWp) : A.goDay(c.dataset.goday, wp));
-    act(listEl, 'capture', () => (A.capture && A.capture.open) ? A.capture.open(ym, wp) : A.toast('스케줄 이미지는 준비 중이에요'));
+    act(listEl, 'capture', () => A.exportImg.open({ wp, ds: ym === A.ymOf(today) ? today : first }));
     if (admin) {
       act(listEl, 'event', b => editEvent(b.dataset.ds, b.dataset.wp));
       act(listEl, 'hope', b => (A.adminTools && A.adminTools.openHopes) ? A.adminTools.openHopes(b.dataset.ds, b.dataset.wp) : A.toast('희망자 넣기는 준비 중이에요'));

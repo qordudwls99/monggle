@@ -1,4 +1,5 @@
-// 출근표 이미지 (관리자): 배경 그림 위에 실제 일정을 캔버스로 그려 PNG 로 저장해요.
+// 출근표 이미지 (누구나: 관리자 메뉴 · 월간 보기): 배경 그림 위에 실제 일정을 캔버스로 그려 PNG 로 저장해요.
+// 관리자가 아니면 공개 전 달이 걸린 범위는 잠가요.
 // 범위는 2주(매장별) · 1주(3개 층) · 1일(3개 층, 쉬는 층은 휴무), 크기는 스토리 1080×1920 · 게시글 1080×1350 비율로 두 배 크게 저장해요.
 // 배경은 assets/export-*.jpg, 칸과 패널 자리는 LAYOUT 표 (1080 기준 px) 에 있어요.
 {
@@ -247,8 +248,9 @@
   const FILE_SCOPE = { '2w': '2주', '1w': '1주', '1d': '1일' }, FILE_FMT = { story: '스토리', post: '게시글' };
   const fileName = o => { const [from] = rangeOf(o), d = A.parse(from); return `출근표_${FILE_SCOPE[o.scope]}${o.scope === '2w' ? `_${o.wp}` : ''}_${d.getMonth() + 1}월${d.getDate()}일_${FILE_FMT[o.fmt]}.png`; };
 
-  function open() {
-    const st = { scope: '2w', fmt: 'story', wp: WPS()[0], ds: A.today() };
+  // o: { wp, ds } 처음 보여 줄 매장과 날짜 (없으면 맨 위 층 · 오늘)
+  function open(o = {}) {
+    const st = { scope: '2w', fmt: 'story', wp: WPS().includes(o.wp) ? o.wp : WPS()[0], ds: o.ds || A.today() };
     let alive = true, busy = false, seq = 0, png = null;
     const seg = (k, items) => `<div class="seg" role="group" data-k="${k}">${items.map(([v, l]) => `<button data-v="${v}" class="${st[k] === v ? 'on' : ''}" aria-pressed="${st[k] === v}">${l}</button>`).join('')}</div>`;
     const stepOf = () => (st.scope === '1d' ? 1 : 7);
@@ -267,6 +269,7 @@
       const [from, to] = rangeOf(st), ok = await A.store.ensure(from, to);
       if (!alive || me !== seq) return;
       if (!ok) { box.innerHTML = A.emptyBox('cal', '불러오지 못했어요', '시트를 닫고 다시 열어 주세요'); return; }
+      if (!A.isAdmin() && [from, to].some(A.store.isDraft)) { box.innerHTML = A.lockedMonth(); return; }
       try {
         const cv = await render(st);
         if (!alive || me !== seq) return;

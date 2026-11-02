@@ -922,29 +922,6 @@ button.nt-p:focus-visible,button.nt-pb:focus-visible{outline:2px solid var(--ink
 .hp-row .av,.hp-res .av{width:34px;height:34px;font-size:14px}
 
 /* ── 출근표 이미지 ── */
-.cp-top:empty{display:none}
-.cp-sheet{background:#fff;padding:12px 6px 10px}
-.cp-head{display:flex;align-items:center;gap:10px;padding:0 4px 10px}
-.cp-head img{width:40px;height:40px;border-radius:50%;flex-shrink:0}
-.cp-head b{display:block;font-size:19px;font-weight:800;letter-spacing:-.4px;color:var(--acc-ink);line-height:1.25}
-.cp-head small{display:block;font-size:13px;font-weight:700;color:var(--ink2)}
-.cp-dow{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));text-align:center;font-size:11px;font-weight:700;color:var(--ink2);padding:2px 0 4px}
-.cp-dow .sun{color:var(--sun)}.cp-dow .sat{color:var(--sat)}
-.cp-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:3px}
-.cp-c{min-width:0;min-height:62px;background:var(--cell);border-radius:7px;padding:3px 2px 4px;display:flex;flex-direction:column;align-items:center;gap:1px;overflow:hidden}
-.cp-c.blank{background:none}
-.cp-dn{font-size:11.5px;font-weight:800;line-height:1.25;margin-bottom:1px;font-variant-numeric:tabular-nums}
-.cp-c.sun .cp-dn{color:var(--sun)}.cp-c.sat .cp-dn{color:var(--sat)}
-.cp-ev{align-self:stretch;margin:0 1px 1px;padding:2px 1px;border-radius:4px;background:var(--acc);color:#fff;font-size:9.5px;font-weight:800;line-height:1.25;text-align:center;white-space:nowrap;overflow:hidden}
-.cp-gl{font-size:8.5px;font-weight:700;line-height:1.1;color:var(--muted)}
-.cp-nm{max-width:100%;font-size:10.5px;font-weight:700;line-height:1.25;letter-spacing:-.5px;color:var(--ink);white-space:nowrap;overflow:hidden}
-.cp-nm.g{font-weight:800;color:var(--acc-ink)}
-.cp-sep{align-self:stretch;height:1px;background:#e2dfe4;margin:1px 4px}
-.cp-short{font-size:10px;font-weight:800;line-height:1.25;color:var(--red)}
-.cp-off{font-size:10.5px;font-weight:700;color:var(--muted);margin-top:4px}
-.cp-nt{align-self:stretch;display:flex;flex-direction:column;align-items:center;margin:2px 1px 0;padding:2px 1px 3px;border-radius:4px;background:var(--night);color:#fff;font-size:10px;font-weight:700;line-height:1.25}
-.cp-nt b{font-size:8.5px;font-weight:800;color:var(--moon)}
-.cp-nt span{max-width:100%;white-space:nowrap;overflow:hidden;letter-spacing:-.5px}
 .ex-ctl{display:flex;flex-direction:column;gap:8px;padding-bottom:10px}
 .ex-date{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:44px}
 .ex-date b{font-size:14.5px;font-weight:800}
@@ -2582,9 +2559,9 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
       return `<section class="vm-floor" data-theme="${A.themeKey(g)}"><div class="vm-h">${A.storeTag(g)}</div>${dow}<div class="mgrid">${cells}</div></section>`;
     }).join('');
     const bar = admin && draft ? draftBar(first) : '';
-    listEl.innerHTML = `${bar}<button class="btn vm-capture" data-act="capture">스케줄 이미지</button>${grids}${admin ? '' : '<p class="wk-hint">날짜를 누르면 그날 출근표로 가요</p>'}`;
+    listEl.innerHTML = `${bar}<button class="btn vm-capture" data-act="capture">출근표 이미지</button>${grids}${admin ? '' : '<p class="wk-hint">날짜를 누르면 그날 출근표로 가요</p>'}`;
     bindTap(listEl, '.vm-c[data-goday]', c => admin ? A.dayEdit(c.dataset.goday, c.dataset.dropWp) : A.goDay(c.dataset.goday, wp));
-    act(listEl, 'capture', () => (A.capture && A.capture.open) ? A.capture.open(ym, wp) : A.toast('스케줄 이미지는 준비 중이에요'));
+    act(listEl, 'capture', () => A.exportImg.open({ wp, ds: ym === A.ymOf(today) ? today : first }));
     if (admin) {
       act(listEl, 'event', b => editEvent(b.dataset.ds, b.dataset.wp));
       act(listEl, 'hope', b => (A.adminTools && A.adminTools.openHopes) ? A.adminTools.openHopes(b.dataset.ds, b.dataset.wp) : A.toast('희망자 넣기는 준비 중이에요'));
@@ -2813,12 +2790,10 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 }
 
 // ── js/12-capture.js ──
-// 출근표 이미지 (운영 staff.html 1776-1852): 매장별 한 달 출근표를 그려 html2canvas 로 PNG 를 만들고,
-// 휴대폰은 공유 시트(navigator.share), 안 되면 '<매장>_<MM>월_스케줄.png' 로 내려받아요. 로그인 없이도 써요.
+// 만든 이미지 보내기: 휴대폰은 공유 시트(navigator.share), 안 되면 파일로 내려받아요.
+// 출근표 이미지(33-export.js)가 써요. 예전 한 달 출근표(html2canvas)는 2026-11-02 에 출근표 이미지로 합쳤어요.
 {
   const A = window.App;
-  const WPS = () => A.FLOORS.map(f => f[0]);
-  const monthDays = ym => { const [y, m] = ym.split('-').map(Number); const n = new Date(y, m, 0).getDate(); return Array.from({ length: n }, (_, i) => `${ym}-${A.pad(i + 1)}`); };
 
   async function deliver(blob, name) {
     const file = new File([blob], name, { type: 'image/png' });
@@ -2835,90 +2810,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
     A.toast('이미지를 저장했어요');
   }
 
-  function open(ym, wp) {
-    ym = ym || A.ymOf(A.today());
-    const [y, m] = ym.split('-').map(Number);
-    const days = monthDays(ym);
-    let cur = WPS().includes(wp) ? wp : WPS().includes(A.state.wp) ? A.state.wp : WPS()[0];
-    let open = true, busy = false, ready = false;
-
-    const chips = () => `<div class="chips cp-chips" role="group" aria-label="매장">${A.FLOORS.map(([w, fl]) => { const th = A.THEMES[w];
-      return `<button class="chip${w === cur ? ' on' : ''}" data-w="${w}" aria-pressed="${w === cur}" style="--c:${th.c};--cs:${th.cs};--ci:${th.ci}"><img src="${A.logo(w)}" alt=""><span class="ct"><b>${w}</b><small>${fl}</small></span></button>`; }).join('')}</div>`;
-
-    // 한 칸: 날짜 · 이벤트 · 휴무 또는 (게스트 → 직원 → 부족) · 야간 멤버
-    const cell = ds => {
-      const d = A.store.day(ds, cur), dow = A.parse(ds).getDay();
-      const cls = dow === 0 ? ' sun' : dow === 6 ? ' sat' : '';
-      let body = '';
-      if (d.closed) body = '<span class="cp-off">휴무</span>';
-      else {
-        const g = d.shifts.filter(s => s.guest), st = d.shifts.filter(s => !s.guest);
-        if (g.length) body += `<span class="cp-gl">게스트</span>${g.map(s => `<span class="cp-nm g">${A.esc(s.name)}</span>`).join('')}${st.length ? '<i class="cp-sep"></i>' : ''}`;
-        body += st.map(s => `<span class="cp-nm">${A.esc(s.name)}</span>`).join('');
-        body += d.slots.map(() => '<span class="cp-short">부족</span>').join('');
-        const nm = d.night ? d.night.members.filter(x => !x.short) : [];
-        if (nm.length) body += `<span class="cp-nt"><b>야간</b>${nm.map(x => `<span>${A.esc(x.name)}</span>`).join('')}</span>`;
-      }
-      return `<div class="cp-c${cls}"><span class="cp-dn">${A.parse(ds).getDate()}</span>${d.event ? `<span class="cp-ev">${A.esc(d.event)}</span>` : ''}${body}</div>`;
-    };
-    const image = () => {
-      const first = new Date(y, m - 1, 1).getDay();
-      return `<div class="cp-sheet" data-theme="${A.themeKey(cur)}">
-        <div class="cp-head"><img src="${A.logo(cur)}" alt=""><span><b>${A.esc(cur)}</b><small>${y}년 ${m}월 출근표</small></span></div>
-        <div class="cp-dow">${A.DAYS.map((d, i) => `<span class="${i === 0 ? 'sun' : i === 6 ? 'sat' : ''}">${d}</span>`).join('')}</div>
-        <div class="cp-grid">${'<div class="cp-c blank"></div>'.repeat(first)}${days.map(cell).join('')}</div></div>`;
-    };
-
-    const draw = async () => {
-      const el = s.el, wrap = el.querySelector('.cp-wrap'), btn = el.querySelector('.sheet-a .primary');
-      el.querySelector('.cp-top').innerHTML = chips();
-      el.querySelectorAll('[data-w]').forEach(b => b.onclick = () => { if (busy) return; cur = b.dataset.w; draw(); });
-      ready = false; btn.disabled = true;
-      const ok = await A.store.ensure(days[0], days[days.length - 1]);
-      if (!open || !document.contains(el)) return;
-      if (!ok) { wrap.innerHTML = A.emptyBox('cal', '불러오지 못했어요', '시트를 닫고 다시 열어 주세요'); return; }
-      if (A.store.day(days[0], cur).draft && !A.isAdmin()) { wrap.innerHTML = A.emptyBox('lock', '아직 공개되지 않은 달이에요'); return; }
-      wrap.innerHTML = image();
-      ready = true; btn.disabled = false;
-    };
-
-    const save = async (close, el) => {
-      if (busy || !ready) return;
-      const node = el.querySelector('.cp-sheet'), btn = el.querySelector('.sheet-a .primary');
-      if (!node) return;
-      busy = true; btn.setAttribute('aria-busy', 'true');
-      const label = btn.textContent; btn.textContent = '만드는 중…';
-      const box = el.querySelector('.sheet-b'), top = box.scrollTop;
-      try {
-        await Promise.all([...node.querySelectorAll('img')].map(i => i.complete ? null : new Promise(r => { i.onload = i.onerror = r; })));
-        const mod = await import('https://esm.sh/html2canvas@1.4.1');
-        const html2canvas = mod.default || mod;
-        box.scrollTop = 0;
-        const canvas = await html2canvas(node, { scale: 2, backgroundColor: '#ffffff', useCORS: true, logging: false });
-        box.scrollTop = top;
-        const name = `${cur}_${ym.split('-')[1]}월_스케줄.png`;
-        const blob = await new Promise(r => canvas.toBlob(r, 'image/png'));
-        if (!blob) throw new Error('이미지를 만들지 못했어요');
-        await deliver(blob, name);
-      } catch (e) {
-        A.toast('이미지를 저장하지 못했어요: ' + ((e && e.message) || e), true);
-      } finally {
-        box.scrollTop = top;
-        busy = false; btn.removeAttribute('aria-busy'); btn.textContent = label;
-      }
-    };
-
-    const s = A.sheet({
-      title: '출근표 이미지',
-      html: `<div class="cp-top"></div><div class="cp-wrap"><div class="tl-load"><span class="spin"></span></div></div><p class="sheet-note">휴대폰에서는 공유 창이 열려요. 거기서 이미지 저장이나 단톡방을 골라 주세요.</p>`,
-      actions: [{ label: '이미지 저장하기', kind: 'primary', onClick: save }],
-      onClose: () => { open = false; },
-    });
-    draw();
-    return s;
-  }
-
-  A.capture = { open, deliver };
+  A.capture = { deliver };
 }
 
 // ── js/13-drag.js ──
@@ -4664,7 +4556,8 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 }
 
 // ── js/33-export.js ──
-// 출근표 이미지 (관리자): 배경 그림 위에 실제 일정을 캔버스로 그려 PNG 로 저장해요.
+// 출근표 이미지 (누구나: 관리자 메뉴 · 월간 보기): 배경 그림 위에 실제 일정을 캔버스로 그려 PNG 로 저장해요.
+// 관리자가 아니면 공개 전 달이 걸린 범위는 잠가요.
 // 범위는 2주(매장별) · 1주(3개 층) · 1일(3개 층, 쉬는 층은 휴무), 크기는 스토리 1080×1920 · 게시글 1080×1350 비율로 두 배 크게 저장해요.
 // 배경은 assets/export-*.jpg, 칸과 패널 자리는 LAYOUT 표 (1080 기준 px) 에 있어요.
 {
@@ -4913,8 +4806,9 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
   const FILE_SCOPE = { '2w': '2주', '1w': '1주', '1d': '1일' }, FILE_FMT = { story: '스토리', post: '게시글' };
   const fileName = o => { const [from] = rangeOf(o), d = A.parse(from); return `출근표_${FILE_SCOPE[o.scope]}${o.scope === '2w' ? `_${o.wp}` : ''}_${d.getMonth() + 1}월${d.getDate()}일_${FILE_FMT[o.fmt]}.png`; };
 
-  function open() {
-    const st = { scope: '2w', fmt: 'story', wp: WPS()[0], ds: A.today() };
+  // o: { wp, ds } 처음 보여 줄 매장과 날짜 (없으면 맨 위 층 · 오늘)
+  function open(o = {}) {
+    const st = { scope: '2w', fmt: 'story', wp: WPS().includes(o.wp) ? o.wp : WPS()[0], ds: o.ds || A.today() };
     let alive = true, busy = false, seq = 0, png = null;
     const seg = (k, items) => `<div class="seg" role="group" data-k="${k}">${items.map(([v, l]) => `<button data-v="${v}" class="${st[k] === v ? 'on' : ''}" aria-pressed="${st[k] === v}">${l}</button>`).join('')}</div>`;
     const stepOf = () => (st.scope === '1d' ? 1 : 7);
@@ -4933,6 +4827,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
       const [from, to] = rangeOf(st), ok = await A.store.ensure(from, to);
       if (!alive || me !== seq) return;
       if (!ok) { box.innerHTML = A.emptyBox('cal', '불러오지 못했어요', '시트를 닫고 다시 열어 주세요'); return; }
+      if (!A.isAdmin() && [from, to].some(A.store.isDraft)) { box.innerHTML = A.lockedMonth(); return; }
       try {
         const cv = await render(st);
         if (!alive || me !== seq) return;
