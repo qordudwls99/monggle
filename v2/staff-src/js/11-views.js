@@ -77,15 +77,15 @@
     const day = weekNames(info.shifts, o) + open;
     const evFit = info.event ? fitName(info.event, admin ? 13 : 10, avail + 14) : '';
     const ev = info.event
-      ? (admin ? `<button class="ev" ${toolAttrs('event', ds, wp)} aria-label="이벤트 ${esc(info.event)} 바꾸기"${evFit}>${esc(info.event)}</button>` : `<span class="ev"${evFit}>${esc(info.event)}</span>`)
-      : (admin ? `<button class="vw-tb" ${toolAttrs('event', ds, wp)} aria-label="이벤트 넣기">＋데이</button>` : '');
+      ? (admin ? `<button class="ev evb" ${toolAttrs('event', ds, wp)} aria-label="이벤트 ${esc(info.event)} 바꾸기"${evFit}>${esc(info.event)}</button>` : `<span class="ev"${evFit}>${esc(info.event)}</span>`)
+      : (admin ? `<button class="vw-tb evb" ${toolAttrs('event', ds, wp)} aria-label="이벤트 넣기">＋데이</button>` : '');
     let html = ev + (day || '<span class="no">없음</span>');
     if (info.night) {
       const ms = info.night.members.filter(m => !m.short), sh = info.night.members.length - ms.length;
       const nm = weekNames(ms, { ...o, night: true }) + (sh ? `<span class="vw-op">부족 ${sh}</span>` : '');
       html += `<span class="nsep"></span><span class="ntl">${I.moon}야간</span>${nm || '<span class="no">미정</span>'}`;
     }
-    if (admin) html += `<button class="vw-tb end" ${toolAttrs('addp', ds, wp)} aria-label="근무 넣기">＋근무</button><button class="vw-tb" ${toolAttrs('hope', ds, wp)} aria-label="희망자 넣기">＋희망</button>`;
+    if (admin) html += `<span class="vw-tools"><button class="vw-tb" ${toolAttrs('addp', ds, wp)} aria-label="근무 넣기">＋근무</button><button class="vw-tb" ${toolAttrs('hope', ds, wp)} aria-label="희망자 넣기">＋희망</button></span>`;
     return html;
   }
   function weekTitle(d) {
@@ -159,14 +159,14 @@
     if (info.closed) { body = '<span class="moff">휴무</span>'; label = '휴무'; }
     else {
       const ev = info.event
-        ? (o.admin ? `<button class="mev vm-ev" data-act="event" data-ds="${ds}" data-wp="${esc(wp)}" aria-label="이벤트 ${esc(info.event)} 바꾸기"${fitName(info.event, 12.5, o.avail)}>${esc(info.event)}</button>` : `<span class="mev">${esc(info.event)}</span>`)
-        : (o.admin ? `<button class="vm-ev add" data-act="event" data-ds="${ds}" data-wp="${esc(wp)}" aria-label="이벤트 넣기">＋데이</button>` : '');
+        ? (o.admin ? `<button class="mev vm-ev evb" data-act="event" data-ds="${ds}" data-wp="${esc(wp)}" aria-label="이벤트 ${esc(info.event)} 바꾸기"${fitName(info.event, 12.5, o.avail)}>${esc(info.event)}</button>` : `<span class="mev">${esc(info.event)}</span>`)
+        : (o.admin ? `<button class="vm-ev add evb" data-act="event" data-ds="${ds}" data-wp="${esc(wp)}" aria-label="이벤트 넣기">＋데이</button>` : '');
       let ns = '';
       if (night) {
         const ms = info.night.members.filter(m => !m.short), sh = info.night.members.filter(m => m.short);
         ns = `<span class="vm-nsep"></span><span class="vm-ntl">${I.moon}야간</span>${monthNames(ms, { avail: o.avail, night: true, admin: o.admin, ds })}${sh.map(m => shortTag(o.admin, 'nshort', m.id, ds, wp)).join('')}`;
       }
-      const tools = o.admin ? `<button class="vm-tb" ${toolAttrs('addp', ds, wp)} aria-label="근무 넣기">＋근무</button><button class="vm-tb" ${toolAttrs('hope', ds, wp)} aria-label="희망자 넣기">＋희망</button>` : '';
+      const tools = o.admin ? `<span class="vm-tools"><button class="vm-tb" ${toolAttrs('addp', ds, wp)} aria-label="근무 넣기">＋근무</button><button class="vm-tb" ${toolAttrs('hope', ds, wp)} aria-label="희망자 넣기">＋희망</button></span>` : '';
       body = ev + monthNames(info.shifts, { avail: o.avail, admin: o.admin, ds }) + info.slots.map(s => shortTag(o.admin, 'short', s.id, ds, wp)).join('') + ns + tools;
       const mine = info.shifts.some(isMe) || (night && info.night.members.some(isMe));
       label = `${info.shifts.length}명${info.slots.length ? ` 부족 ${info.slots.length}` : ''}${night ? ` 야간 ${info.night.members.filter(m => !m.short).length}명` : ''}${info.event ? `, ${info.event}` : ''}${mine ? ', 내 근무' : ''}`;
