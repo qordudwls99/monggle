@@ -123,7 +123,7 @@
     const nm = p => {
       const me = isMe(p);
       const attrs = o.night ? ` data-night-id="${p.id}"` : ` data-shift-id="${p.id}" data-date="${esc(p.date)}" data-wp="${esc(p.wp)}"`;
-      return `<span class="mnm${p.guest ? ' g' : ''}${me ? ' me' : ''}"${attrs}${fitName(p.name, 10, o.avail)}>${esc(p.name)}${me ? meMark : ''}</span>`;
+      return `<span class="mnm${p.guest ? ' g' : ''}${me ? ' me' : ''}"${attrs}${fitName(p.name, 13, o.avail)}>${esc(p.name)}${me ? meMark : ''}</span>`;
     };
     const gs = list.filter(p => p.guest), st = list.filter(p => !p.guest);
     return (gs.length ? `<span class="vm-gl">게스트</span>${gs.map(nm).join('')}${st.length ? '<span class="vm-gsep"></span>' : ''}` : '') + st.map(nm).join('');

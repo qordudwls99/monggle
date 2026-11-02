@@ -548,7 +548,7 @@ body.gated #tabbar{display:none}
 .vm-c:focus-visible{outline:2px solid var(--ink);outline-offset:1px}
 .vm-c .mn .vm-moon{position:absolute;top:-3px;right:-8px;display:flex}
 .vm-c .mn .vm-moon svg{width:9px;height:9px;color:var(--moon)}
-.vm-c .mnm{color:var(--ink);font-size:10px;font-weight:700;letter-spacing:-.6px;line-height:1.25}
+.vm-c .mnm{color:var(--ink);font-size:13px;font-weight:700;letter-spacing:-.5px;line-height:1.3}
 .vm-c .mnm.g{font-weight:800}
 .vm-c .mnm.me{text-decoration:underline;text-decoration-thickness:1.5px;text-underline-offset:2px}
 .vm-gl{font-size:8px;font-weight:700;line-height:1.1;color:var(--ink2)}
@@ -2531,7 +2531,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
     const nm = p => {
       const me = isMe(p);
       const attrs = o.night ? ` data-night-id="${p.id}"` : ` data-shift-id="${p.id}" data-date="${esc(p.date)}" data-wp="${esc(p.wp)}"`;
-      return `<span class="mnm${p.guest ? ' g' : ''}${me ? ' me' : ''}"${attrs}${fitName(p.name, 10, o.avail)}>${esc(p.name)}${me ? meMark : ''}</span>`;
+      return `<span class="mnm${p.guest ? ' g' : ''}${me ? ' me' : ''}"${attrs}${fitName(p.name, 13, o.avail)}>${esc(p.name)}${me ? meMark : ''}</span>`;
     };
     const gs = list.filter(p => p.guest), st = list.filter(p => !p.guest);
     return (gs.length ? `<span class="vm-gl">게스트</span>${gs.map(nm).join('')}${st.length ? '<span class="vm-gsep"></span>' : ''}` : '') + st.map(nm).join('');
