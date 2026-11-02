@@ -236,7 +236,7 @@
   const TAB_KEYS = TABS.map(t => t[0]);
   const ALIAS = { swap: 'swaps' };
   const tabFromHash = () => { const h = (location.hash || '').replace('#', ''); const k = ALIAS[h] || h; return TAB_KEYS.includes(k) ? k : null; };
-  const state = { tab: 'schedule', view: 'day', date: parse(today()), wp: '전체', edit: false, dir: 0, quiet: false };
+  const state = { tab: 'schedule', view: 'day', date: parse(today()), wp: '전체', dir: 0, quiet: false };
   // role: 'admin' | 'staff' | 'out' (로그아웃)
   Object.defineProperty(state, 'role', { enumerable: true, get: () => !A.session ? 'out' : A.session.is_admin ? 'admin' : 'staff' });
   const screens = {}, views = {};

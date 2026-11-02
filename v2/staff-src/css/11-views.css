@@ -53,6 +53,8 @@ button.mev{border:none;cursor:pointer}
 .nt-i.today .nt-d{font-size:18px}
 .nt-acts{display:flex;gap:6px;margin-left:auto}
 .nt-acts .btn.sm{height:40px;padding:0 14px}
+.nt-acts .btn.nt-day{padding:0 9px}
+.nt-day svg{width:20px;height:20px}
 .nt-hrs{display:flex;align-items:flex-start;gap:5px;margin-top:2px;font-size:13px;font-weight:600;line-height:1.45;color:var(--ink2);font-variant-numeric:tabular-nums}
 .nt-hrs svg{width:12px;height:12px;margin-top:3px;color:var(--moon);flex-shrink:0}
 .nt-m{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}

@@ -15,12 +15,9 @@
 .mtab.on span{font-weight:800}
 .mtab:active{transform:scale(.95)}
 
-/* ── 스케줄 머리: 보기 전환 + 편집(관리자) ── */
+/* ── 스케줄 머리: 보기 전환 ── */
 .sched-h{display:flex;align-items:stretch;gap:8px}
 .sched-h .seg{flex:1}
-.edit-tg{flex-shrink:0;height:auto;min-height:40px;border-radius:10px}
-.edit-tg.on{background:#e6e3e8}
-.edit-tg svg{width:16px;height:16px}
 .sched-h+.chips{margin-top:10px}
 /* 고르는 줄(보기·매장·날짜)과 내용 사이를 한 단계 띄움 */
 #list{margin-top:10px}

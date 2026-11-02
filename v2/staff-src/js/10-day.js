@@ -41,13 +41,10 @@
 
   A.screen('schedule', { async render(el) {
     const admin = A.isAdmin();
-    if (!admin || S.view !== 'day') S.edit = false;
     const v = A.views[S.view];
     const nav = v || A.views.day;                         // 아직 등록 안 된 보기: 날짜 줄은 일별 규칙으로
     el.dataset.theme = A.themeKey(S.wp);
-    const editBtn = admin && S.view === 'day'
-      ? `<button class="btn sm edit-tg${S.edit ? ' on' : ''}" data-edit-tg aria-pressed="${S.edit}">${S.edit ? '완료' : '편집'}</button>` : '';
-    el.innerHTML = `<div class="sched-h"><div class="seg" role="tablist" aria-label="보기">${VIEWS.map(([k, l]) => `<button data-v="${k}" role="tab" aria-selected="${S.view === k}" class="${S.view === k ? 'on' : ''}">${l}</button>`).join('')}</div>${editBtn}</div>
+    el.innerHTML = `<div class="sched-h"><div class="seg" role="tablist" aria-label="보기">${VIEWS.map(([k, l]) => `<button data-v="${k}" role="tab" aria-selected="${S.view === k}" class="${S.view === k ? 'on' : ''}">${l}</button>`).join('')}</div></div>
       ${v && v.chips === false ? '' : chipsHtml()}
       <div class="datebar sched-date"><button class="nav" data-step="-1" aria-label="이전">${I.prev}</button><button class="dlabel" data-cal></button><button class="nav" data-step="1" aria-label="다음">${I.next}</button></div>
       <div class="subline"><span class="today-tag" data-today-tag hidden></span><button class="today-btn" data-today hidden></button></div>
@@ -63,13 +60,12 @@
     el.querySelectorAll('.datebar [data-step]').forEach(b => b.onclick = () => { const dir = +b.dataset.step; S.date = nav.step(S.date, dir); S.dir = dir; A.render(); });
     q('[data-today]').onclick = () => { const t = A.today(); S.dir = A.ymd(S.date) < t ? 1 : -1; S.date = A.parse(t); A.render(); };
     q('[data-cal]').onclick = () => openCalendar();
-    const tg = q('[data-edit-tg]');
-    if (tg) tg.onclick = async () => { S.edit = !S.edit; await A.render({ keep: true }); A.toast(S.edit ? '편집 중이에요. 바꾼 내용은 바로 저장돼요' : '편집을 마쳤어요'); };
     const list = q('#list');
     if (!v) list.innerHTML = A.emptyBox('cal', '준비 중인 보기예요', '다른 보기를 골라 주세요');
-    else await v.render(list, { ds: A.ymd(S.date), wp: S.wp, admin, edit: admin && S.edit });
+    else await v.render(list, { ds: A.ymd(S.date), wp: S.wp, admin, edit: admin });
     if (!S.quiet) list.classList.add(S.dir > 0 ? 'anim-r' : S.dir < 0 ? 'anim-l' : 'anim-f');
     A.bindDraft(list);
+    if (panel) await paintPanel();
   } });
 
   // ── 달력 시트 (운영 openCalendar/renderCal) ──
@@ -115,7 +111,7 @@
     const mine = isMine(p);
     const seek = !night && p.status === 'seeking_sub' ? '<span class="seek">대타 구하는 중</span>' : '';
     let tail, hasSub = false;
-    if (ctx.edit) tail = moreBtn(p, night, p.name);
+    if (ctx.edit) tail = igBtn(p) + moreBtn(p, night, p.name);
     else {
       const sub = !night && mine && !ctx.admin && p.status === 'confirmed'
         ? `<button class="btn sm sub-btn" data-sub="${p.id}" aria-label="${esc(where(p.date, p.wp))} 대타 구하기">${sm ? '대타' : '대타 구하기'}</button>` : '';
@@ -173,15 +169,12 @@
     return w => ({
       p: day.filter(a => a.choice === w && !(placed[a.staffId] && placed[a.staffId].has(w))).map(a => ({ ...a, also: elsewhere(a, w) })).sort(byName),
       any: day.filter(a => a.choice === '상관없음' && !placed[a.staffId]).sort(byName),
-      total: day.filter(a => a.choice === w || a.choice === '상관없음').length,
     });
   }
   function hopeHtml(h, w) {
     const chip = (a, any) => `<button class="hchip${any ? ' any' : ''}" data-hope="${esc(a.staffId)}" data-hwp="${esc(w)}" data-hn="${esc(a.staffName)}" aria-label="${esc(a.staffName)}님을 ${esc(w)}에 넣기${a.also ? ` (지금 ${esc(a.also)}에 있어요)` : ''}">${esc(a.staffName)}${a.also ? `<small>${esc(a.also)}</small>` : ''}${I.plus}</button>`;
-    const has = h.p.length || h.any.length;
-    const body = has ? `<div class="hchips">${h.p.map(a => chip(a, false)).join('')}${h.any.map(a => chip(a, true)).join('')}</div>`
-      : `<p class="hope-none">${h.total ? '희망한 사람은 모두 넣었어요' : '이 날 고른 사람이 없어요'}</p>`;
-    return `<div class="hope"><div class="hope-h"><b>희망</b>${has ? `<span>눌러서 넣어요${h.any.length ? ' · 흐린 이름은 상관없음' : ''}${h.p.some(a => a.also) ? ' · 빨간 글씨는 이미 들어간 매장' : ''}</span>` : ''}</div>${body}</div>`;
+    if (!h.p.length && !h.any.length) return '';           // 넣을 사람이 있을 때만 (관리자는 늘 이 화면이라서)
+    return `<div class="hope"><div class="hope-h"><b>희망</b><span>눌러서 넣어요${h.any.length ? ' · 흐린 이름은 상관없음' : ''}${h.p.some(a => a.also) ? ' · 빨간 글씨는 이미 들어간 매장' : ''}</span></div><div class="hchips">${h.p.map(a => chip(a, false)).join('')}${h.any.map(a => chip(a, true)).join('')}</div></div>`;
   }
   let hoping = false;
   async function addHope(ds, b) {
@@ -195,7 +188,7 @@
     } finally { hoping = false; }
   }
 
-  async function renderDayList(list, { ds, wp, admin, edit }) {
+  async function renderDayList(list, { ds, wp, admin, edit, inPanel = false }) {
     const ok = await A.store.ensure(ds, ds);
     if (A.store.isDraft(ds) && !admin) { list.innerHTML = A.lockedMonth(); return; }
     if (!ok) { list.innerHTML = A.emptyBox('cal', '불러오지 못했어요', '당겨서 새로고침해 주세요'); return; }
@@ -203,7 +196,7 @@
     edit = !!(admin && edit);
     const ctx = { admin, edit };
     const hopes = edit ? await hopeData(ds) : null;
-    let html = admin && A.store.isDraft(ds) ? A.draftBar(ds) : '', shown = 0, closedAll = true;
+    let html = admin && !inPanel && A.store.isDraft(ds) ? A.draftBar(ds) : '', shown = 0, closedAll = true;
     (all ? A.FLOORS.map(f => f[0]) : [wp]).forEach(w => {
       const info = A.store.day(ds, w);
       if (!info.closed) closedAll = false;
@@ -227,8 +220,15 @@
     if (!shown) html += closedAll ? A.emptyBox('closed', '휴무일이에요', '이 날은 모든 매장이 쉬어요') : A.emptyBox('cal', '이 날은 등록된 근무가 없어요', '다른 날짜를 확인해 보세요');
     list.innerHTML = html;
     bindDay(list, ds);
-    A.drag?.bind?.(list);
+    if (!inPanel) A.drag?.bind?.(list);
   }
+  // 주간·월간·야간에서 관리자가 칸을 누르면: 일별과 같은 내용을 시트에 그려요. 고친 뒤 화면을 다시 그릴 때 같이 새로 그려요
+  let panel = null;
+  const paintPanel = () => renderDayList(panel.body, { ds: panel.ds, wp: panel.wp, admin: true, edit: true, inPanel: true });
+  A.dayEdit = (ds, wp) => A.sheet({ title: A.fmt(ds), onClose: () => { panel = null; }, onOpen: el => {
+    panel = { ds, wp, body: el.querySelector('.sheet-b') };
+    paintPanel();
+  } });
   A.view('day', {
     title: d => A.fmt(A.ymd(d)),
     isNow: d => A.ymd(d) === A.today(),

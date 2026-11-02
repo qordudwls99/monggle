@@ -104,9 +104,9 @@
       return `<div class="wt-band" data-theme="${A.themeKey(g)}"><div class="wt-label"><i></i>${A.floorOf(g)} ${esc(g)}</div><div class="wt-row">${cells}</div></div>`;
     }).join('');
     const bar = admin ? draftBars(dss) : '';
-    listEl.innerHTML = `${bar}<div class="wt vw"><div class="wt-row wt-head">${head}</div>${bands}</div><p class="wk-hint">칸을 누르면 그날 출근표로 가요</p>`;
+    listEl.innerHTML = `${bar}<div class="wt vw"><div class="wt-row wt-head">${head}</div>${bands}</div>${admin ? '' : '<p class="wk-hint">칸을 누르면 그날 출근표로 가요</p>'}`;
     listEl.querySelectorAll('.wt-h[data-goday]').forEach(b => b.onclick = () => A.goDay(b.dataset.goday, wp));
-    bindTap(listEl, '.wt-c[data-goday]', c => A.goDay(c.dataset.goday, wp));
+    bindTap(listEl, '.wt-c[data-goday]', c => admin ? A.dayEdit(c.dataset.goday, c.dataset.dropWp) : A.goDay(c.dataset.goday, wp));
     if (bar && A.bindDraft) A.bindDraft(listEl);
     if (A.drag && A.drag.bind) A.drag.bind(listEl);
   }
@@ -171,9 +171,8 @@
       return `<section class="vm-floor" data-theme="${A.themeKey(g)}"><div class="vm-h">${A.storeTag(g)}</div>${dow}<div class="mgrid">${cells}</div></section>`;
     }).join('');
     const bar = admin && draft ? draftBar(first) : '';
-    const tip = admin ? '날짜를 누르면 그날로 가요. 부족을 누르면 뺄 수 있어요' : '날짜를 누르면 그날 출근표로 가요';
-    listEl.innerHTML = `${bar}<button class="btn vm-capture" data-act="capture">스케줄 이미지</button>${grids}<p class="wk-hint">${tip}</p>`;
-    bindTap(listEl, '.vm-c[data-goday]', c => A.goDay(c.dataset.goday, wp));
+    listEl.innerHTML = `${bar}<button class="btn vm-capture" data-act="capture">스케줄 이미지</button>${grids}${admin ? '' : '<p class="wk-hint">날짜를 누르면 그날 출근표로 가요</p>'}`;
+    bindTap(listEl, '.vm-c[data-goday]', c => admin ? A.dayEdit(c.dataset.goday, c.dataset.dropWp) : A.goDay(c.dataset.goday, wp));
     act(listEl, 'capture', () => (A.capture && A.capture.open) ? A.capture.open(ym, wp) : A.toast('스케줄 이미지는 준비 중이에요'));
     if (admin) {
       act(listEl, 'event', b => editEvent(b.dataset.ds, b.dataset.wp));
@@ -243,8 +242,8 @@
     const rows = items.map(info => {
       const x = info.ds, isToday = x === today, members = info.night ? info.night.members : [];
       const hours = info.night ? info.night.hours : '';
-      const acts = admin && !info.closed
-        ? `<span class="nt-acts">${info.night ? `<button class="btn sm" data-act="hours" data-ds="${x}" aria-label="${A.fmt(x)} 야간 시간 바꾸기">시간</button>` : ''}<button class="btn sm" data-act="add" data-ds="${x}" aria-label="${A.fmt(x)} 야간에 멤버 넣기">＋ 멤버</button></span>` : '';
+      const acts = admin
+        ? `<span class="nt-acts">${info.night && !info.closed ? `<button class="btn sm" data-act="hours" data-ds="${x}" aria-label="${A.fmt(x)} 야간 시간 바꾸기">시간</button>` : ''}${info.closed ? '' : `<button class="btn sm" data-act="add" data-ds="${x}" aria-label="${A.fmt(x)} 야간에 멤버 넣기">＋ 멤버</button>`}<button class="btn sm nt-day" data-act="day" data-ds="${x}" aria-label="${A.fmt(x)} ${NIGHT_WP} 근무 고치기">${I.more}</button></span>` : '';
       const body = members.length
         ? `<div class="nt-m">${members.map(p => pill(p, admin)).join('')}</div>`
         : `<div class="nt-none${info.night ? ' wait' : ''}">${info.closed ? '휴무일이에요' : info.night ? '멤버 미정' : '야간 없음'}</div>`;
@@ -255,6 +254,7 @@
     if (admin) {
       act(listEl, 'add', b => openAdd(b.dataset.ds, NIGHT_WP));
       act(listEl, 'hours', b => editHours(b.dataset.ds, NIGHT_WP));
+      act(listEl, 'day', b => A.dayEdit(b.dataset.ds, NIGHT_WP));
       act(listEl, 'rm', b => {
         const x = b.closest('[data-ds]').dataset.ds, info = A.store.day(x, NIGHT_WP);
         const mem = info.night && info.night.members.find(p => p.id === Number(b.dataset.id));

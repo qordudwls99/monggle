@@ -200,7 +200,6 @@
     el.querySelector('#adExport').onclick = () => { if (A.exportImg && A.exportImg.open) A.exportImg.open(); else A.toast('준비 중이에요'); };
     el.querySelector('#adEdit').onclick = () => {
       const t = A.today();
-      A.state.edit = true;
       A.go('schedule', { view: 'day', date: A.ymOf(t) === ym ? t : ym + '-01' });
     };
   }

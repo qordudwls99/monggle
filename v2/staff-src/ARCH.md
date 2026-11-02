@@ -263,11 +263,12 @@ The prototype source is `proto/js/admin.js` `staffSec()`/`staffRows()`. Preview 
 - Call `A.bindStaffPick(el)` in `onOpen`. `A.cho` and `A.nameHit(name, q)` are the shared 초성 helpers.
 
 ## 출근표 짜기 merged into the schedule (2026-10-28)
-- In 일별 edit mode, each store section ends with a 희망 block: chips of people who chose that store and are not in it yet, then 상관없음 people (shown faded) who are not placed anywhere that day. This is the same rule as production 희망자 넣기.
+- Superseded 2026-11-02: there is no edit toggle. Admins always get the edit layout in 일별, and tapping a 주간 or 월간 cell, or the ⋯ on a 야간 row, opens `A.dayEdit(ds, wp)`: `renderDayList` drawn into a sheet, repainted after every schedule render. Staff tap through to 일별 as before.
+- In 일별, each store section ends with a 희망 block when someone can still be added: chips of people who chose that store and are not in it yet, then 상관없음 people (shown faded) who are not placed anywhere that day. This is the same rule as production 희망자 넣기.
 - A tap calls `admin_assign_from_submission` with one id, then `done()`. If the person already works in another store that day, that store's name is shown in small red text on the chip.
 - Answers are cached per month for 60 s in 10-day.
 - The 희망자 floor-tool button is removed. The month view's ＋희망 still opens `A.adminTools.openHopes`.
-- In 관리, "출근표 짜기" is now 스케줄에서 짜기 plus 표로 한 번에 짜기. 근무 한 칸 추가 (`openShiftAdd`) is removed; it duplicated '+ 사람 넣기' in schedule edit.
+- In 관리, "출근표 짜기" is now 스케줄에서 짜기 plus 표로 한 번에 짜기. 근무 한 칸 추가 (`openShiftAdd`) is removed; it duplicated '+ 사람 넣기' in the schedule.
 
 ## Bottom sheet (core, 2026-10-28)
 - `A.sheet` DOM: `.modal` > `.modal-c` > `.sheet-top` (`.grab` + `.sheet-h` with `.sheet-x`) + `.sheet-b` (the scroller) + `.sheet-a` (pinned actions). Code that needs the sheet's scroll position reads `.sheet-b`, not `.modal-c`.
