@@ -171,6 +171,7 @@
       any: day.filter(a => a.choice === '상관없음' && !placed[a.staffId]).sort(byName),
     });
   }
+  A.hopeData = hopeData;   // 주간·월간 '희망 N' 도 같은 기준으로 세요
   function hopeHtml(h, w) {
     const chip = (a, any) => `<button class="hchip${any ? ' any' : ''}" data-hope="${esc(a.staffId)}" data-hwp="${esc(w)}" data-hn="${esc(a.staffName)}" aria-label="${esc(a.staffName)}님을 ${esc(w)}에 넣기${a.also ? ` (지금 ${esc(a.also)}에 있어요)` : ''}">${esc(a.staffName)}${a.also ? `<small>${esc(a.also)}</small>` : ''}${I.plus}</button>`;
     if (!h.p.length && !h.any.length) return '';           // 넣을 사람이 있을 때만 (관리자는 늘 이 화면이라서)

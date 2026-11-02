@@ -40,6 +40,16 @@
   // 관리자: 이름을 누르면 그 사람 메뉴 (일별 ⋯ 와 같음)
   const memAttrs = (p, o) => o.admin ? ` data-act="mem" data-mk="${o.night ? 'n' : 's'}" data-id="${p.id}" data-ds="${esc(o.ds)}" role="button" tabindex="0" aria-label="${esc(p.name)} 근무 바꾸기"` : '';
   const toolAttrs = (act, ds, wp) => `data-act="${act}" data-ds="${ds}" data-wp="${esc(wp)}"`;
+  // 관리자 칸의 희망자 수: 희망자 시트·일별 희망 칩과 같은 기준 (A.hopeData). 제출을 먼저 불러 두고 일정이 온 뒤에 세요
+  const warmHopes = dss => (A.hopeData ? Promise.all([...new Set(dss.map(A.ymOf))].map(ym => A.hopeData(`${ym}-01`))) : null);
+  async function hopeCounts(dss) {
+    const out = {};
+    if (!A.hopeData) return out;
+    for (const ds of dss) { const h = await A.hopeData(ds); A.FLOORS.forEach(([w]) => { const x = h(w); out[`${ds}|${w}`] = x.p.length + x.any.length; }); }
+    return out;
+  }
+  const hopeBtn = (cls, ds, wp, n, base, avail) => { const t = `희망 ${n}`;
+    return `<button class="${cls} hp${n ? ' on' : ''}" ${toolAttrs('hope', ds, wp)} aria-label="희망자 ${n}명"${fitName(t, base, avail)}>${t}</button>`; };
   // 주간·월간 관리자 칸: 이벤트 · 이름 · ＋근무 · ＋희망
   function bindEdit(root) {
     act(root, 'event', b => editEvent(b.dataset.ds, b.dataset.wp));
@@ -71,7 +81,7 @@
     const gs = list.filter(p => p.guest), st = list.filter(p => !p.guest);
     return (gs.length ? `<span class="gl">게스트</span>${gs.map(p => person(p, o)).join('')}${st.length ? '<span class="gsep"></span>' : ''}` : '') + st.map(p => person(p, o)).join('');
   }
-  function weekCell(info, { avail, admin }) {
+  function weekCell(info, { avail, admin, hopes }) {
     const ds = info.ds, wp = info.wp, o = { avail, admin, ds };
     const open = info.slots.length ? `<span class="vw-op">모집중 ${info.slots.length}</span>` : '';
     const day = weekNames(info.shifts, o) + open;
@@ -85,7 +95,7 @@
       const nm = weekNames(ms, { ...o, night: true }) + (sh ? `<span class="vw-op">부족 ${sh}</span>` : '');
       html += `<span class="nsep"></span><span class="ntl">${I.moon}야간</span>${nm || '<span class="no">미정</span>'}`;
     }
-    if (admin) html += `<span class="vw-tools"><button class="vw-tb" ${toolAttrs('addp', ds, wp)} aria-label="근무 넣기">＋근무</button><button class="vw-tb" ${toolAttrs('hope', ds, wp)} aria-label="희망자 넣기">＋희망</button></span>`;
+    if (admin) html += `<span class="vw-tools"><button class="vw-tb" ${toolAttrs('addp', ds, wp)} aria-label="근무 넣기">＋근무</button>${hopeBtn('vw-tb', ds, wp, (hopes || {})[`${ds}|${wp}`] || 0, 13, avail + 14)}</span>`;
     return html;
   }
   function weekTitle(d) {
@@ -96,7 +106,8 @@
     const sun = sundayOf(A.parse(ds));
     const dates = [...Array(7)].map((_, i) => new Date(sun.getFullYear(), sun.getMonth(), sun.getDate() + i));
     const dss = dates.map(A.ymd);
-    if (!await A.store.ensure(dss[0], dss[6])) { listEl.innerHTML = failBox(); return; }
+    if (!(await Promise.all([A.store.ensure(dss[0], dss[6]), admin ? warmHopes(dss) : null]))[0]) { listEl.innerHTML = failBox(); return; }
+    const hopes = admin ? await hopeCounts(dss) : null;
     const groups = floorsOf(wp), today = A.today();
     const avail = (vw() - 20) / 7 - 20;   // 칸 너비 - 사진(14) - 틈
     const days = dates.map((day, i) => {
@@ -113,7 +124,7 @@
         if (x.hide) { inner = '<span class="no">비공개</span>'; label = '비공개'; }
         else if (info.closed) { inner = '<span class="no">휴무</span>'; label = '휴무'; }
         else {
-          inner = weekCell(info, { avail, admin });
+          inner = weekCell(info, { avail, admin, hopes });
           const nightN = info.night ? info.night.members.filter(m => !m.short).length : 0;
           const mine = info.shifts.some(isMe) || (info.night && info.night.members.some(isMe));
           label = `${info.shifts.length}명${info.slots.length ? ` · 모집중 ${info.slots.length}` : ''}${info.night ? ` · 야간 ${nightN}명` : ''}${info.event ? ` · ${info.event}` : ''}${mine ? ' · 내 근무' : ''}`;
@@ -166,7 +177,7 @@
         const ms = info.night.members.filter(m => !m.short), sh = info.night.members.filter(m => m.short);
         ns = `<span class="vm-nsep"></span><span class="vm-ntl">${I.moon}야간</span>${monthNames(ms, { avail: o.avail, night: true, admin: o.admin, ds })}${sh.map(m => shortTag(o.admin, 'nshort', m.id, ds, wp)).join('')}`;
       }
-      const tools = o.admin ? `<span class="vm-tools"><button class="vm-tb" ${toolAttrs('addp', ds, wp)} aria-label="근무 넣기">＋근무</button><button class="vm-tb" ${toolAttrs('hope', ds, wp)} aria-label="희망자 넣기">＋희망</button></span>` : '';
+      const tools = o.admin ? `<span class="vm-tools"><button class="vm-tb" ${toolAttrs('addp', ds, wp)} aria-label="근무 넣기">＋근무</button>${hopeBtn('vm-tb', ds, wp, (o.hopes || {})[`${ds}|${wp}`] || 0, 12.5, o.avail)}</span>` : '';
       body = ev + monthNames(info.shifts, { avail: o.avail, admin: o.admin, ds }) + info.slots.map(s => shortTag(o.admin, 'short', s.id, ds, wp)).join('') + ns + tools;
       const mine = info.shifts.some(isMe) || (night && info.night.members.some(isMe));
       label = `${info.shifts.length}명${info.slots.length ? ` 부족 ${info.slots.length}` : ''}${night ? ` 야간 ${info.night.members.filter(m => !m.short).length}명` : ''}${info.event ? `, ${info.event}` : ''}${mine ? ', 내 근무' : ''}`;
@@ -176,9 +187,11 @@
   async function renderMonth(listEl, { ds, wp, admin }) {
     const d0 = A.parse(ds), y = d0.getFullYear(), m = d0.getMonth(), N = new Date(y, m + 1, 0).getDate();
     const ym = A.ymOf(ds), first = `${ym}-01`, last = `${ym}-${A.pad(N)}`;
-    if (!await A.store.ensure(first, last)) { listEl.innerHTML = failBox(); return; }
+    const mds = Array.from({ length: N }, (_, i) => `${ym}-${A.pad(i + 1)}`);
+    if (!(await Promise.all([A.store.ensure(first, last), admin ? warmHopes(mds) : null]))[0]) { listEl.innerHTML = failBox(); return; }
     const draft = A.store.isDraft(first);
     if (draft && !admin) { listEl.innerHTML = locked(); return; }
+    const hopes = admin ? await hopeCounts(mds) : null;
     const groups = floorsOf(wp), today = A.today(), lead = new Date(y, m, 1).getDay();
     const avail = (vw() - 50) / 7 - 6;
     const dow = `<div class="mdow" aria-hidden="true">${A.DAYS.map((x, i) => `<span class="${i === 0 ? 'sun' : i === 6 ? 'sat' : ''}">${x}</span>`).join('')}</div>`;
@@ -186,7 +199,7 @@
       let cells = '<span class="mc blank" aria-hidden="true"></span>'.repeat(lead);
       for (let d = 1; d <= N; d++) {
         const day = new Date(y, m, d);
-        cells += monthCell(A.store.day(A.ymd(day), g), day, { admin, avail, today });
+        cells += monthCell(A.store.day(A.ymd(day), g), day, { admin, avail, today, hopes });
       }
       return `<section class="vm-floor" data-theme="${A.themeKey(g)}"><div class="vm-h">${A.storeTag(g)}</div>${dow}<div class="mgrid">${cells}</div></section>`;
     }).join('');
