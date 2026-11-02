@@ -12,6 +12,11 @@
 .wav.photo{color:transparent}
 .vw-nm{min-width:0;overflow:hidden}
 .wt-c .n.me .vw-nm{text-decoration:underline;text-decoration-thickness:1.5px;text-underline-offset:2px}
+.wt-c button.ev{border:none;cursor:pointer}
+.wt-c .vw-tb{align-self:stretch;margin:0 3px;padding:2px 0;border:none;border-radius:5px;background:rgba(255,255,255,.2);color:var(--band-ink);font-size:9.5px;font-weight:700;line-height:1.25;cursor:pointer;white-space:nowrap;overflow:hidden}
+.wt-c .vw-tb.end{margin-top:auto}
+.wt-c .vw-tb:active,.wt-c button.ev:active{filter:brightness(.92)}
+[data-act="mem"]{cursor:pointer}
 .vw-op{max-width:100%;font-size:9.5px;font-weight:800;line-height:1.2;color:var(--band-ink);background:rgba(255,255,255,.2);border-radius:4px;padding:2px 3px;white-space:nowrap;overflow:hidden;font-variant-numeric:tabular-nums}
 
 /* ── 월간: 층마다 달력 ── */
@@ -37,6 +42,7 @@ button.vm-short{cursor:pointer}
 button.mev{border:none;cursor:pointer}
 .vm-ev.add,.vm-tb{display:block;margin:0 1px;padding:2px 0;border:none;border-radius:5px;background:rgba(255,255,255,.75);color:var(--ink2);font-size:9px;font-weight:700;line-height:1.25;cursor:pointer;white-space:nowrap;overflow:hidden}
 .vm-tb{margin-top:auto}
+.vm-tb+.vm-tb{margin-top:0}
 .vm-ev.add:active,.vm-tb:active,button.vm-short:active,button.mev:active{filter:brightness(.92)}
 
 /* ── 야간 (데빌) ── */

@@ -33,7 +33,20 @@
       c.addEventListener('keydown', e => { if ((e.key === 'Enter' || e.key === ' ') && e.target === c) { e.preventDefault(); fn(c); } });
     });
   }
-  const act = (root, name, fn) => root.querySelectorAll(`[data-act="${name}"]`).forEach(b => b.addEventListener('click', e => { e.stopPropagation(); fn(b); }));
+  const act = (root, name, fn) => root.querySelectorAll(`[data-act="${name}"]`).forEach(b => {
+    b.addEventListener('click', e => { e.stopPropagation(); fn(b); });
+    if (b.tagName !== 'BUTTON') b.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); fn(b); } });
+  });
+  // 관리자: 이름을 누르면 그 사람 메뉴 (일별 ⋯ 와 같음)
+  const memAttrs = (p, o) => o.admin ? ` data-act="mem" data-mk="${o.night ? 'n' : 's'}" data-id="${p.id}" data-ds="${esc(o.ds)}" role="button" tabindex="0" aria-label="${esc(p.name)} 근무 바꾸기"` : '';
+  const toolAttrs = (act, ds, wp) => `data-act="${act}" data-ds="${ds}" data-wp="${esc(wp)}"`;
+  // 주간·월간 관리자 칸: 이벤트 · 이름 · ＋사람 · ＋희망
+  function bindEdit(root) {
+    act(root, 'event', b => editEvent(b.dataset.ds, b.dataset.wp));
+    act(root, 'hope', b => (A.adminTools && A.adminTools.openHopes) ? A.adminTools.openHopes(b.dataset.ds, b.dataset.wp) : A.toast('희망자 넣기는 준비 중이에요'));
+    act(root, 'addp', b => A.addShift(b.dataset.ds, b.dataset.wp));
+    act(root, 'mem', b => A.memberMenu(b.dataset.mk, b.dataset.ds, b.dataset.id));
+  }
   // 쓰기 뒤: 읽기 버림 → 다시 그림 → 알림
   async function after(ds, msg) {
     if (ds) A.store.invalidate(ds, ds); else A.store.invalidateAll();
@@ -51,22 +64,28 @@
   function person(p, o) {
     const me = isMe(p);
     const attrs = o.night ? ` data-night-id="${p.id}"` : ` data-shift-id="${p.id}" data-date="${esc(p.date)}" data-wp="${esc(p.wp)}"`;
-    return `<span class="n vw-p${p.guest ? ' g' : ''}${me ? ' me' : ''}"${attrs}>${A.avatar({ name: p.name, avatar: p.guest ? null : p.avatar }, 'wav')}<span class="vw-nm"${fitName(p.name, 11.5, o.avail)}>${esc(p.name)}</span>${me ? meMark : ''}</span>`;
+    return `<span class="n vw-p${p.guest ? ' g' : ''}${me ? ' me' : ''}"${attrs}${memAttrs(p, o)}>${A.avatar({ name: p.name, avatar: p.guest ? null : p.avatar }, 'wav')}<span class="vw-nm"${fitName(p.name, 11.5, o.avail)}>${esc(p.name)}</span>${me ? meMark : ''}</span>`;
   }
   // 칸 안 이름: 게스트를 위에 모아 작은 '게스트' 글자로 묶고, 선 아래에 직원
   function weekNames(list, o) {
     const gs = list.filter(p => p.guest), st = list.filter(p => !p.guest);
     return (gs.length ? `<span class="gl">게스트</span>${gs.map(p => person(p, o)).join('')}${st.length ? '<span class="gsep"></span>' : ''}` : '') + st.map(p => person(p, o)).join('');
   }
-  function weekCell(info, avail) {
+  function weekCell(info, { avail, admin }) {
+    const ds = info.ds, wp = info.wp, o = { avail, admin, ds };
     const open = info.slots.length ? `<span class="vw-op">모집중 ${info.slots.length}</span>` : '';
-    const day = weekNames(info.shifts, { avail }) + open;
-    let html = (info.event ? `<span class="ev"${fitName(info.event, 10, avail + 14)}>${esc(info.event)}</span>` : '') + (day || '<span class="no">없음</span>');
+    const day = weekNames(info.shifts, o) + open;
+    const evFit = info.event ? fitName(info.event, 10, avail + 14) : '';
+    const ev = info.event
+      ? (admin ? `<button class="ev" ${toolAttrs('event', ds, wp)} aria-label="이벤트 ${esc(info.event)} 바꾸기"${evFit}>${esc(info.event)}</button>` : `<span class="ev"${evFit}>${esc(info.event)}</span>`)
+      : (admin ? `<button class="vw-tb" ${toolAttrs('event', ds, wp)} aria-label="이벤트 넣기">＋데이</button>` : '');
+    let html = ev + (day || '<span class="no">없음</span>');
     if (info.night) {
       const ms = info.night.members.filter(m => !m.short), sh = info.night.members.length - ms.length;
-      const nm = weekNames(ms, { avail, night: true }) + (sh ? `<span class="vw-op">부족 ${sh}</span>` : '');
+      const nm = weekNames(ms, { ...o, night: true }) + (sh ? `<span class="vw-op">부족 ${sh}</span>` : '');
       html += `<span class="nsep"></span><span class="ntl">${I.moon}야간</span>${nm || '<span class="no">미정</span>'}`;
     }
+    if (admin) html += `<button class="vw-tb end" ${toolAttrs('addp', ds, wp)} aria-label="사람 넣기">＋사람</button><button class="vw-tb" ${toolAttrs('hope', ds, wp)} aria-label="희망자 넣기">＋희망</button>`;
     return html;
   }
   function weekTitle(d) {
@@ -94,7 +113,7 @@
         if (x.hide) { inner = '<span class="no">비공개</span>'; label = '비공개'; }
         else if (info.closed) { inner = '<span class="no">휴무</span>'; label = '휴무'; }
         else {
-          inner = weekCell(info, avail);
+          inner = weekCell(info, { avail, admin });
           const nightN = info.night ? info.night.members.filter(m => !m.short).length : 0;
           const mine = info.shifts.some(isMe) || (info.night && info.night.members.some(isMe));
           label = `${info.shifts.length}명${info.slots.length ? ` · 모집중 ${info.slots.length}` : ''}${info.night ? ` · 야간 ${nightN}명` : ''}${info.event ? ` · ${info.event}` : ''}${mine ? ' · 내 근무' : ''}`;
@@ -107,6 +126,7 @@
     listEl.innerHTML = `${bar}<div class="wt vw"><div class="wt-row wt-head">${head}</div>${bands}</div>${admin ? '' : '<p class="wk-hint">칸을 누르면 그날 출근표로 가요</p>'}`;
     listEl.querySelectorAll('.wt-h[data-goday]').forEach(b => b.onclick = () => A.goDay(b.dataset.goday, wp));
     bindTap(listEl, '.wt-c[data-goday]', c => admin ? A.dayEdit(c.dataset.goday, c.dataset.dropWp) : A.goDay(c.dataset.goday, wp));
+    if (admin) bindEdit(listEl);
     if (bar && A.bindDraft) A.bindDraft(listEl);
     if (A.drag && A.drag.bind) A.drag.bind(listEl);
   }
@@ -123,7 +143,7 @@
     const nm = p => {
       const me = isMe(p);
       const attrs = o.night ? ` data-night-id="${p.id}"` : ` data-shift-id="${p.id}" data-date="${esc(p.date)}" data-wp="${esc(p.wp)}"`;
-      return `<span class="mnm${p.guest ? ' g' : ''}${me ? ' me' : ''}"${attrs}${fitName(p.name, 13, o.avail)}>${esc(p.name)}${me ? meMark : ''}</span>`;
+      return `<span class="mnm${p.guest ? ' g' : ''}${me ? ' me' : ''}"${attrs}${memAttrs(p, o)}${fitName(p.name, 13, o.avail)}>${esc(p.name)}${me ? meMark : ''}</span>`;
     };
     const gs = list.filter(p => p.guest), st = list.filter(p => !p.guest);
     return (gs.length ? `<span class="vm-gl">게스트</span>${gs.map(nm).join('')}${st.length ? '<span class="vm-gsep"></span>' : ''}` : '') + st.map(nm).join('');
@@ -144,10 +164,10 @@
       let ns = '';
       if (night) {
         const ms = info.night.members.filter(m => !m.short), sh = info.night.members.filter(m => m.short);
-        ns = `<span class="vm-nsep"></span><span class="vm-ntl">${I.moon}야간</span>${monthNames(ms, { avail: o.avail, night: true })}${sh.map(m => shortTag(o.admin, 'nshort', m.id, ds, wp)).join('')}`;
+        ns = `<span class="vm-nsep"></span><span class="vm-ntl">${I.moon}야간</span>${monthNames(ms, { avail: o.avail, night: true, admin: o.admin, ds })}${sh.map(m => shortTag(o.admin, 'nshort', m.id, ds, wp)).join('')}`;
       }
-      const hope = o.admin ? `<button class="vm-tb" data-act="hope" data-ds="${ds}" data-wp="${esc(wp)}" aria-label="희망자 넣기">＋희망</button>` : '';
-      body = ev + monthNames(info.shifts, { avail: o.avail }) + info.slots.map(s => shortTag(o.admin, 'short', s.id, ds, wp)).join('') + ns + hope;
+      const tools = o.admin ? `<button class="vm-tb" ${toolAttrs('addp', ds, wp)} aria-label="사람 넣기">＋사람</button><button class="vm-tb" ${toolAttrs('hope', ds, wp)} aria-label="희망자 넣기">＋희망</button>` : '';
+      body = ev + monthNames(info.shifts, { avail: o.avail, admin: o.admin, ds }) + info.slots.map(s => shortTag(o.admin, 'short', s.id, ds, wp)).join('') + ns + tools;
       const mine = info.shifts.some(isMe) || (night && info.night.members.some(isMe));
       label = `${info.shifts.length}명${info.slots.length ? ` 부족 ${info.slots.length}` : ''}${night ? ` 야간 ${info.night.members.filter(m => !m.short).length}명` : ''}${info.event ? `, ${info.event}` : ''}${mine ? ', 내 근무' : ''}`;
     }
@@ -175,8 +195,7 @@
     bindTap(listEl, '.vm-c[data-goday]', c => admin ? A.dayEdit(c.dataset.goday, c.dataset.dropWp) : A.goDay(c.dataset.goday, wp));
     act(listEl, 'capture', () => A.exportImg.open({ wp, ds: ym === A.ymOf(today) ? today : first }));
     if (admin) {
-      act(listEl, 'event', b => editEvent(b.dataset.ds, b.dataset.wp));
-      act(listEl, 'hope', b => (A.adminTools && A.adminTools.openHopes) ? A.adminTools.openHopes(b.dataset.ds, b.dataset.wp) : A.toast('희망자 넣기는 준비 중이에요'));
+      bindEdit(listEl);
       act(listEl, 'short', b => deleteShort(Number(b.dataset.id), b.dataset.ds, b.dataset.wp));
       act(listEl, 'nshort', b => {
         const ds2 = b.dataset.ds, info = A.store.day(ds2, NIGHT_WP);

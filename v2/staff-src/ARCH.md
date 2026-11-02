@@ -264,6 +264,7 @@ The prototype source is `proto/js/admin.js` `staffSec()`/`staffRows()`. Preview 
 
 ## 출근표 짜기 merged into the schedule (2026-10-28)
 - Superseded 2026-11-02: there is no edit toggle. Admins always get the edit layout in 일별, and tapping a 주간 or 월간 cell, or the ⋯ on a 야간 row, opens `A.dayEdit(ds, wp)`: `renderDayList` drawn into a sheet, repainted after every schedule render. Staff tap through to 일별 as before.
+- Added 2026-11-02 (owner: member and event editing must work in 주간 and 월간): admin 주간 and 월간 cells also show ＋데이 (or the event name), ＋사람 and ＋희망, and every name opens `A.memberMenu(kind, ds, id)`, the same menu as the 일별 ⋯ (`kind` 's' day shift, 'n' night member). Tapping empty space in a cell still opens `A.dayEdit`.
 - In 일별, each store section ends with a 희망 block when someone can still be added: chips of people who chose that store and are not in it yet, then 상관없음 people (shown faded) who are not placed anywhere that day. This is the same rule as production 희망자 넣기.
 - A tap calls `admin_assign_from_submission` with one id, then `done()`. If the person already works in another store that day, that store's name is shown in small red text on the chip.
 - Answers are cached per month for 60 s in 10-day.

@@ -414,6 +414,11 @@
     add(ds, wp) { A.addShift(ds, wp); },
     nadd(ds, wp) { if (A.night && A.night.openAdd) A.night.openAdd(ds, wp); else A.toast('야간 멤버 넣기는 준비 중이에요'); },
   };
+  // 주간·월간에서 관리자가 이름을 누르면: 일별 ⋯ 와 같은 메뉴 (kind 's' 주간 근무 · 'n' 야간 멤버)
+  A.memberMenu = (kind, ds, id) => {
+    if (kind === 'n') { const m = findNight(ds, id); if (m) nightMenu(m); }
+    else { const s = findShift(ds, id); if (s) shiftMenu(s); }
+  };
 
   // ── 근무 시트 (관리자): 직원 / 게스트 / 빈 자리, 시작·끝, 지우기 (운영 2223-2267, 2305-2310) ──
   async function shiftSheet(s, ds, wp) {
