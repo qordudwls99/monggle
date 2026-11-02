@@ -75,7 +75,7 @@
     const ds = info.ds, wp = info.wp, o = { avail, admin, ds };
     const open = info.slots.length ? `<span class="vw-op">모집중 ${info.slots.length}</span>` : '';
     const day = weekNames(info.shifts, o) + open;
-    const evFit = info.event ? fitName(info.event, admin ? 11.5 : 10, avail + 14) : '';
+    const evFit = info.event ? fitName(info.event, admin ? 13 : 10, avail + 14) : '';
     const ev = info.event
       ? (admin ? `<button class="ev" ${toolAttrs('event', ds, wp)} aria-label="이벤트 ${esc(info.event)} 바꾸기"${evFit}>${esc(info.event)}</button>` : `<span class="ev"${evFit}>${esc(info.event)}</span>`)
       : (admin ? `<button class="vw-tb" ${toolAttrs('event', ds, wp)} aria-label="이벤트 넣기">＋데이</button>` : '');
@@ -159,7 +159,7 @@
     if (info.closed) { body = '<span class="moff">휴무</span>'; label = '휴무'; }
     else {
       const ev = info.event
-        ? (o.admin ? `<button class="mev vm-ev" data-act="event" data-ds="${ds}" data-wp="${esc(wp)}" aria-label="이벤트 ${esc(info.event)} 바꾸기">${esc(info.event)}</button>` : `<span class="mev">${esc(info.event)}</span>`)
+        ? (o.admin ? `<button class="mev vm-ev" data-act="event" data-ds="${ds}" data-wp="${esc(wp)}" aria-label="이벤트 ${esc(info.event)} 바꾸기"${fitName(info.event, 12.5, o.avail)}>${esc(info.event)}</button>` : `<span class="mev">${esc(info.event)}</span>`)
         : (o.admin ? `<button class="vm-ev add" data-act="event" data-ds="${ds}" data-wp="${esc(wp)}" aria-label="이벤트 넣기">＋데이</button>` : '');
       let ns = '';
       if (night) {
