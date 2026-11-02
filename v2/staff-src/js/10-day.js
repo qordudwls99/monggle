@@ -139,7 +139,7 @@
   function floorTools(info) {
     const b = (k, l) => `<button class="btn sm" data-tool="${k}" data-twp="${info.wp}">${l}</button>`;
     if (info.closed) return `<div class="ftools">${b('closed', '휴무 풀기')}</div>`;
-    const add = info.night ? b('add', '+ 주간에 넣기') + b('nadd', '+ 야간에 넣기') : b('add', '+ 사람 넣기');
+    const add = info.night ? b('add', '+ 주간에 넣기') + b('nadd', '+ 야간에 넣기') : b('add', '+ 근무 넣기');
     return `<div class="ftools">${add}${b('event', info.event ? '이벤트 바꾸기' : '이벤트')}${info.wp === '데빌' ? b('night', info.night ? '야간 시간' : '야간 열기') : ''}${b('closed', '휴무로')}</div>`;
   }
   // 영업시간 글은 그대로 보여 줘요. '주간 … · 야간 …' 모양이면 칸 머리에 나눠 싣고, 아니면 한 줄로 (손님 페이지와 같음)

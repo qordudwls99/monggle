@@ -40,7 +40,7 @@
   // 관리자: 이름을 누르면 그 사람 메뉴 (일별 ⋯ 와 같음)
   const memAttrs = (p, o) => o.admin ? ` data-act="mem" data-mk="${o.night ? 'n' : 's'}" data-id="${p.id}" data-ds="${esc(o.ds)}" role="button" tabindex="0" aria-label="${esc(p.name)} 근무 바꾸기"` : '';
   const toolAttrs = (act, ds, wp) => `data-act="${act}" data-ds="${ds}" data-wp="${esc(wp)}"`;
-  // 주간·월간 관리자 칸: 이벤트 · 이름 · ＋사람 · ＋희망
+  // 주간·월간 관리자 칸: 이벤트 · 이름 · ＋근무 · ＋희망
   function bindEdit(root) {
     act(root, 'event', b => editEvent(b.dataset.ds, b.dataset.wp));
     act(root, 'hope', b => (A.adminTools && A.adminTools.openHopes) ? A.adminTools.openHopes(b.dataset.ds, b.dataset.wp) : A.toast('희망자 넣기는 준비 중이에요'));
@@ -85,7 +85,7 @@
       const nm = weekNames(ms, { ...o, night: true }) + (sh ? `<span class="vw-op">부족 ${sh}</span>` : '');
       html += `<span class="nsep"></span><span class="ntl">${I.moon}야간</span>${nm || '<span class="no">미정</span>'}`;
     }
-    if (admin) html += `<button class="vw-tb end" ${toolAttrs('addp', ds, wp)} aria-label="사람 넣기">＋사람</button><button class="vw-tb" ${toolAttrs('hope', ds, wp)} aria-label="희망자 넣기">＋희망</button>`;
+    if (admin) html += `<button class="vw-tb end" ${toolAttrs('addp', ds, wp)} aria-label="근무 넣기">＋근무</button><button class="vw-tb" ${toolAttrs('hope', ds, wp)} aria-label="희망자 넣기">＋희망</button>`;
     return html;
   }
   function weekTitle(d) {
@@ -166,7 +166,7 @@
         const ms = info.night.members.filter(m => !m.short), sh = info.night.members.filter(m => m.short);
         ns = `<span class="vm-nsep"></span><span class="vm-ntl">${I.moon}야간</span>${monthNames(ms, { avail: o.avail, night: true, admin: o.admin, ds })}${sh.map(m => shortTag(o.admin, 'nshort', m.id, ds, wp)).join('')}`;
       }
-      const tools = o.admin ? `<button class="vm-tb" ${toolAttrs('addp', ds, wp)} aria-label="사람 넣기">＋사람</button><button class="vm-tb" ${toolAttrs('hope', ds, wp)} aria-label="희망자 넣기">＋희망</button>` : '';
+      const tools = o.admin ? `<button class="vm-tb" ${toolAttrs('addp', ds, wp)} aria-label="근무 넣기">＋근무</button><button class="vm-tb" ${toolAttrs('hope', ds, wp)} aria-label="희망자 넣기">＋희망</button>` : '';
       body = ev + monthNames(info.shifts, { avail: o.avail, admin: o.admin, ds }) + info.slots.map(s => shortTag(o.admin, 'short', s.id, ds, wp)).join('') + ns + tools;
       const mine = info.shifts.some(isMe) || (night && info.night.members.some(isMe));
       label = `${info.shifts.length}명${info.slots.length ? ` 부족 ${info.slots.length}` : ''}${night ? ` 야간 ${info.night.members.filter(m => !m.short).length}명` : ''}${info.event ? `, ${info.event}` : ''}${mine ? ', 내 근무' : ''}`;
