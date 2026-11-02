@@ -533,8 +533,8 @@ body.gated #tabbar{display:none}
 .wav.photo{color:transparent}
 .vw-nm{min-width:0;overflow:hidden}
 .wt-c .n.me .vw-nm{text-decoration:underline;text-decoration-thickness:1.5px;text-underline-offset:2px}
-.wt-c button.ev{border:none;cursor:pointer}
-.wt-c .vw-tb{align-self:stretch;margin:0 3px;padding:2px 0;border:none;border-radius:5px;background:rgba(255,255,255,.2);color:var(--band-ink);font-size:9.5px;font-weight:700;line-height:1.25;cursor:pointer;white-space:nowrap;overflow:hidden}
+.wt-c button.ev{border:none;cursor:pointer;min-height:30px;font-size:11.5px}
+.wt-c .vw-tb{align-self:stretch;min-height:30px;margin:0 3px;padding:4px 0;border:none;border-radius:7px;background:rgba(255,255,255,.2);color:var(--band-ink);font-size:11.5px;font-weight:800;line-height:1.25;cursor:pointer;white-space:nowrap;overflow:hidden}
 .wt-c .vw-tb.end{margin-top:auto}
 .wt-c .vw-tb:active,.wt-c button.ev:active{filter:brightness(.92)}
 [data-act="mem"]{cursor:pointer}
@@ -558,10 +558,11 @@ body.gated #tabbar{display:none}
 .vm-ntl{display:flex;align-items:center;justify-content:center;gap:1px;font-size:8.5px;font-weight:800;line-height:1.1;color:var(--ink2)}
 .vm-ntl svg{width:8px;height:8px;color:var(--moon)}
 .vm-short{display:block;margin:0 1px;padding:2px 0;border:none;border-radius:5px;background:var(--red-soft);color:var(--red);font-size:9.5px;font-weight:800;line-height:1.25;text-align:center}
-button.vm-short{cursor:pointer}
+button.vm-short{cursor:pointer;min-height:26px;font-size:11px}
 .vm-c .mev{margin:0 1px;font-size:9.5px;padding:2px 1px;text-overflow:clip}
 button.mev{border:none;cursor:pointer}
-.vm-ev.add,.vm-tb{display:block;margin:0 1px;padding:2px 0;border:none;border-radius:5px;background:rgba(255,255,255,.75);color:var(--ink2);font-size:9px;font-weight:700;line-height:1.25;cursor:pointer;white-space:nowrap;overflow:hidden}
+.vm-c button.mev{min-height:28px;font-size:11px}
+.vm-ev.add,.vm-tb{display:block;min-height:28px;margin:0 1px;padding:4px 0;border:none;border-radius:6px;background:rgba(255,255,255,.75);color:var(--ink2);font-size:11px;font-weight:800;line-height:1.25;cursor:pointer;white-space:nowrap;overflow:hidden}
 .vm-tb{margin-top:auto}
 .vm-tb+.vm-tb{margin-top:0}
 .vm-ev.add:active,.vm-tb:active,button.vm-short:active,button.mev:active{filter:brightness(.92)}
@@ -2474,7 +2475,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
     const ds = info.ds, wp = info.wp, o = { avail, admin, ds };
     const open = info.slots.length ? `<span class="vw-op">모집중 ${info.slots.length}</span>` : '';
     const day = weekNames(info.shifts, o) + open;
-    const evFit = info.event ? fitName(info.event, 10, avail + 14) : '';
+    const evFit = info.event ? fitName(info.event, admin ? 11.5 : 10, avail + 14) : '';
     const ev = info.event
       ? (admin ? `<button class="ev" ${toolAttrs('event', ds, wp)} aria-label="이벤트 ${esc(info.event)} 바꾸기"${evFit}>${esc(info.event)}</button>` : `<span class="ev"${evFit}>${esc(info.event)}</span>`)
       : (admin ? `<button class="vw-tb" ${toolAttrs('event', ds, wp)} aria-label="이벤트 넣기">＋데이</button>` : '');

@@ -75,7 +75,7 @@
     const ds = info.ds, wp = info.wp, o = { avail, admin, ds };
     const open = info.slots.length ? `<span class="vw-op">모집중 ${info.slots.length}</span>` : '';
     const day = weekNames(info.shifts, o) + open;
-    const evFit = info.event ? fitName(info.event, 10, avail + 14) : '';
+    const evFit = info.event ? fitName(info.event, admin ? 11.5 : 10, avail + 14) : '';
     const ev = info.event
       ? (admin ? `<button class="ev" ${toolAttrs('event', ds, wp)} aria-label="이벤트 ${esc(info.event)} 바꾸기"${evFit}>${esc(info.event)}</button>` : `<span class="ev"${evFit}>${esc(info.event)}</span>`)
       : (admin ? `<button class="vw-tb" ${toolAttrs('event', ds, wp)} aria-label="이벤트 넣기">＋데이</button>` : '');
