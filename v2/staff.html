@@ -2179,7 +2179,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
     list.querySelectorAll('[data-app-ok]').forEach(b => b.onclick = () => { const s = findShift(ds, b.dataset.slot); const a = s && s.applicants.find(x => String(x.appId) === b.dataset.appOk); if (a) approve(s, a); });
     list.querySelectorAll('[data-app-no]').forEach(b => b.onclick = () => { const s = findShift(ds, b.dataset.slot); const a = s && s.applicants.find(x => String(x.appId) === b.dataset.appNo); if (a) reject(s, a); });
     list.querySelectorAll('[data-slot-pick]').forEach(b => b.onclick = () => { const s = findShift(ds, b.dataset.slotPick); if (s) pickApplicant(s); });
-    list.querySelectorAll('[data-slot-apply]').forEach(b => b.onclick = () => apply(ds, b.dataset.slotApply));
+    list.querySelectorAll('[data-slot-apply]').forEach(b => b.onclick = () => apply(ds, b.dataset.slotApply, b));
     list.querySelectorAll('[data-slot-cancel]').forEach(b => b.onclick = () => cancelApply(ds, b.dataset.slotCancel));
     list.querySelectorAll('[data-sub]').forEach(b => b.onclick = () => { const s = findShift(ds, b.dataset.sub); if (!s) return;
       if (A.swap && A.swap.request) A.swap.request(s); else A.toast('대타 구하기는 준비 중이에요'); });
@@ -2220,13 +2220,18 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
       el.querySelectorAll('[data-pno]').forEach(b => b.onclick = () => { close(); reject(s, of(b.dataset.pno)); });
     } });
   }
-  async function apply(ds, id) {
+  let applying = false;   // 신청 처리 중에는 다시 누르기 막기
+  async function apply(ds, id, b) {
     if (!await A.auth.require()) return;
     if (A.isAdmin()) return;                               // 관리자로 로그인했으면 다시 그려진 화면에서 고르기
+    if (applying) return;                                  // 로그인을 기다린 뒤에 봐요. 로그인 창을 닫아도 막히지 않게
     const s = me();
-    if (await rpc('apply_slot', { p_staff_id: s.id, p_shift_id: Number(id) }) === false) return;
-    A.api.notify({ to: 'admins', title: '빈자리 신청', body: `${s.name}님이 빈자리에 신청했어요`, exclude_id: s.id });
-    await done(ds, v2db() ? '신청했어요. 관리자가 확인하면 알려 드려요' : '신청했어요. 관리자 확인을 기다려 주세요');
+    applying = true; b.disabled = true; b.setAttribute('aria-busy', 'true');
+    try {
+      if (await rpc('apply_slot', { p_staff_id: s.id, p_shift_id: Number(id) }) === false) { b.disabled = false; b.removeAttribute('aria-busy'); return; }
+      A.api.notify({ to: 'admins', title: '빈자리 신청', body: `${s.name}님이 빈자리에 신청했어요`, exclude_id: s.id });
+      await done(ds, v2db() ? '신청했어요. 관리자가 확인하면 알려 드려요' : '신청했어요. 관리자 확인을 기다려 주세요');
+    } finally { applying = false; }
   }
   async function cancelApply(ds, id) {
     if (!await A.auth.require()) return;
