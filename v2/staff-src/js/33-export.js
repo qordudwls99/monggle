@@ -12,15 +12,15 @@
   const SIZE = { story: [1080, 1920], post: [1080, 1350] }, SCALE = 2;
   const LIGHT = '#f4f4f6', DARK = '#2a1418';
   const TH = {
-    '데빌': { ink: LIGHT, sub: '#c4c7cf', ac: '#d4202f', ev: '#ff6f7a', off: '폐업' },
-    '메이드': { ink: '#231318', sub: '#7d5563', ac: '#e0407f', ev: '#e0407f', off: '휴무' },
-    '마츠리': { ink: '#33140f', sub: '#8a4a3c', ac: '#d3261b', ev: '#d3261b', off: '휴무' },
+    '데빌': { ink: LIGHT, sub: '#c4c7cf', ac: '#d4202f', ev: '#ff6f7a', off: '폐업', head: [38, 33, 31] },
+    '메이드': { ink: '#231318', sub: '#7d5563', ac: '#e0407f', ev: '#e0407f', off: '휴무', head: [217, 64, 121] },
+    '마츠리': { ink: '#33140f', sub: '#8a4a3c', ac: '#d3261b', ev: '#d3261b', off: '휴무', head: [224, 69, 46] },
   };
   const PANEL_INK = '#231318', PANEL_LINE = '#e3b7c3';
   // 1주 · 1일 그림은 세 층 모두 연한 메이드 톤이라 글자를 진하게 써요
   const pale = wp => ({ ...TH[wp], ink: PANEL_INK, sub: TH['메이드'].sub, ev: TH[wp].ac });
 
-  // title: [x, y, w, h, 글자색] · x/y: 칸 경계 (2주) · week: 매장별 칸 경계 (1주) · panels: 층 순서대로 [x, y, w, h] (1일) · labels: 층 이름판 [x, y, w, h]
+  // title: [x, y, w, h, 글자색] · x/y: 칸 경계 (2주) · week: 매장별 [칸 경계, 칸 위, 칸 아래, 요일 줄 위] (1주) · panels: 층 순서대로 [x, y, w, h] (1일) · labels: 층 이름판 [x, y, w, h]
   const LAYOUT = {
     'story-2w-devil': { title: [264, 257, 552, 98, LIGHT], x: [62, 182, 300, 419, 539, 658, 777, 897, 1019], y: [466, 1021, 1565], fs: 33 },
     'story-2w-maid': { title: [294, 265, 492, 109, DARK], x: [60, 195, 335, 471, 609, 748, 887, 1020], y: [480, 1022, 1582], fs: 36 },
@@ -28,8 +28,8 @@
     'post-2w-devil': { title: [282, 145, 514, 75, LIGHT], x: [67, 183, 302, 419, 539, 656, 777, 894, 1012], y: [300, 709, 1119], fs: 33 },
     'post-2w-maid': { title: [322, 72, 458, 76, DARK], x: [54, 193, 333, 471, 606, 745, 881, 1021], y: [245, 714, 1169], fs: 36 },
     'post-2w-matsuri': { title: [274, 67, 534, 86, DARK], x: [51, 191, 331, 471, 608, 748, 888, 1027], y: [234, 709, 1179], fs: 36 },
-    'story-1w': { title: [272, 165, 541, 71, DARK], labels: [[411, 263, 258, 37], [411, 704, 258, 37], [410, 1186, 261, 40]], week: [[[50, 174, 297, 419, 542, 662, 783, 906, 1029], 380, 684], [[50, 192, 332, 470, 609, 748, 887, 1028], 824, 1167], [[50, 192, 332, 470, 609, 748, 887, 1028], 1309, 1651]], fs: 28 },
-    'post-1w': { title: [315, 100, 449, 58, DARK], labels: [[428, 179, 221, 25], [428, 532, 221, 28], [428, 880, 221, 29]], week: [[[49, 173, 296, 418, 539, 660, 783, 904, 1029], 275, 502], [[49, 191, 331, 471, 609, 749, 888, 1029], 636, 848], [[49, 190, 331, 471, 609, 749, 888, 1029], 982, 1192]], fs: 26 },
+    'story-1w': { title: [272, 165, 541, 71, DARK], labels: [[411, 263, 258, 37], [411, 704, 258, 37], [410, 1186, 261, 40]], week: [[[50, 174, 297, 419, 542, 662, 783, 906, 1029], 380, 684, 320], [[50, 192, 332, 470, 609, 748, 887, 1028], 824, 1167, 762], [[50, 192, 332, 470, 609, 748, 887, 1028], 1309, 1651, 1247]], fs: 28 },
+    'post-1w': { title: [315, 100, 449, 58, DARK], labels: [[428, 179, 221, 25], [428, 532, 221, 28], [428, 880, 221, 29]], week: [[[49, 173, 296, 418, 539, 660, 783, 904, 1029], 275, 502, 221], [[49, 191, 331, 471, 609, 749, 888, 1029], 636, 848, 581], [[49, 190, 331, 471, 609, 749, 888, 1029], 982, 1192, 928]], fs: 26 },
     'story-1d': { title: [279, 199, 520, 79, DARK], labels: [[428, 310, 223, 40], [428, 748, 223, 44], [428, 1200, 223, 42]], panels: [[98, 378, 885, 332], [98, 819, 885, 346], [98, 1269, 885, 346]], fs: 58 },
     'post-1d': { title: [313, 121, 455, 59, DARK], labels: [[430, 202, 219, 28], [430, 532, 219, 30], [430, 863, 219, 28]], panels: [[75, 252, 930, 256], [75, 584, 930, 256], [75, 913, 930, 249]], fs: 50 },
   };
@@ -164,7 +164,7 @@
       });
     });
   }
-  // 1일 패널 안 연분홍 종이를 흰색으로 바꿔요. 밝은 종이만 하얘지고 검은 틀과 그 가장자리는 그대로예요
+  // 1일 패널 · 1주 칸 안 연분홍 종이를 흰색으로 바꿔요. 밝은 종이만 하얘지고 검은 틀과 그 가장자리는 그대로예요
   function whiten(c, [px, py, pw, ph]) {
     const x = Math.floor((px - 1) * SCALE), y = Math.floor((py - 1) * SCALE), w = Math.ceil((pw + 2) * SCALE), h = Math.ceil((ph + 2) * SCALE);
     const img = c.getImageData(x, y, w, h), d = img.data;
@@ -173,6 +173,18 @@
       if (t) for (let k = i; k < i + 3; k++) d[k] += (255 - d[k]) * t;
     }
     c.putImageData(img, x, y);
+  }
+  // 1주 요일 줄을 층 색으로: 칸 가운데는 종이→층 색, 글자→흰색. 가장자리는 종이만 층 색이 되고 검은 줄은 그대로예요
+  function headTint(c, xs, top, bot, rgb) {
+    const x0 = Math.round(xs[0] * SCALE), y0 = Math.round(top * SCALE), w = Math.round((xs[xs.length - 1] - xs[0]) * SCALE), h = Math.round((bot - top) * SCALE);
+    const img = c.getImageData(x0, y0, w, h), d = img.data, pad = 5 * SCALE;
+    const mid = Array.from({ length: w }, (_, x) => { const X = xs[0] + x / SCALE; return xs.some((a, i) => i < xs.length - 1 && X > a + 8 && X < xs[i + 1] - 8); });
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+      const i = (y * w + x) * 4, l = d[i] * .3 + d[i + 1] * .59 + d[i + 2] * .11;
+      if (mid[x] && y > pad && y < h - pad) { const t = Math.min(1, Math.max(0, (l - 80) / 120)); for (let k = 0; k < 3; k++) d[i + k] = rgb[k] * t + 255 * (1 - t); }
+      else { const t = Math.min(1, l / 215); for (let k = 0; k < 3; k++) d[i + k] = rgb[k] * t; }
+    }
+    c.putImageData(img, x0, y0);
   }
   function drawPanel(c, p, wp, ds, fs0) {
     const th = pale(wp), d = A.store.day(ds, wp), night = nightOf(d);
@@ -204,7 +216,8 @@
   function drawWeek(c, L, from) {
     const days = span(from, 7), lh = 1.32;
     const floors = WPS().map((wp, p) => {
-      const [x, y0, y1] = L.week[p], cells = days.map(ds => dayLines(ds, wp, A.parse(ds).getDate()));
+      const [x, y0, y1, hy] = L.week[p], cells = days.map(ds => dayLines(ds, wp, A.parse(ds).getDate()));
+      whiten(c, [x[0], y0, x[x.length - 1] - x[0], y1 - y0]); headTint(c, x, hy, y0, TH[wp].head);
       return { wp, x, y0, h: y1 - y0, cells, night: x.length === 9 ? nightLines(days, wp) : [] };
     });
     // 세 층 글자 크기는 같게, 빽빽한 칸은 줄 간격을 좁혀서 맞춰요
