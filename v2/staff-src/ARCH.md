@@ -69,6 +69,11 @@ v2/
     - The code is what stops a login started by someone else's link from being collected by whoever sent the link.
     - On Android the tab shares storage, so the app just adopts the stored session when it becomes visible.
     - Only an iPhone browser outside the app parks and shows a code. Any other browser whose state doesn't match gets a toast and makes no RPC call.
+  - Where the button goes depends on the device (`myLinks` / `myTarget`).
+    - Android: `intent://connect/moetable?…;scheme=mateyou;package=com.mateyou.app`. If the app is missing, Chrome follows `S.browser_fallback_url` to the www web page.
+    - iPhone: `mateyou://connect/moetable?…`. A page can't tell whether the app is installed, so the sheet also has a '웹에서 로그인' button.
+    - Desktop: the www web page.
+    - The MateYou app returns with `Linking.openURL(redirect)`, which opens Safari or Chrome. The rest of the flow is unchanged.
   - The button renders only when `App.MATEYOU_ON` (`00-config.js`) is true. It is off until the MateYou server and the DB functions are live. In the dev harness, `&myon=1` turns it on.
 - **Logout.** Call `staff_signout`, then remove the key.
 - **Other storage keys** (same as production): `push_ask_dismiss`, `install_dismiss`, `noti_seen_ids`.

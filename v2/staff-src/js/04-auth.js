@@ -25,16 +25,27 @@
   // ── 메이트유로 로그인: mateyou.me 에서 로그인 → 이 페이지로 #mateyou=<티켓> 으로 돌아와요 (supabase-v2-mateyou.sql) ──
   // 홈 화면 앱(iOS)은 메이트유를 따로 뜨는 브라우저에서 열어요(저장소가 달라요). 그 브라우저가 숫자 4자리를 보여주고,
   // 앱에서 그 숫자를 넣어 로그인을 넘겨받아요. 남이 보낸 링크로 들어온 사람의 로그인을 링크 보낸 사람이 가져가지 못하게 막아요.
-  const MY_URL = 'https://www.mateyou.me/connect/moetable', MY_STATE = 'mateyou_state';
+  // 앱이 있으면 메이트유 앱(mateyou://)으로. 안드로이드는 intent:// 라 앱이 없으면 크롬이 웹으로 보내요.
+  // 아이폰은 앱이 깔렸는지 알 수 없어서 앱으로 열고, 앱이 없는 사람은 '웹에서 로그인'을 눌러요. 컴퓨터는 바로 웹.
+  const MY_URL = 'https://www.mateyou.me/connect/moetable', MY_PKG = 'com.mateyou.app', MY_STATE = 'mateyou_state';
   let pendingLink = null, pendingCode = null, codeSheet = null;
   const myState = () => {
     try { const w = JSON.parse(localStorage.getItem(MY_STATE) || 'null'); return w && Date.now() - w.t < 15 * 60e3 ? w : null; } catch (e) { return null; }
   };
-  function startMateyou() {
+  const isAndroid = () => /android/i.test(navigator.userAgent);
+  function myLinks(s) {
+    const q = `state=${s}&return=${encodeURIComponent(location.origin + location.pathname)}`, web = `${MY_URL}?${q}`;
+    return {
+      web, app: `mateyou://connect/moetable?${q}`,
+      intent: `intent://connect/moetable?${q}#Intent;scheme=mateyou;package=${MY_PKG};S.browser_fallback_url=${encodeURIComponent(web)};end`,
+    };
+  }
+  const myTarget = (L, viaWeb) => viaWeb ? L.web : isAndroid() ? L.intent : isIOS() ? L.app : L.web;
+  function startMateyou(viaWeb) {
     const s = Array.from(crypto.getRandomValues(new Uint8Array(16)), b => b.toString(16).padStart(2, '0')).join('');
     localStorage.setItem(MY_STATE, JSON.stringify({ s, t: Date.now() }));
     if (isStandalone() && isIOS()) openCodeEntry();
-    location.href = `${MY_URL}?state=${s}&return=${encodeURIComponent(location.origin + location.pathname)}`;
+    location.href = myTarget(myLinks(s), viaWeb === true);
   }
   const claimsOf = t => {
     try { const b = t.split('.')[1].replace(/-/g, '+').replace(/_/g, '/'); return JSON.parse(atob(b + '='.repeat((4 - b.length % 4) % 4))); } catch (e) { return null; }
@@ -211,7 +222,8 @@
       <label class="fld-l">이름<input class="fld" data-l="name" autocomplete="username" autocapitalize="off" spellcheck="false" maxlength="30"></label>
       <label class="fld-l">PIN<input class="fld" data-l="pin" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="current-password" placeholder="숫자 6자리"></label>
       <p class="sheet-err" hidden></p>
-      ${A.MATEYOU_ON ? '<button type="button" class="btn lg my-login" data-l="mateyou"><img src="assets/mateyou.png" alt="" width="22" height="22">메이트유로 로그인</button>' : ''}</div>`;
+      ${A.MATEYOU_ON ? '<button type="button" class="btn lg my-login" data-l="mateyou"><img src="assets/mateyou.png" alt="" width="22" height="22">메이트유로 로그인</button>' : ''}
+      ${A.MATEYOU_ON && isIOS() ? '<button type="button" class="btn ghost my-web" data-l="mateyou-web">웹에서 로그인</button>' : ''}</div>`;
     const submit = async (close, el) => {
       if (busy) return;
       const nameEl = el.querySelector('[data-l="name"]'), pinEl = el.querySelector('[data-l="pin"]'), err = el.querySelector('.sheet-err');
@@ -243,7 +255,9 @@
         nameEl.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.isComposing) { e.preventDefault(); pinEl.focus(); } });
         pinEl.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.isComposing) { e.preventDefault(); submit(close, el); } });
         const myBtn = el.querySelector('[data-l="mateyou"]');
-        if (myBtn) myBtn.addEventListener('click', startMateyou);
+        if (myBtn) myBtn.addEventListener('click', () => startMateyou(false));
+        const myWeb = el.querySelector('[data-l="mateyou-web"]');
+        if (myWeb) myWeb.addEventListener('click', () => startMateyou(true));
         nameEl.focus();
       },
     });
@@ -364,6 +378,6 @@
 
   A.auth = {
     openLogin, require: requireLogin, logout, expire, update, upgradeSession,
-    enablePush, pushOn, maybeAskPush, isIOS, isStandalone, boot, afterBoot,
+    enablePush, pushOn, maybeAskPush, isIOS, isStandalone, boot, afterBoot, myLinks, myTarget,
   };
 }
