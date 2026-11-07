@@ -65,7 +65,7 @@ v2/
   - The link stores a fingerprint of the PIN (`mateyou_pin_tag`). If the PIN changes (by the staff member, an admin reset, or clearing it), the link is void and the next MateYou login asks for the link again.
   - On the iPhone home-screen app, mateyou.me opens in a separate in-app browser with its own storage.
     - That page finds no matching state, so it calls `mateyou_signin(ticket, p_here=false)`. The DB parks the result under the state for 5 minutes and returns a random 4-digit code, which the page shows as '앱에 넣을 숫자'.
-    - The app has the '메이트유 로그인' entry sheet open since it started the flow (it reopens on relaunch while the state is fresh). The user types the code, and `mateyou_claim(state, code)` hands over the result. After 5 wrong codes the parked result is deleted.
+    - The app opens the '메이트유 로그인' code sheet in two cases: right away for '웹에서 로그인', because that page opens on top of the app; and for the MateYou app, only when the user comes back after being away for more than 1.5 seconds. That way, if the app isn't installed, the login sheet and its '웹에서 로그인' button stay put. The sheet also reopens on relaunch while the state is fresh. The user types the code, and `mateyou_claim(state, code)` hands over the result. After 5 wrong codes the parked result is deleted.
     - The code is what stops a login started by someone else's link from being collected by whoever sent the link.
     - On Android the tab shares storage, so the app just adopts the stored session when it becomes visible.
     - Only an iPhone browser outside the app parks and shows a code. Any other browser whose state doesn't match gets a toast and makes no RPC call.

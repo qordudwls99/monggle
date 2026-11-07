@@ -44,7 +44,9 @@
   function startMateyou(viaWeb) {
     const s = Array.from(crypto.getRandomValues(new Uint8Array(16)), b => b.toString(16).padStart(2, '0')).join('');
     localStorage.setItem(MY_STATE, JSON.stringify({ s, t: Date.now() }));
-    if (isStandalone() && isIOS()) openCodeEntry();
+    // 아이폰 홈 화면 앱: 웹은 앱 위에 따로 뜨니 숫자 넣기를 미리 열어 두고, 메이트유 앱은 다녀와서 열어요(watchReturn).
+    // 앱이 없어 안 열리면 로그인 시트가 그대로 남아 '웹에서 로그인'을 누를 수 있어요.
+    if (isStandalone() && isIOS() && viaWeb === true) openCodeEntry();
     location.href = myTarget(myLinks(s), viaWeb === true);
   }
   const claimsOf = t => {
@@ -123,15 +125,24 @@
     });
     return codeSheet;
   }
-  // 같은 저장소를 쓰는 다른 창(안드로이드 앱이 연 탭)에서 로그인됐으면 돌아올 때 이어받아요
+  // 돌아왔을 때: 같은 저장소를 쓰는 다른 창(안드로이드, 사파리 새 탭)에서 로그인됐으면 이어받고,
+  // 아이폰 홈 화면 앱이 메이트유 앱에 다녀왔으면 숫자 넣기를 열어요
   function watchReturn() {
+    let away = 0;
     const back = () => {
-      if (document.visibilityState !== 'visible' || session) return;
+      if (document.visibilityState === 'hidden') { away = Date.now(); return; }
+      const gone = away && Date.now() - away > 1500;
+      away = 0;
+      if (session) return;
       const s = load();
-      if (!s) return;
-      session = s;
-      if (codeSheet) codeSheet.close();
-      A.store.invalidateAll(); A.render({ keep: true });
+      if (s) {
+        session = s;
+        if (loginSheet) loginSheet.close();
+        settle(true);
+        A.store.invalidateAll(); A.render({ keep: true });
+        return;
+      }
+      if (gone && isStandalone() && isIOS() && myState() && !codeSheet) openCodeEntry();
     };
     document.addEventListener('visibilitychange', back);
     window.addEventListener('focus', back);
