@@ -1,11 +1,13 @@
 -- 메이트유로 로그인 (2026-11-07)
 -- 메이트유 서버가 서명한 1회용 티켓(HS256 JWT, 2분)을 받아요.
 --   claims: iss 'mateyou', aud 'moetable', sub 메이트유 회원 id(uuid), pp 파트너+ 여부(true), state, jti, iat, exp
+--   PKCE 처럼: 브라우저가 비밀값 v(64 hex)를 갖고, 메이트유에는 state = sha256(v) 앞 32자만 보내요.
+--   티켓을 쓰려면 v 가 있어야 해요 → 티켓을 가로채도 시작한 브라우저가 아니면 못 써요.
 --   연결된 직원이면 바로 세션 토큰, 아니면 연결표(10분)를 돌려줘요.
 --   연결표 + 이름 · PIN → 기존 계정에 연결 / 연결표 + 한글 닉네임 → 새로 가입 (PIN 없음, 관리자 아님).
 --   연결할 때의 PIN 지문(mateyou_pin_tag)을 남겨요. PIN 이 바뀌면(본인 변경 · 관리자 재설정 · 지움) 연결이 풀려요.
 --   홈 화면 앱(iOS)은 메이트유를 따로 뜨는 브라우저에서 열어 저장소가 달라요. 그 브라우저는 결과를 state 로 맡기고
---   (mateyou_signin(..., false)) 무작위 숫자 4자리를 보여줘요. 앱으로 돌아와 그 숫자를 넣으면 mateyou_claim(state, 숫자) 로 찾아가요.
+--   (mateyou_signin(티켓, null)) 무작위 숫자 4자리를 보여줘요. 앱으로 돌아와 그 숫자를 넣으면 mateyou_claim(v, 숫자) 로 찾아가요.
 --   숫자는 남이 보낸 링크로 들어온 사람의 결과를 링크 보낸 사람이 가져가지 못하게 막아요 (5번 틀리면 지워요).
 -- 서명 키는 vault 의 'mateyou_link_secret' 에만 있어요 (메이트유 서버 MOETABLE_LINK_SECRET 과 같은 값). 이 파일에는 키를 두지 않아요.
 -- 적용: begin; … commit; 으로 감싸서 db query -f. 키는 따로 vault.create_secret 으로 넣어요.
@@ -111,10 +113,12 @@ end $$;
 revoke execute on function public._b64url(text), public._mateyou_claims(text), public._mateyou_session(bigint),
   public._mateyou_link_member(text), public._mateyou_pin_tag(text), public._mateyou_resolve(uuid) from public, anon, authenticated;
 
--- 1) 메이트유에서 돌아왔을 때. p_here: 이 브라우저가 로그인을 시작한 곳이면 true (결과를 바로), 아니면 false (state 로 맡기고 숫자를 돌려줘요)
+-- 1) 메이트유에서 돌아왔을 때. p_verifier: 이 브라우저가 로그인을 시작한 곳이면 그 비밀값 v (맞으면 결과를 바로),
+--    아니면 null (아이폰 홈 화면 앱이 따로 연 브라우저: state 로 맡기고 숫자를 돌려줘요)
 --    PIN 잠김(failed_attempts)은 PIN 로그인만 막아요. 메이트유 로그인은 PIN 을 쓰지 않으니 막지 않아요.
 drop function if exists public.mateyou_signin(text);
-create or replace function public.mateyou_signin(p_ticket text, p_here boolean default true)
+drop function if exists public.mateyou_signin(text, boolean);
+create or replace function public.mateyou_signin(p_ticket text, p_verifier text default null)
 returns table(id bigint, name text, is_admin boolean, avatar_url text, pin_temp boolean, token text, link text, err text, code text)
 language plpgsql security definer set search_path = public as $$
 #variable_conflict use_column
@@ -132,7 +136,7 @@ begin
     return;
   end if;
   m := (c->>'sub')::uuid;
-  if not coalesce(p_here, true) then
+  if p_verifier is null then
     delete from mateyou_handoffs where expires_at < now();
     cd := lpad(((('x' || encode(extensions.gen_random_bytes(3), 'hex'))::bit(24)::int) % 10000)::text, 4, '0');
     insert into mateyou_handoffs(state_hash, member_id, code_hash, tries, expires_at)
@@ -141,20 +145,27 @@ begin
     return query select null::bigint, null::text, null::boolean, null::text, null::boolean, null::text, null::text, null::text, cd;
     return;
   end if;
+  if p_verifier !~ '^[0-9a-f]{64}$' or left(_token_hash(p_verifier), 32) <> c->>'state' then
+    return query select null::bigint, null::text, null::boolean, null::text, null::boolean, null::text, null::text,
+      '메이트유 로그인을 다시 해 주세요.'::text, null::text;
+    return;
+  end if;
   return query select r.id, r.name, r.is_admin, r.avatar_url, r.pin_temp, r.token, r.link, r.err, null::text from _mateyou_resolve(m) r;
 end $$;
 
--- 1b) 홈 화면 앱: 메이트유 브라우저에 뜬 숫자로 맡겨 둔 결과 찾아가기. 맡긴 게 없으면 빈 결과
-create or replace function public.mateyou_claim(p_state text, p_code text)
+-- 1b) 홈 화면 앱: 메이트유 브라우저에 뜬 숫자 + 이 앱의 비밀값 v 로 맡겨 둔 결과 찾아가기. 맡긴 게 없으면 빈 결과
+drop function if exists public.mateyou_claim(text, text);
+create or replace function public.mateyou_claim(p_verifier text, p_code text)
 returns table(id bigint, name text, is_admin boolean, avatar_url text, pin_temp boolean, token text, link text, err text)
 language plpgsql security definer set search_path = public as $$
 #variable_conflict use_column
-declare h mateyou_handoffs;
+declare h mateyou_handoffs; st text;
 begin
-  if coalesce(p_state, '') !~ '^[0-9a-f]{32}$' or coalesce(p_code, '') !~ '^[0-9]{4}$' then return; end if;
-  select * into h from mateyou_handoffs where state_hash = _token_hash(p_state) and expires_at > now() for update;
+  if coalesce(p_verifier, '') !~ '^[0-9a-f]{64}$' or coalesce(p_code, '') !~ '^[0-9]{4}$' then return; end if;
+  st := left(_token_hash(p_verifier), 32);
+  select * into h from mateyou_handoffs where state_hash = _token_hash(st) and expires_at > now() for update;
   if h.state_hash is null then return; end if;
-  if h.code_hash <> _token_hash(p_state || ':' || p_code) then
+  if h.code_hash <> _token_hash(st || ':' || p_code) then
     if h.tries + 1 >= 5 then
       delete from mateyou_handoffs where state_hash = h.state_hash;
       return query select null::bigint, null::text, null::boolean, null::text, null::boolean, null::text, null::text,
@@ -247,5 +258,5 @@ exception when unique_violation then
     case when cn = 'staff_name_key' then '이미 있는 닉네임이에요.' else '이 메이트유 계정은 이미 가입돼 있어요. 다시 로그인해 주세요.' end;
 end $$;
 
-revoke execute on function public.mateyou_signin(text, boolean), public.mateyou_claim(text, text), public.mateyou_link(text, text, text), public.mateyou_join(text, text) from public;
-grant execute on function public.mateyou_signin(text, boolean), public.mateyou_claim(text, text), public.mateyou_link(text, text, text), public.mateyou_join(text, text) to anon, authenticated;
+revoke execute on function public.mateyou_signin(text, text), public.mateyou_claim(text, text), public.mateyou_link(text, text, text), public.mateyou_join(text, text) from public;
+grant execute on function public.mateyou_signin(text, text), public.mateyou_claim(text, text), public.mateyou_link(text, text, text), public.mateyou_join(text, text) to anon, authenticated;

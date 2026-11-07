@@ -1769,6 +1769,14 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
     try { const w = JSON.parse(localStorage.getItem(MY_STATE) || 'null'); return w && Date.now() - w.t < 15 * 60e3 ? w : null; } catch (e) { return null; }
   };
   const isAndroid = () => /android/i.test(navigator.userAgent);
+  // PKCE 처럼: 비밀값 v 는 이 브라우저에만 두고, 메이트유에는 그 SHA-256 앞 32자(state)만 보내요. 결과는 v 가 있어야 써요.
+  // 누르는 순간 바로 앱을 열어야 해서(기다렸다 열면 아이폰이 막아요) 로그인 시트를 열 때 미리 만들어 둬요.
+  const hex = b => Array.from(b, x => x.toString(16).padStart(2, '0')).join('');
+  let myNext = null;
+  async function prepMateyou() {
+    const v = hex(crypto.getRandomValues(new Uint8Array(32)));
+    myNext = { v, s: hex(new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(v)))).slice(0, 32) };
+  }
   function myLinks(s) {
     const q = `state=${s}&return=${encodeURIComponent(location.origin + location.pathname)}`, web = `${MY_URL}?${q}`;
     return {
@@ -1778,8 +1786,11 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
   }
   const myTarget = (L, viaWeb) => viaWeb ? L.web : isAndroid() ? L.intent : isIOS() ? L.app : L.web;
   function startMateyou(viaWeb) {
-    const s = Array.from(crypto.getRandomValues(new Uint8Array(16)), b => b.toString(16).padStart(2, '0')).join('');
-    localStorage.setItem(MY_STATE, JSON.stringify({ s, t: Date.now() }));
+    const n = myNext;
+    if (!n) return;
+    myNext = null; prepMateyou();
+    const s = n.s;
+    localStorage.setItem(MY_STATE, JSON.stringify({ s, v: n.v, t: Date.now() }));
     // 아이폰 홈 화면 앱: 웹은 앱 위에 따로 뜨니 숫자 넣기를 미리 열어 두고, 메이트유 앱은 다녀와서 열어요(watchReturn).
     // 앱이 없어 안 열리면 로그인 시트가 그대로 남아 '웹에서 로그인'을 누를 수 있어요.
     if (isStandalone() && isIOS() && viaWeb === true) openCodeEntry();
@@ -1794,10 +1805,10 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
     history.replaceState(null, '', location.pathname + location.search);
     const want = myState(), c = claimsOf(m[1]);
     // 이 브라우저에서 시작한 로그인이면 바로, 아이폰 홈 화면 앱이 따로 연 브라우저면 결과를 맡기고 숫자를 받아요
-    const here = !!(want && c && c.state === want.s);
+    const here = !!(want && want.v && c && c.state === want.s);
     if (!here && !(isIOS() && !isStandalone())) { A.toast('메이트유 로그인을 다시 해 주세요', true); return; }
     if (here) localStorage.removeItem(MY_STATE);
-    let res; try { res = await A.supa.rpc('mateyou_signin', { p_ticket: m[1], p_here: here }); } catch (e) { res = { error: e }; }
+    let res; try { res = await A.supa.rpc('mateyou_signin', { p_ticket: m[1], p_verifier: here ? want.v : null }); } catch (e) { res = { error: e }; }
     const me = res.data && res.data[0];
     if (res.error || !me) { A.toast(A.api.errText(res.error, '메이트유 로그인 실패'), true); return; }
     if (me.err) { A.toast(me.err, true); return; }
@@ -1835,10 +1846,10 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
       const inp = el.querySelector('[data-l="code"]'), err = el.querySelector('.sheet-err'), btn = el.querySelector('.sheet-a .primary');
       const show = msg => { err.hidden = false; err.textContent = msg; inp.focus(); };
       const want = myState(), code = inp.value.trim();
-      if (!want) { close(); A.toast('메이트유 로그인을 다시 해 주세요', true); return; }
+      if (!want || !want.v) { close(); A.toast('메이트유 로그인을 다시 해 주세요', true); return; }
       if (!/^\d{4}$/.test(code)) return show('숫자 4자리를 넣어 주세요');
       busy = true; btn.setAttribute('aria-busy', 'true'); err.hidden = true;
-      let res; try { res = await A.supa.rpc('mateyou_claim', { p_state: want.s, p_code: code }); } catch (e) { res = { error: e }; }
+      let res; try { res = await A.supa.rpc('mateyou_claim', { p_verifier: want.v, p_code: code }); } catch (e) { res = { error: e }; }
       busy = false; btn.removeAttribute('aria-busy');
       if (res.error) return show(A.api.errText(res.error, '로그인 실패'));
       const me = res.data && res.data[0];
@@ -2002,7 +2013,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
         nameEl.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.isComposing) { e.preventDefault(); pinEl.focus(); } });
         pinEl.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.isComposing) { e.preventDefault(); submit(close, el); } });
         const myBtn = el.querySelector('[data-l="mateyou"]');
-        if (myBtn) myBtn.addEventListener('click', () => startMateyou(false));
+        if (myBtn) { prepMateyou(); myBtn.addEventListener('click', () => startMateyou(false)); }
         const myWeb = el.querySelector('[data-l="mateyou-web"]');
         if (myWeb) myWeb.addEventListener('click', () => startMateyou(true));
         nameEl.focus();

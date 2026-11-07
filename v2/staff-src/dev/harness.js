@@ -31,7 +31,7 @@
 
   // ── 기록 ──
   const calls = window.__calls = [];
-  const SECRET = new Set(['p_pin', 'p_new_pin', 'token', 'p_ticket', 'p_link']);
+  const SECRET = new Set(['p_pin', 'p_new_pin', 'token', 'p_ticket', 'p_link', 'p_verifier']);
   const redact = v => {
     if (Array.isArray(v)) return v.map(redact);
     if (v && typeof v === 'object' && !(v instanceof Blob)) {
@@ -99,7 +99,7 @@
     if (fn === 'mateyou_signin') {
       log(fn, args);
       const none = { id: null, name: null, is_admin: null, avatar_url: null, pin_temp: null, token: null, link: null, err: null, code: null };
-      if (args.p_here === false) return ok([{ ...none, code: '4821' }]);
+      if (args.p_verifier == null) return ok([{ ...none, code: '4821' }]);
       if (q.get('my') === 'linked') return ok([{ ...none, id: 900004, name: '메이트', is_admin: false, avatar_url: null, pin_temp: false, token: 'tk_dev' }]);
       if (q.get('my') === 'no') return ok([{ ...none, err: '파트너+만 메이트유로 로그인할 수 있어요.' }]);
       return ok([{ ...none, link: 'ml_dev' }]);
