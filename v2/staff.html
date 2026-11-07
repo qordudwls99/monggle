@@ -988,6 +988,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
   const A = window.App = window.App || {};
   A.CONFIG = CONFIG;
   A.VAPID_PUBLIC = VAPID_PUBLIC;
+  A.MATEYOU_ON = false;   // 메이트유로 로그인 버튼: 메이트유 서버와 DB 함수가 준비되면 true
   A.supa = createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
 }
 
@@ -1945,7 +1946,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
       <label class="fld-l">이름<input class="fld" data-l="name" autocomplete="username" autocapitalize="off" spellcheck="false" maxlength="30"></label>
       <label class="fld-l">PIN<input class="fld" data-l="pin" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="current-password" placeholder="숫자 6자리"></label>
       <p class="sheet-err" hidden></p>
-      <button type="button" class="btn lg my-login" data-l="mateyou"><img src="assets/mateyou.png" alt="" width="22" height="22">메이트유로 로그인</button></div>`;
+      ${A.MATEYOU_ON ? '<button type="button" class="btn lg my-login" data-l="mateyou"><img src="assets/mateyou.png" alt="" width="22" height="22">메이트유로 로그인</button>' : ''}</div>`;
     const submit = async (close, el) => {
       if (busy) return;
       const nameEl = el.querySelector('[data-l="name"]'), pinEl = el.querySelector('[data-l="pin"]'), err = el.querySelector('.sheet-err');
@@ -1976,7 +1977,8 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
         const nameEl = el.querySelector('[data-l="name"]'), pinEl = el.querySelector('[data-l="pin"]');
         nameEl.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.isComposing) { e.preventDefault(); pinEl.focus(); } });
         pinEl.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.isComposing) { e.preventDefault(); submit(close, el); } });
-        el.querySelector('[data-l="mateyou"]').addEventListener('click', startMateyou);
+        const myBtn = el.querySelector('[data-l="mateyou"]');
+        if (myBtn) myBtn.addEventListener('click', startMateyou);
         nameEl.focus();
       },
     });

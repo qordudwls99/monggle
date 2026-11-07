@@ -10,5 +10,6 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
   const A = window.App = window.App || {};
   A.CONFIG = CONFIG;
   A.VAPID_PUBLIC = VAPID_PUBLIC;
+  A.MATEYOU_ON = false;   // 메이트유로 로그인 버튼: 메이트유 서버와 DB 함수가 준비되면 true
   A.supa = createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
 }

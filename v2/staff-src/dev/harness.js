@@ -12,6 +12,7 @@
   }
   const q = new URLSearchParams(location.search);
   if (q.get('standalone') === '1') Object.defineProperty(navigator, 'standalone', { get: () => true });   // 홈 화면 앱 흉내
+  if (q.get('myon') === '1') A.MATEYOU_ON = true;   // 메이트유 버튼 켜기
   if (q.get('ios') === '1') Object.defineProperty(navigator, 'userAgent', { get: () => 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1' });   // 아이폰 흉내
   const FAIL_STALE = q.get('fail') === 'stale';
   const KEY = 'shift_session';

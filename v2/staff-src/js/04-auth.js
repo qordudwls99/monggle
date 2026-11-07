@@ -211,7 +211,7 @@
       <label class="fld-l">이름<input class="fld" data-l="name" autocomplete="username" autocapitalize="off" spellcheck="false" maxlength="30"></label>
       <label class="fld-l">PIN<input class="fld" data-l="pin" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="current-password" placeholder="숫자 6자리"></label>
       <p class="sheet-err" hidden></p>
-      <button type="button" class="btn lg my-login" data-l="mateyou"><img src="assets/mateyou.png" alt="" width="22" height="22">메이트유로 로그인</button></div>`;
+      ${A.MATEYOU_ON ? '<button type="button" class="btn lg my-login" data-l="mateyou"><img src="assets/mateyou.png" alt="" width="22" height="22">메이트유로 로그인</button>' : ''}</div>`;
     const submit = async (close, el) => {
       if (busy) return;
       const nameEl = el.querySelector('[data-l="name"]'), pinEl = el.querySelector('[data-l="pin"]'), err = el.querySelector('.sheet-err');
@@ -242,7 +242,8 @@
         const nameEl = el.querySelector('[data-l="name"]'), pinEl = el.querySelector('[data-l="pin"]');
         nameEl.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.isComposing) { e.preventDefault(); pinEl.focus(); } });
         pinEl.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.isComposing) { e.preventDefault(); submit(close, el); } });
-        el.querySelector('[data-l="mateyou"]').addEventListener('click', startMateyou);
+        const myBtn = el.querySelector('[data-l="mateyou"]');
+        if (myBtn) myBtn.addEventListener('click', startMateyou);
         nameEl.focus();
       },
     });
