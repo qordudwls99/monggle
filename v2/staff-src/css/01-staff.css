@@ -158,6 +158,10 @@ select.fld{appearance:none;-webkit-appearance:none}
 .login-f .fld{font-variant-numeric:tabular-nums}
 .login-f[hidden]{display:none}
 .my-login img{width:22px;height:22px;border-radius:6px;flex:none}
+.my-code{display:flex;flex-direction:column;align-items:center;gap:10px;padding:6px 0 10px}
+.my-code b{font-size:44px;font-weight:800;letter-spacing:10px;font-variant-numeric:tabular-nums;color:var(--ink)}
+.login-f .my-code-in{font-size:24px;font-weight:800;letter-spacing:8px;text-align:center}
+.login-f .my-code-in::placeholder{font-size:17px;font-weight:600;letter-spacing:0}
 .sheet-note{font-size:13px;font-weight:600;color:var(--muted);line-height:1.5}
 
 /* 알림(토스트) 오류 */

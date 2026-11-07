@@ -11,6 +11,7 @@
     throw new Error('dev harness refused to run on ' + location.hostname);
   }
   const q = new URLSearchParams(location.search);
+  if (q.get('standalone') === '1') Object.defineProperty(navigator, 'standalone', { get: () => true });   // 홈 화면 앱 흉내
   const FAIL_STALE = q.get('fail') === 'stale';
   const KEY = 'shift_session';
 
@@ -94,15 +95,16 @@
     // 메이트유로 로그인 (supabase-v2-mateyou.sql): &my=linked 연결된 사람 · &my=no 파트너+ 아님 · 기본은 연결 전
     if (fn === 'mateyou_signin') {
       log(fn, args);
-      const none = { id: null, name: null, is_admin: null, avatar_url: null, pin_temp: null, token: null, link: null, err: null, handoff: false };
-      if (args.p_here === false) return ok([{ ...none, handoff: true }]);
+      const none = { id: null, name: null, is_admin: null, avatar_url: null, pin_temp: null, token: null, link: null, err: null, code: null };
+      if (args.p_here === false) return ok([{ ...none, code: '4821' }]);
       if (q.get('my') === 'linked') return ok([{ ...none, id: 900004, name: '메이트', is_admin: false, avatar_url: null, pin_temp: false, token: 'tk_dev' }]);
       if (q.get('my') === 'no') return ok([{ ...none, err: '파트너+만 메이트유로 로그인할 수 있어요.' }]);
       return ok([{ ...none, link: 'ml_dev' }]);
     }
-    if (fn === 'mateyou_claim') {                                            // &claim=wait 아직 없음 · &claim=token 연결된 사람 · 기본은 연결표
+    if (fn === 'mateyou_claim') {                                            // &claim=wait 아직 없음 · &claim=token 연결된 사람 · 기본은 연결표 · 숫자 0000 은 틀림
       log(fn, args);
       if (q.get('claim') === 'wait') return ok([]);
+      if (args.p_code === '0000') return ok([{ err: '숫자가 맞지 않아요.' }]);
       const none = { id: null, name: null, is_admin: null, avatar_url: null, pin_temp: null, token: null, link: null, err: null };
       if (q.get('claim') === 'token') return ok([{ ...none, id: 900004, name: '메이트', is_admin: false, pin_temp: false, token: 'tk_dev' }]);
       return ok([{ ...none, link: 'ml_dev' }]);

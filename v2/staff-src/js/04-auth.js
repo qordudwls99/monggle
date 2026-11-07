@@ -23,12 +23,17 @@
   const signedIn = me => { session = { id: me.id, name: me.name, is_admin: me.is_admin, avatar: me.avatar_url || null, pin: me.token, pin_temp: !!me.pin_temp }; save(); };
 
   // ── 메이트유로 로그인: mateyou.me 에서 로그인 → 이 페이지로 #mateyou=<티켓> 으로 돌아와요 (supabase-v2-mateyou.sql) ──
+  // 홈 화면 앱(iOS)은 메이트유를 따로 뜨는 브라우저에서 열어요(저장소가 달라요). 그 브라우저가 숫자 4자리를 보여주고,
+  // 앱에서 그 숫자를 넣어 로그인을 넘겨받아요. 남이 보낸 링크로 들어온 사람의 로그인을 링크 보낸 사람이 가져가지 못하게 막아요.
   const MY_URL = 'https://mateyou.me/connect/moetable', MY_STATE = 'mateyou_state';
-  let pendingLink = null;
+  let pendingLink = null, pendingCode = null, codeSheet = null;
+  const myState = () => {
+    try { const w = JSON.parse(localStorage.getItem(MY_STATE) || 'null'); return w && Date.now() - w.t < 15 * 60e3 ? w : null; } catch (e) { return null; }
+  };
   function startMateyou() {
     const s = Array.from(crypto.getRandomValues(new Uint8Array(16)), b => b.toString(16).padStart(2, '0')).join('');
     localStorage.setItem(MY_STATE, JSON.stringify({ s, t: Date.now() }));
-    if (isStandalone()) { clearInterval(claimTimer); claimTimer = setInterval(() => { if (document.visibilityState === 'visible') claimPending(); }, 3000); }
+    if (isStandalone()) openCodeEntry();
     location.href = `${MY_URL}?state=${s}&return=${encodeURIComponent(location.origin + location.pathname)}`;
   }
   const claimsOf = t => {
@@ -39,19 +44,16 @@
     if (!m) return;
     history.replaceState(null, '', location.pathname + location.search);
     const want = myState(), c = claimsOf(m[1]);
-    // 이 브라우저에서 시작한 로그인이면 바로, 아니면(홈 화면 앱이 따로 연 브라우저) 결과를 맡겨 두고 앱이 찾아가요
+    // 이 브라우저에서 시작한 로그인이면 바로, 아니면(홈 화면 앱이 따로 연 브라우저) 결과를 맡기고 숫자를 받아요
     const here = !!(want && c && c.state === want.s);
     if (here) localStorage.removeItem(MY_STATE);
     let res; try { res = await A.supa.rpc('mateyou_signin', { p_ticket: m[1], p_here: here }); } catch (e) { res = { error: e }; }
     const me = res.data && res.data[0];
     if (res.error || !me) { A.toast(A.api.errText(res.error, '메이트유 로그인 실패'), true); return; }
     if (me.err) { A.toast(me.err, true); return; }
-    if (me.handoff) { A.toast('모에 스케줄 앱으로 돌아가 주세요'); return; }
+    if (me.code) { pendingCode = me.code; return; }
     mateyouDone(me, false);
   }
-  const myState = () => {
-    try { const w = JSON.parse(localStorage.getItem(MY_STATE) || 'null'); return w && Date.now() - w.t < 15 * 60e3 ? w : null; } catch (e) { return null; }
-  };
   // 로그인 결과 처리: token → 로그인, link → 연결 시트 (첫 그리기 전이면 afterBoot 에서 열어요)
   function mateyouDone(me, drawn) {
     if (me.token) {
@@ -61,29 +63,66 @@
       if (drawn) { if (loginSheet) loginSheet.close(); openLink(me.link); } else pendingLink = me.link;
     }
   }
-  // 홈 화면 앱: 메이트유 브라우저를 닫고 돌아오면 맡겨 둔 결과를 찾아가요. 앱은 3초마다, 일반 브라우저는 돌아올 때만
-  let claiming = false, claimTimer = 0;
-  async function claimPending() {
-    const want = myState();
-    if (!want || session || claiming) { if (!want) clearInterval(claimTimer); return; }
-    claiming = true;
-    let res; try { res = await A.supa.rpc('mateyou_claim', { p_state: want.s }); } catch (e) { res = { error: e }; }
-    claiming = false;
-    const me = !res.error && res.data && res.data[0];
-    if (!me) return;                                       // 아직 없음
-    localStorage.removeItem(MY_STATE); clearInterval(claimTimer);
-    if (me.err) { A.toast(me.err, true); return; }
-    mateyouDone(me, true);
+  // 따로 뜬 브라우저: 앱에 넣을 숫자
+  function showCode(code) {
+    loginSheet = A.sheet({
+      title: '메이트유 로그인',
+      html: `<div class="my-code"><span class="fld-l">앱에 넣을 숫자</span><b>${A.esc(code)}</b></div>`,
+      actions: [{ label: '닫기' }],
+      onClose: () => { loginSheet = null; },
+    });
   }
-  function watchClaim() {
+  // 홈 화면 앱: 메이트유를 연 동안 열어 두는 숫자 넣기
+  function openCodeEntry() {
+    if (codeSheet) return codeSheet;
+    if (loginSheet) loginSheet.close();
+    let busy = false;
+    const html = `<div class="login-f">
+      <label class="fld-l">메이트유 화면의 숫자<input class="fld my-code-in" data-l="code" inputmode="numeric" pattern="[0-9]*" maxlength="4" autocomplete="one-time-code" placeholder="4자리"></label>
+      <p class="sheet-err" hidden></p></div>`;
+    const submit = async (close, el) => {
+      if (busy) return;
+      const inp = el.querySelector('[data-l="code"]'), err = el.querySelector('.sheet-err'), btn = el.querySelector('.sheet-a .primary');
+      const show = msg => { err.hidden = false; err.textContent = msg; inp.focus(); };
+      const want = myState(), code = inp.value.trim();
+      if (!want) { close(); A.toast('메이트유 로그인을 다시 해 주세요', true); return; }
+      if (!/^\d{4}$/.test(code)) return show('숫자 4자리를 넣어 주세요');
+      busy = true; btn.setAttribute('aria-busy', 'true'); err.hidden = true;
+      let res; try { res = await A.supa.rpc('mateyou_claim', { p_state: want.s, p_code: code }); } catch (e) { res = { error: e }; }
+      busy = false; btn.removeAttribute('aria-busy');
+      if (res.error) return show(A.api.errText(res.error, '로그인 실패'));
+      const me = res.data && res.data[0];
+      if (!me) return show('메이트유 로그인을 먼저 마쳐 주세요');
+      if (me.err) {
+        inp.value = '';
+        if (me.err.startsWith('숫자가 맞지')) return show(me.err);
+        close(); A.toast(me.err, true); return;
+      }
+      close();
+      mateyouDone(me, true);
+    };
+    codeSheet = loginSheet = A.sheet({
+      title: '메이트유 로그인', html,
+      actions: [{ label: '취소' }, { label: '확인', kind: 'primary', onClick: submit }],
+      onClose: () => { codeSheet = loginSheet = null; localStorage.removeItem(MY_STATE); if (!session) settle(false); },
+      onOpen: (el, close) => {
+        el.querySelector('[data-l="code"]').addEventListener('keydown', e => { if (e.key === 'Enter' && !e.isComposing) { e.preventDefault(); submit(close, el); } });
+      },
+    });
+    return codeSheet;
+  }
+  // 같은 저장소를 쓰는 다른 창(안드로이드 앱이 연 탭)에서 로그인됐으면 돌아올 때 이어받아요
+  function watchReturn() {
     const back = () => {
-      if (document.visibilityState !== 'visible') return;
-      if (!session && load()) { session = load(); A.store.invalidateAll(); A.render({ keep: true }); return; }   // 같은 저장소의 다른 창에서 로그인됨
-      claimPending();
+      if (document.visibilityState !== 'visible' || session) return;
+      const s = load();
+      if (!s) return;
+      session = s;
+      if (codeSheet) codeSheet.close();
+      A.store.invalidateAll(); A.render({ keep: true });
     };
     document.addEventListener('visibilitychange', back);
     window.addEventListener('focus', back);
-    if (isStandalone()) claimTimer = setInterval(() => { if (document.visibilityState === 'visible') claimPending(); }, 3000);
   }
 
   // 메이트유는 됐는데 아직 연결이 없을 때: PIN 이 있으면 이름 · PIN 으로 연결, 없으면 한글 닉네임으로 새로 가입
@@ -314,8 +353,9 @@
   async function boot() { wireBars(); await mateyouReturn(); await upgradeSession(); }
   function afterBoot() {
     if (pendingLink && !session) { openLink(pendingLink); pendingLink = null; }
-    watchClaim();
-    if (!session && myState()) claimPending();
+    if (pendingCode) { showCode(pendingCode); pendingCode = null; }
+    watchReturn();
+    if (!session && !loginSheet && isStandalone() && myState()) openCodeEntry();   // 앱을 다시 켰을 때 이어서
     if (session) setTimeout(maybeAskPush, 1200);
     if (isIOS() && !isStandalone() && !localStorage.getItem('install_dismiss')) showInstallBar();
   }

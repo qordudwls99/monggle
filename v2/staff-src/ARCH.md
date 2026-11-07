@@ -63,7 +63,11 @@ v2/
 
   The DB verifies the signature with the vault secret `mateyou_link_secret`.
   - The link stores a fingerprint of the PIN (`mateyou_pin_tag`). If the PIN changes (by the staff member, an admin reset, or clearing it), the link is void and the next MateYou login asks for the link again.
-  - On the iPhone home-screen app, mateyou.me opens in a separate in-app browser with its own storage. That page finds no matching state, so it calls `mateyou_signin(ticket, p_here=false)`. The DB parks the result under the state for 5 minutes. The app picks it up with `mateyou_claim(state)` on focus or visibility, and every 3 s while standalone.
+  - On the iPhone home-screen app, mateyou.me opens in a separate in-app browser with its own storage.
+    - That page finds no matching state, so it calls `mateyou_signin(ticket, p_here=false)`. The DB parks the result under the state for 5 minutes and returns a random 4-digit code, which the page shows as '앱에 넣을 숫자'.
+    - The app has the '메이트유 로그인' entry sheet open since it started the flow (it reopens on relaunch while the state is fresh). The user types the code, and `mateyou_claim(state, code)` hands over the result. After 5 wrong codes the parked result is deleted.
+    - The code is what stops a login started by someone else's link from being collected by whoever sent the link.
+    - On Android the tab shares storage, so the app just adopts the stored session when it becomes visible.
 - **Logout.** Call `staff_signout`, then remove the key.
 - **Other storage keys** (same as production): `push_ask_dismiss`, `install_dismiss`, `noti_seen_ids`.
 - **Anonymous use is allowed.** Schedule views and the 대타 board list work logged out. Actions open the login sheet. 내 근무 and 제출 show a login prompt. The top bar shows "로그인" when logged out and the avatar circle when logged in.
