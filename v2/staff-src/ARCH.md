@@ -56,7 +56,7 @@ v2/
   - empty array → "이름 또는 PIN이 올바르지 않아요"
   - `err` → show that text
   - `pin_temp` → force the 내 정보 PIN change.
-- **메이트유로 로그인** (`supabase-v2-mateyou.sql`, 2026-11-07). The login sheet's 메이트유 button stores a random `state` in `localStorage.mateyou_state` and goes to `https://mateyou.me/connect/moetable?state=…&return=…`. 메이트유 signs a one-time HS256 ticket (2 minutes, 파트너+ only) and sends the user back to `#mateyou=<ticket>`. `auth.boot` reads it before tab routing, removes it from the URL, checks that the ticket's `state` matches, then calls `mateyou_signin(p_ticket)`:
+- **메이트유로 로그인** (`supabase-v2-mateyou.sql`, 2026-11-07). The login sheet's 메이트유 button stores a random `state` in `localStorage.mateyou_state` and goes to `https://www.mateyou.me/connect/moetable?state=…&return=…`. 메이트유 signs a one-time HS256 ticket (2 minutes, 파트너+ only) and sends the user back to `#mateyou=<ticket>`. `auth.boot` reads it before tab routing, removes it from the URL, checks that the ticket's `state` matches, then calls `mateyou_signin(p_ticket)`:
   - `token` → logged in
   - `link` → the 메이트유 연결 sheet, either 'PIN으로 연결' (`mateyou_link(p_link, p_name, p_pin)`, wrong PINs count toward the same 5-try lock) or '새로 가입' (`mateyou_join(p_link, p_name)`, Korean nickname of 1–8 syllables, no PIN, never admin)
   - `err` → toast
@@ -68,6 +68,8 @@ v2/
     - The app has the '메이트유 로그인' entry sheet open since it started the flow (it reopens on relaunch while the state is fresh). The user types the code, and `mateyou_claim(state, code)` hands over the result. After 5 wrong codes the parked result is deleted.
     - The code is what stops a login started by someone else's link from being collected by whoever sent the link.
     - On Android the tab shares storage, so the app just adopts the stored session when it becomes visible.
+    - Only an iPhone browser outside the app parks and shows a code. Any other browser whose state doesn't match gets a toast and makes no RPC call.
+  - The button renders only when `App.MATEYOU_ON` (`00-config.js`) is true. It is off until the MateYou server and the DB functions are live. In the dev harness, `&myon=1` turns it on.
 - **Logout.** Call `staff_signout`, then remove the key.
 - **Other storage keys** (same as production): `push_ask_dismiss`, `install_dismiss`, `noti_seen_ids`.
 - **Anonymous use is allowed.** Schedule views and the 대타 board list work logged out. Actions open the login sheet. 내 근무 and 제출 show a login prompt. The top bar shows "로그인" when logged out and the avatar circle when logged in.

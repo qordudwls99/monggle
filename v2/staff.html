@@ -1760,7 +1760,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
   // ── 메이트유로 로그인: mateyou.me 에서 로그인 → 이 페이지로 #mateyou=<티켓> 으로 돌아와요 (supabase-v2-mateyou.sql) ──
   // 홈 화면 앱(iOS)은 메이트유를 따로 뜨는 브라우저에서 열어요(저장소가 달라요). 그 브라우저가 숫자 4자리를 보여주고,
   // 앱에서 그 숫자를 넣어 로그인을 넘겨받아요. 남이 보낸 링크로 들어온 사람의 로그인을 링크 보낸 사람이 가져가지 못하게 막아요.
-  const MY_URL = 'https://mateyou.me/connect/moetable', MY_STATE = 'mateyou_state';
+  const MY_URL = 'https://www.mateyou.me/connect/moetable', MY_STATE = 'mateyou_state';
   let pendingLink = null, pendingCode = null, codeSheet = null;
   const myState = () => {
     try { const w = JSON.parse(localStorage.getItem(MY_STATE) || 'null'); return w && Date.now() - w.t < 15 * 60e3 ? w : null; } catch (e) { return null; }
