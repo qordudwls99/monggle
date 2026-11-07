@@ -33,7 +33,7 @@
   function startMateyou() {
     const s = Array.from(crypto.getRandomValues(new Uint8Array(16)), b => b.toString(16).padStart(2, '0')).join('');
     localStorage.setItem(MY_STATE, JSON.stringify({ s, t: Date.now() }));
-    if (isStandalone()) openCodeEntry();
+    if (isStandalone() && isIOS()) openCodeEntry();
     location.href = `${MY_URL}?state=${s}&return=${encodeURIComponent(location.origin + location.pathname)}`;
   }
   const claimsOf = t => {
@@ -44,8 +44,9 @@
     if (!m) return;
     history.replaceState(null, '', location.pathname + location.search);
     const want = myState(), c = claimsOf(m[1]);
-    // 이 브라우저에서 시작한 로그인이면 바로, 아니면(홈 화면 앱이 따로 연 브라우저) 결과를 맡기고 숫자를 받아요
+    // 이 브라우저에서 시작한 로그인이면 바로, 아이폰 홈 화면 앱이 따로 연 브라우저면 결과를 맡기고 숫자를 받아요
     const here = !!(want && c && c.state === want.s);
+    if (!here && !(isIOS() && !isStandalone())) { A.toast('메이트유 로그인을 다시 해 주세요', true); return; }
     if (here) localStorage.removeItem(MY_STATE);
     let res; try { res = await A.supa.rpc('mateyou_signin', { p_ticket: m[1], p_here: here }); } catch (e) { res = { error: e }; }
     const me = res.data && res.data[0];
@@ -76,7 +77,7 @@
   function openCodeEntry() {
     if (codeSheet) return codeSheet;
     if (loginSheet) loginSheet.close();
-    let busy = false;
+    let busy = false, ok = false;
     const html = `<div class="login-f">
       <label class="fld-l">메이트유 화면의 숫자<input class="fld my-code-in" data-l="code" inputmode="numeric" pattern="[0-9]*" maxlength="4" autocomplete="one-time-code" placeholder="4자리"></label>
       <p class="sheet-err" hidden></p></div>`;
@@ -98,13 +99,13 @@
         if (me.err.startsWith('숫자가 맞지')) return show(me.err);
         close(); A.toast(me.err, true); return;
       }
-      close();
-      mateyouDone(me, true);
+      ok = true;
+      mateyouDone(me, true);   // 로그인 · 연결 시트로 넘기면서 이 시트를 닫아요
     };
     codeSheet = loginSheet = A.sheet({
       title: '메이트유 로그인', html,
       actions: [{ label: '취소' }, { label: '확인', kind: 'primary', onClick: submit }],
-      onClose: () => { codeSheet = loginSheet = null; localStorage.removeItem(MY_STATE); if (!session) settle(false); },
+      onClose: () => { codeSheet = loginSheet = null; localStorage.removeItem(MY_STATE); if (!session && !ok) settle(false); },
       onOpen: (el, close) => {
         el.querySelector('[data-l="code"]').addEventListener('keydown', e => { if (e.key === 'Enter' && !e.isComposing) { e.preventDefault(); submit(close, el); } });
       },
@@ -355,7 +356,7 @@
     if (pendingLink && !session) { openLink(pendingLink); pendingLink = null; }
     if (pendingCode) { showCode(pendingCode); pendingCode = null; }
     watchReturn();
-    if (!session && !loginSheet && isStandalone() && myState()) openCodeEntry();   // 앱을 다시 켰을 때 이어서
+    if (!session && !loginSheet && isStandalone() && isIOS() && myState()) openCodeEntry();   // 앱을 다시 켰을 때 이어서
     if (session) setTimeout(maybeAskPush, 1200);
     if (isIOS() && !isStandalone() && !localStorage.getItem('install_dismiss')) showInstallBar();
   }

@@ -113,6 +113,7 @@ revoke execute on function public._b64url(text), public._mateyou_claims(text), p
 
 -- 1) 메이트유에서 돌아왔을 때. p_here: 이 브라우저가 로그인을 시작한 곳이면 true (결과를 바로), 아니면 false (state 로 맡기고 숫자를 돌려줘요)
 --    PIN 잠김(failed_attempts)은 PIN 로그인만 막아요. 메이트유 로그인은 PIN 을 쓰지 않으니 막지 않아요.
+drop function if exists public.mateyou_signin(text);
 create or replace function public.mateyou_signin(p_ticket text, p_here boolean default true)
 returns table(id bigint, name text, is_admin boolean, avatar_url text, pin_temp boolean, token text, link text, err text, code text)
 language plpgsql security definer set search_path = public as $$
