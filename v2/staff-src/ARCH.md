@@ -62,6 +62,8 @@ v2/
   - `err` → toast
 
   The DB verifies the signature with the vault secret `mateyou_link_secret`.
+  - The link stores a fingerprint of the PIN (`mateyou_pin_tag`). If the PIN changes (by the staff member, an admin reset, or clearing it), the link is void and the next MateYou login asks for the link again.
+  - On the iPhone home-screen app, mateyou.me opens in a separate in-app browser with its own storage. That page finds no matching state, so it calls `mateyou_signin(ticket, p_here=false)`. The DB parks the result under the state for 5 minutes. The app picks it up with `mateyou_claim(state)` on focus or visibility, and every 3 s while standalone.
 - **Logout.** Call `staff_signout`, then remove the key.
 - **Other storage keys** (same as production): `push_ask_dismiss`, `install_dismiss`, `noti_seen_ids`.
 - **Anonymous use is allowed.** Schedule views and the 대타 board list work logged out. Actions open the login sheet. 내 근무 and 제출 show a login prompt. The top bar shows "로그인" when logged out and the avatar circle when logged in.

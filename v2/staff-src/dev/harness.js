@@ -94,9 +94,17 @@
     // 메이트유로 로그인 (supabase-v2-mateyou.sql): &my=linked 연결된 사람 · &my=no 파트너+ 아님 · 기본은 연결 전
     if (fn === 'mateyou_signin') {
       log(fn, args);
-      const none = { id: null, name: null, is_admin: null, avatar_url: null, pin_temp: null, token: null, link: null, err: null };
+      const none = { id: null, name: null, is_admin: null, avatar_url: null, pin_temp: null, token: null, link: null, err: null, handoff: false };
+      if (args.p_here === false) return ok([{ ...none, handoff: true }]);
       if (q.get('my') === 'linked') return ok([{ ...none, id: 900004, name: '메이트', is_admin: false, avatar_url: null, pin_temp: false, token: 'tk_dev' }]);
       if (q.get('my') === 'no') return ok([{ ...none, err: '파트너+만 메이트유로 로그인할 수 있어요.' }]);
+      return ok([{ ...none, link: 'ml_dev' }]);
+    }
+    if (fn === 'mateyou_claim') {                                            // &claim=wait 아직 없음 · &claim=token 연결된 사람 · 기본은 연결표
+      log(fn, args);
+      if (q.get('claim') === 'wait') return ok([]);
+      const none = { id: null, name: null, is_admin: null, avatar_url: null, pin_temp: null, token: null, link: null, err: null };
+      if (q.get('claim') === 'token') return ok([{ ...none, id: 900004, name: '메이트', is_admin: false, pin_temp: false, token: 'tk_dev' }]);
       return ok([{ ...none, link: 'ml_dev' }]);
     }
     if (fn === 'mateyou_link' || fn === 'mateyou_join') {
