@@ -27,7 +27,7 @@
 
   // ── 기록 ──
   const calls = window.__calls = [];
-  const SECRET = new Set(['p_pin', 'p_new_pin', 'token']);
+  const SECRET = new Set(['p_pin', 'p_new_pin', 'token', 'p_ticket', 'p_link']);
   const redact = v => {
     if (Array.isArray(v)) return v.map(redact);
     if (v && typeof v === 'object' && !(v instanceof Blob)) {
@@ -90,6 +90,22 @@
       if (!name || name === '없는사람') return ok([]);
       if (args.p_pin === '000000') return ok([{ err: 'PIN이 틀렸어요. (남은 시도 4회)' }]);
       return ok([{ id: 900003, name, is_admin: name.includes('관리'), avatar_url: null, pin_temp: q.get('temp') === '1', token: 'tk_dev', err: null }]);
+    }
+    // 메이트유로 로그인 (supabase-v2-mateyou.sql): &my=linked 연결된 사람 · &my=no 파트너+ 아님 · 기본은 연결 전
+    if (fn === 'mateyou_signin') {
+      log(fn, args);
+      const none = { id: null, name: null, is_admin: null, avatar_url: null, pin_temp: null, token: null, link: null, err: null };
+      if (q.get('my') === 'linked') return ok([{ ...none, id: 900004, name: '메이트', is_admin: false, avatar_url: null, pin_temp: false, token: 'tk_dev' }]);
+      if (q.get('my') === 'no') return ok([{ ...none, err: '파트너+만 메이트유로 로그인할 수 있어요.' }]);
+      return ok([{ ...none, link: 'ml_dev' }]);
+    }
+    if (fn === 'mateyou_link' || fn === 'mateyou_join') {
+      log(fn, args);
+      const name = String(args.p_name || '').trim();
+      if (fn === 'mateyou_link' && name === '없는사람') return ok([]);
+      if (fn === 'mateyou_link' && args.p_pin === '000000') return ok([{ err: 'PIN이 틀렸어요. (남은 시도 4회)' }]);
+      if (fn === 'mateyou_join' && name === '모모') return ok([{ err: '이미 있는 닉네임이에요.' }]);
+      return ok([{ id: 900005, name, is_admin: false, avatar_url: null, pin_temp: false, token: 'tk_dev', err: null }]);
     }
     log(fn, args);
     if (fn === 'staff_signout') return ok(null);

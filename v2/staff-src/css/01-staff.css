@@ -156,6 +156,8 @@ select.fld{appearance:none;-webkit-appearance:none}
 /* 로그인 시트 */
 .login-f{display:flex;flex-direction:column;gap:12px}
 .login-f .fld{font-variant-numeric:tabular-nums}
+.login-f[hidden]{display:none}
+.my-login img{width:22px;height:22px;border-radius:6px;flex:none}
 .sheet-note{font-size:13px;font-weight:600;color:var(--muted);line-height:1.5}
 
 /* 알림(토스트) 오류 */

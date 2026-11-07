@@ -56,6 +56,12 @@ v2/
   - empty array → "이름 또는 PIN이 올바르지 않아요"
   - `err` → show that text
   - `pin_temp` → force the 내 정보 PIN change.
+- **메이트유로 로그인** (`supabase-v2-mateyou.sql`, 2026-11-07). The login sheet's 메이트유 button stores a random `state` in `localStorage.mateyou_state` and goes to `https://mateyou.me/connect/moetable?state=…&return=…`. 메이트유 signs a one-time HS256 ticket (2 minutes, 파트너+ only) and sends the user back to `#mateyou=<ticket>`. `auth.boot` reads it before tab routing, removes it from the URL, checks that the ticket's `state` matches, then calls `mateyou_signin(p_ticket)`:
+  - `token` → logged in
+  - `link` → the 메이트유 연결 sheet, either 'PIN으로 연결' (`mateyou_link(p_link, p_name, p_pin)`, wrong PINs count toward the same 5-try lock) or '새로 가입' (`mateyou_join(p_link, p_name)`, Korean nickname of 1–8 syllables, no PIN, never admin)
+  - `err` → toast
+
+  The DB verifies the signature with the vault secret `mateyou_link_secret`.
 - **Logout.** Call `staff_signout`, then remove the key.
 - **Other storage keys** (same as production): `push_ask_dismiss`, `install_dismiss`, `noti_seen_ids`.
 - **Anonymous use is allowed.** Schedule views and the 대타 board list work logged out. Actions open the login sheet. 내 근무 and 제출 show a login prompt. The top bar shows "로그인" when logged out and the avatar circle when logged in.

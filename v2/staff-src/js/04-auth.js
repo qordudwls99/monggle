@@ -20,6 +20,100 @@
     } catch (e) { /* 다음에 다시 */ }
   }
 
+  const signedIn = me => { session = { id: me.id, name: me.name, is_admin: me.is_admin, avatar: me.avatar_url || null, pin: me.token, pin_temp: !!me.pin_temp }; save(); };
+
+  // ── 메이트유로 로그인: mateyou.me 에서 로그인 → 이 페이지로 #mateyou=<티켓> 으로 돌아와요 (supabase-v2-mateyou.sql) ──
+  const MY_URL = 'https://mateyou.me/connect/moetable', MY_STATE = 'mateyou_state';
+  let pendingLink = null;
+  function startMateyou() {
+    const s = Array.from(crypto.getRandomValues(new Uint8Array(16)), b => b.toString(16).padStart(2, '0')).join('');
+    localStorage.setItem(MY_STATE, JSON.stringify({ s, t: Date.now() }));
+    location.href = `${MY_URL}?state=${s}&return=${encodeURIComponent(location.origin + location.pathname)}`;
+  }
+  const claimsOf = t => {
+    try { const b = t.split('.')[1].replace(/-/g, '+').replace(/_/g, '/'); return JSON.parse(atob(b + '='.repeat((4 - b.length % 4) % 4))); } catch (e) { return null; }
+  };
+  async function mateyouReturn() {
+    const m = /^#mateyou=([\w-]+\.[\w-]+\.[\w-]+)$/.exec(location.hash);
+    if (!m) return;
+    history.replaceState(null, '', location.pathname + location.search);
+    let want = null; try { want = JSON.parse(localStorage.getItem(MY_STATE) || 'null'); } catch (e) { /* 없음 */ }
+    localStorage.removeItem(MY_STATE);
+    const c = claimsOf(m[1]);
+    if (!want || !c || c.state !== want.s || Date.now() - want.t > 15 * 60e3) { A.toast('메이트유 로그인을 다시 해 주세요', true); return; }
+    let res; try { res = await A.supa.rpc('mateyou_signin', { p_ticket: m[1] }); } catch (e) { res = { error: e }; }
+    const me = res.data && res.data[0];
+    if (res.error || !me) { A.toast(A.api.errText(res.error, '메이트유 로그인 실패'), true); return; }
+    if (me.err) { A.toast(me.err, true); return; }
+    if (me.token) { signedIn(me); A.toast(`${me.name}님 환영해요!`); return; }
+    if (me.link) pendingLink = me.link;
+  }
+
+  // 메이트유는 됐는데 아직 연결이 없을 때: PIN 이 있으면 이름 · PIN 으로 연결, 없으면 한글 닉네임으로 새로 가입
+  function openLink(link) {
+    let busy = false, mode = 'pin';
+    const html = `<div class="login-f">
+      <div class="seg" role="tablist"><button type="button" class="on" data-m="pin" role="tab" aria-selected="true">PIN으로 연결</button><button type="button" data-m="new" role="tab" aria-selected="false">새로 가입</button></div>
+      <div class="login-f" data-p="pin">
+        <label class="fld-l">이름<input class="fld" data-l="name" autocomplete="username" autocapitalize="off" spellcheck="false" maxlength="30"></label>
+        <label class="fld-l">PIN<input class="fld" data-l="pin" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="current-password" placeholder="숫자 6자리"></label>
+      </div>
+      <div class="login-f" data-p="new" hidden>
+        <label class="fld-l">닉네임<input class="fld" data-l="nick" maxlength="8" autocomplete="off" spellcheck="false" placeholder="한글만"></label>
+      </div>
+      <p class="sheet-err" hidden></p></div>`;
+    const submit = async (close, el) => {
+      if (busy) return;
+      const err = el.querySelector('.sheet-err'), btn = el.querySelector('.sheet-a .primary');
+      const show = (msg, f) => { err.hidden = false; err.textContent = msg; if (f) f.focus(); };
+      let fn, args, focusEl;
+      if (mode === 'pin') {
+        const nameEl = el.querySelector('[data-l="name"]'), pinEl = el.querySelector('[data-l="pin"]');
+        const name = nameEl.value.trim(), pin = pinEl.value.trim();
+        if (!name) return show('이름을 적어 주세요', nameEl);
+        if (!pin) return show('PIN을 입력하세요', pinEl);
+        fn = 'mateyou_link'; args = { p_link: link, p_name: name, p_pin: pin }; focusEl = pinEl;
+      } else {
+        const nickEl = el.querySelector('[data-l="nick"]'), nick = nickEl.value.trim();
+        if (!/^[가-힣]{1,8}$/.test(nick)) return show('닉네임은 한글로만 8자까지 써 주세요', nickEl);
+        fn = 'mateyou_join'; args = { p_link: link, p_name: nick }; focusEl = nickEl;
+      }
+      busy = true; btn.setAttribute('aria-busy', 'true'); err.hidden = true;
+      let res; try { res = await A.supa.rpc(fn, args); } catch (e) { res = { error: e }; }
+      busy = false; btn.removeAttribute('aria-busy');
+      const { data, error } = res;
+      if (error) return show(A.api.errText(error, '연결 실패'));
+      if (!data || data.length === 0) { if (mode === 'pin') focusEl.value = ''; return show('이름 또는 PIN이 올바르지 않아요', focusEl); }
+      const me = data[0];
+      if (me.err) { if (mode === 'pin') focusEl.value = ''; return show(me.err, focusEl); }
+      signedIn(me);
+      close();
+      afterLogin(me);
+    };
+    loginSheet = A.sheet({
+      title: '메이트유 연결', html,
+      actions: [{ label: '취소' }, { label: '연결', kind: 'primary', onClick: submit }],
+      onClose: () => { loginSheet = null; if (!session) settle(false); },
+      onOpen: (el, close) => {
+        const btn = el.querySelector('.sheet-a .primary'), err = el.querySelector('.sheet-err');
+        const setMode = m => {
+          mode = m; err.hidden = true;
+          el.querySelectorAll('[data-m]').forEach(b => { const on = b.dataset.m === m; b.classList.toggle('on', on); b.setAttribute('aria-selected', String(on)); });
+          el.querySelectorAll('[data-p]').forEach(p => { p.hidden = p.dataset.p !== m; });
+          btn.textContent = m === 'pin' ? '연결' : '가입';
+          el.querySelector(m === 'pin' ? '[data-l="name"]' : '[data-l="nick"]').focus();
+        };
+        el.querySelectorAll('[data-m]').forEach(b => b.addEventListener('click', () => setMode(b.dataset.m)));
+        const enter = (sel, next) => el.querySelector(sel).addEventListener('keydown', e => { if (e.key === 'Enter' && !e.isComposing) { e.preventDefault(); next(); } });
+        enter('[data-l="name"]', () => el.querySelector('[data-l="pin"]').focus());
+        enter('[data-l="pin"]', () => submit(close, el));
+        enter('[data-l="nick"]', () => submit(close, el));
+        el.querySelector('[data-l="name"]').focus();
+      },
+    });
+    return loginSheet;
+  }
+
   // 세션 일부 바꾸기 (사진·관리자 여부·임시 PIN 표시)
   function update(patch = {}) {
     if (!session) return;
@@ -39,7 +133,8 @@
     const html = `<div class="login-f">
       <label class="fld-l">이름<input class="fld" data-l="name" autocomplete="username" autocapitalize="off" spellcheck="false" maxlength="30"></label>
       <label class="fld-l">PIN<input class="fld" data-l="pin" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="current-password" placeholder="숫자 6자리"></label>
-      <p class="sheet-err" hidden></p></div>`;
+      <p class="sheet-err" hidden></p>
+      <button type="button" class="btn lg my-login" data-l="mateyou"><img src="assets/mateyou.png" alt="" width="22" height="22">메이트유로 로그인</button></div>`;
     const submit = async (close, el) => {
       if (busy) return;
       const nameEl = el.querySelector('[data-l="name"]'), pinEl = el.querySelector('[data-l="pin"]'), err = el.querySelector('.sheet-err');
@@ -57,8 +152,7 @@
       if (!data || data.length === 0) { show('이름 또는 PIN이 올바르지 않아요'); pinEl.value = ''; pinEl.focus(); return; }
       const me = data[0];
       if (me.err) { show(me.err); pinEl.value = ''; pinEl.focus(); return; }   // 틀린 PIN 남은 횟수 · 잠김 문구 그대로
-      session = { id: me.id, name: me.name, is_admin: me.is_admin, avatar: me.avatar_url || null, pin: me.token, pin_temp: !!me.pin_temp };
-      save();
+      signedIn(me);
       pinEl.value = '';
       close();
       afterLogin(me);
@@ -71,6 +165,7 @@
         const nameEl = el.querySelector('[data-l="name"]'), pinEl = el.querySelector('[data-l="pin"]');
         nameEl.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.isComposing) { e.preventDefault(); pinEl.focus(); } });
         pinEl.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.isComposing) { e.preventDefault(); submit(close, el); } });
+        el.querySelector('[data-l="mateyou"]').addEventListener('click', startMateyou);
         nameEl.focus();
       },
     });
@@ -179,8 +274,9 @@
   }
 
   // core 의 boot 가 불러요: 첫 그리기 전 / 뒤
-  async function boot() { wireBars(); await upgradeSession(); }
+  async function boot() { wireBars(); await mateyouReturn(); await upgradeSession(); }
   function afterBoot() {
+    if (pendingLink && !session) { openLink(pendingLink); pendingLink = null; }
     if (session) setTimeout(maybeAskPush, 1200);
     if (isIOS() && !isStandalone() && !localStorage.getItem('install_dismiss')) showInstallBar();
   }
