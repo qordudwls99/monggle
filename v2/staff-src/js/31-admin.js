@@ -115,45 +115,63 @@
     });
   }
 
-  // ── 2. 야간 문항 ──
+  // ── 2. 야간 가능 조사 (화면 이름, 2026-11-09 사장님 "야간 문항은 뭐임"). 코드·DB 이름은 night_q 그대로 ──
   const nightLabel = (wp, ds, h) => { const d = A.parse(ds); return `${d.getMonth() + 1}/${d.getDate()}(${A.DAYS[d.getDay()]}) ${wp} 야간${h ? ' ' + h : ''}`; };   // 운영 1405
   const addNightQ = (ym, wp, ds, h, quiet) => A.api.rpc('admin_add_night_q',
     { p_admin_id: me().id, p_ym: ym, p_workplace: wp, p_work_date: ds, p_hours: h || null, p_label: nightLabel(wp, ds, h) }, { quiet });
+  // 조사 id → { yes: 가능 이름들, no: 불가능 수 }
+  const nightTally = answers => {
+    const t = {};
+    answers.forEach(a => {
+      if (!String(a.qkey || '').startsWith('n:')) return;
+      const k = a.qkey.slice(2), o = t[k] = t[k] || { yes: [], no: 0 };
+      if (a.choice === '가능') o.yes.push(a.staffName); else if (a.choice === '불가능') o.no++;
+    });
+    return t;
+  };
   function nightsSec(nights, answers) {
-    const byq = {};
-    answers.forEach(a => { if (String(a.qkey || '').startsWith('n:')) (byq[a.qkey.slice(2)] = byq[a.qkey.slice(2)] || []).push(a); });
+    const byq = nightTally(answers);
     const rows = nights.map(n => {
-      const r = byq[String(n.id)] || [], yes = r.filter(x => x.choice === '가능').map(x => x.staffName), no = r.filter(x => x.choice === '불가능').length;
+      const { yes, no } = byq[String(n.id)] || { yes: [], no: 0 };
       const title = n.date ? A.fmt(n.date) : esc(n.label);
       return `<div class="lrow ad-q"><span class="lm"><span class="lt">${title}</span><span class="ls">${esc(n.wp || '')} 야간 ${esc(hrs(n.hours))}</span>
         <span class="ls ad-yes">가능 <b>${yes.length}</b>${yes.length ? ' · ' + yes.map(esc).join(', ') : ''} · 불가능 ${no}</span></span>
-        <span class="la"><button class="btn sm ghost hit" data-del="${n.id}" aria-label="${title} 야간 문항 빼기">빼기</button></span></div>`;
+        <span class="la"><button class="btn sm danger hit" data-del="${n.id}" aria-label="${title} ${esc(n.wp || '')} 야간 가능 조사 지우기">지우기</button></span></div>`;
     }).join('');
-    return `<section class="sec ad-sec"><div class="sec-h"><h2>야간 문항</h2><span class="aside">${nights.length}건</span></div>
-      ${rows || '<p class="sb-quiet">이 달 야간 문항이 없어요</p>'}
-      <div class="ad-sub"><button class="btn lg" id="adNightAdd">야간 문항 추가</button><button class="btn lg" id="adNightSat">토요일 데빌 한 번에</button></div></section>`;
+    return `<section class="sec ad-sec"><div class="sec-h"><h2>야간 가능 조사</h2><span class="aside">${nights.length}건</span></div>
+      ${rows || '<p class="sb-quiet">이 달 야간 가능 조사가 없어요</p>'}
+      <div class="ad-sub"><button class="btn lg" id="adNightAdd">날짜 추가</button><button class="btn lg" id="adNightSat">토요일 데빌 모두 추가</button></div></section>`;
   }
-  function bindNights(el, ym, nights) {
+  // 지우기 전에 무엇이, 몇 명의 답이 지워지는지 그대로 보여 줘요 (2026-11-09 사장님 "지우기 같은 건 한 번 더 정확하게")
+  const nameList = ns => ns.length > 8 ? `${ns.slice(0, 6).join(', ')} 외 ${ns.length - 6}명` : ns.join(', ');
+  function bindNights(el, ym, nights, answers) {
+    const byq = nightTally(answers);
     el.querySelectorAll('[data-del]').forEach(b => b.onclick = async () => {
       const n = nights.find(x => String(x.id) === b.dataset.del);
       if (!n) return;
-      if (!await A.confirm({ title: `${n.date ? A.fmt(n.date) : n.label} 야간 문항을 뺄까요?`, text: '직원들이 이미 고른 답도 함께 지워져요.', ok: '빼기', danger: true })) return;
+      const { yes, no } = byq[String(n.id)] || { yes: [], no: 0 };
+      const what = `${n.date ? A.fmt(n.date) : n.label} ${n.wp || ''} 야간`.replace(/\s+/g, ' ');
+      const ans = yes.length + no
+        ? `가능 ${yes.length}명${yes.length ? `(${nameList(yes)})` : ''} · 불가능 ${no}명이 고른 답도 함께 지워져요.`
+        : '아직 고른 사람은 없어요.';
+      if (!await A.confirm({ title: `${what} 조사를 지울까요?`, text: `직원 제출 화면에서 이 날짜가 빠지고, ${ans} 되돌릴 수 없어요.`, ok: '지우기', danger: true })) return;
       if (await A.api.rpc('admin_del_night_q', { p_admin_id: me().id, p_id: Number(n.id) }) === false) return;
-      await after('야간 문항을 뺐어요', null);
+      await after(`${what} 조사를 지웠어요`, null);
     });
     el.querySelector('#adNightAdd').onclick = () => openNightAdd(ym);
     el.querySelector('#adNightSat').onclick = async e => {
       const btn = e.currentTarget;
       const taken = new Set(nights.filter(n => n.wp === '데빌').map(n => n.date));
       const sats = daysOf(ym).filter(ds => A.parse(ds).getDay() === 6 && !taken.has(ds));
-      if (!sats.length) { A.toast('이 달 토요일 데빌 야간은 모두 있어요'); return; }
-      const h = await A.prompt({ title: '토요일 데빌 야간 한 번에 추가', text: `이 달 토요일 ${sats.length}일에 데빌 야간 문항을 넣어요.`, label: '시간', value: NIGHT_DEFAULT, placeholder: `예: ${NIGHT_DEFAULT}`, ok: '넣기' });
+      if (!sats.length) { A.toast('이 달 토요일 데빌은 모두 들어가 있어요'); return; }
+      const md = ds => { const d = A.parse(ds); return `${d.getMonth() + 1}/${d.getDate()}`; };
+      const h = await A.prompt({ title: '토요일 데빌 모두 추가', text: `${sats.map(md).join(', ')} · ${sats.length}일`, label: '시간', value: NIGHT_DEFAULT, placeholder: `예: ${NIGHT_DEFAULT}`, ok: '추가' });
       if (h === null) return;
       await withBusy(btn, async () => {
         let cnt = 0, bad = 0;
         for (const ds of sats) { if (await addNightQ(ym, '데빌', ds, h || NIGHT_DEFAULT, true) === false) { bad++; if (!A.session) return; } else cnt++; }
         await after(null, null);
-        A.toast(bad ? `${cnt}개 넣고 ${bad}개는 못 넣었어요` : `토요일 데빌 야간 ${cnt}개를 넣었어요`, !!bad);
+        A.toast(bad ? `${cnt}일 추가하고 ${bad}일은 못 넣었어요` : `토요일 데빌 ${cnt}일을 추가했어요`, !!bad);
       });
     };
   }
@@ -161,7 +179,7 @@
     const days = daysOf(ym), sat = days.find(ds => A.parse(ds).getDay() === 6) || days[0];
     let busy = false;
     A.sheet({
-      title: '야간 문항 추가',
+      title: '날짜 추가',
       html: `<div class="fld-row"><label class="fld-l">매장<select class="fld" data-wp>${STORES.map(w => `<option>${esc(w)}</option>`).join('')}</select></label>
         <label class="fld-l">날짜<input class="fld" type="date" data-ds value="${sat}" min="${days[0]}" max="${days[days.length - 1]}"></label></div>
         <label class="fld-l">시간<input class="fld" data-h value="${NIGHT_DEFAULT}" placeholder="예: ${NIGHT_DEFAULT}" autocomplete="off"></label><p class="sheet-err" hidden></p>`,
@@ -175,7 +193,7 @@
         busy = false;
         if (r === false) return;
         close();
-        await after('야간 문항을 추가했어요', null);
+        await after('날짜를 추가했어요', null);
       } }],
     });
   }
@@ -366,12 +384,12 @@
       ]);
       const st = A.store.status(ym);
       const done = new Set(answers.map(a => a.staffId));
-      el.innerHTML = `${A.pageHead('관리', '제출, 야간 문항, 직원을 한곳에서 관리해요')}
+      el.innerHTML = `${A.pageHead('관리', '제출, 야간 가능 조사, 직원을 한곳에서 관리해요')}
         <div class="datebar sb-mbar"><button class="nav" data-m="-1" aria-label="이전 달">${I.prev}</button><div class="dlabel">${ymLabel(ym)}</div><button class="nav" data-m="1" aria-label="다음 달">${I.next}</button></div>
         ${scheduleSec(ym, st, staff, answers, hasV2)}${nightsSec(nights, answers)}${toolsSec(ym)}${staffSec(staff)}`;
       el.querySelectorAll('.sb-mbar [data-m]').forEach(b => b.onclick = () => { admYM = A.ymShift(admYM, +b.dataset.m); A.render(); });
       bindSchedule(el, ym, staff.filter(s => !done.has(s.id)).length);
-      bindNights(el, ym, nights);
+      bindNights(el, ym, nights, answers);
       bindTools(el, ym, staff);
       bindStaff(el, staff);
     },

@@ -398,7 +398,9 @@
       const n = info.night.members.length;
       A.sheet({ title: '야간', html: `<p class="sheet-p">${esc(where(ds, wp))}</p><div class="box hrs-box">${esc(cur)}</div>`, actions: [
         { label: '야간 닫기', kind: 'danger', onClick: async c => { c();
-          if (!await A.confirm({ title: '야간을 닫을까요?', text: n ? `야간 멤버 ${n}명도 같이 빠져요.` : '', ok: '야간 닫기', danger: true })) return;
+          const ms = info.night.members, k = ms.filter(m => m.short).length;
+          const who = [...ms.filter(m => !m.short).map(m => m.name).filter(Boolean), ...(k ? [`부족 자리 ${k}`] : [])].join(', ');
+          if (!await A.confirm({ title: `${where(ds, wp)} 야간을 닫을까요?`, text: n ? `야간 멤버 ${n}명(${who})도 같이 빠져요.` : '', ok: '야간 닫기', danger: true })) return;
           if (await rpc('admin_set_night', { p_admin_id: adminId(), p_date: ds, p_workplace: wp, p_on: false, p_hours: cur }) === false) return;
           await done(ds, '야간을 닫았어요'); } },
         { label: '시간 바꾸기', kind: 'primary', onClick: c => { c(); ask(); } }] });

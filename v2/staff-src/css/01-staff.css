@@ -102,7 +102,7 @@ button.lrow:active{background:var(--cell)}
 .sheet-b{display:flex;flex-direction:column;gap:12px}
 .sheet-a{display:flex;gap:8px;flex-shrink:0;padding:16px 20px 20px}
 .sheet-a .btn{flex:1;width:auto}
-.sheet-p{font-size:15px;font-weight:500;color:var(--ink2);line-height:1.55}
+.sheet-p{font-size:15px;font-weight:500;color:var(--ink2);line-height:1.55;word-break:keep-all;overflow-wrap:break-word}
 .sheet-err{color:var(--red);font-size:13.5px;font-weight:700}
 .sheet-err[hidden]{display:none}
 .fld-l{display:flex;flex-direction:column;gap:6px;font-size:13.5px;font-weight:700;color:var(--ink2)}

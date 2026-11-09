@@ -100,12 +100,13 @@
 .ad-pb{border:none;cursor:pointer;position:relative;font:inherit;font-size:12px;font-weight:800}
 .ad-pb::after{content:"";position:absolute;inset:-8px -2px}
 .ad-pb:active{filter:brightness(.94)}
-.ad-q .ad-yes{color:var(--ink);font-weight:600;white-space:normal;line-height:1.45}
+.ad-q .ad-yes{color:var(--ink);font-weight:600;white-space:normal;line-height:1.45;word-break:keep-all;overflow-wrap:break-word}
 .ad-q .ad-yes b{font-weight:800}
 .ad-q .lt{white-space:normal}
 .ad-st .tag{font-size:11px;padding:2px 7px}
 .ad-pin{font-size:36px;font-weight:800;letter-spacing:6px;text-align:center;font-variant-numeric:tabular-nums;background:var(--cell);border-radius:var(--r-md);padding:18px 0;user-select:all}
-@media (max-width:350px){.ad-sub{flex-direction:column}}
+/* "토요일 데빌 모두 추가"가 한 줄에 들어가지 않는 폭에서는 위아래로. flex:1 은 세로에서 높이를 0으로 만들어서 풀어요 */
+@media (max-width:380px){.ad-sub{flex-direction:column}.ad-sub .btn{flex:none;width:100%}}
 .ad-det{padding:14px 2px 0}
 .ad-det summary{display:flex;align-items:center;min-height:44px;cursor:pointer;list-style:none}
 .ad-det summary::-webkit-details-marker{display:none}
