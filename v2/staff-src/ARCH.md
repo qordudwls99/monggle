@@ -75,6 +75,7 @@ v2/
     - iPhone: `mateyou://connect/moetable?…`. A page can't tell whether the app is installed, so the sheet also has a '웹에서 로그인' button.
     - Desktop: the www web page.
     - The MateYou app returns with `Linking.openURL(redirect)`, which opens Safari or Chrome. The rest of the flow is unchanged.
+  - `App.MATEYOU_APP` (`00-config.js`) switches phones to the MateYou app (`mateyou://` / `intent://`). It stays false, so every device uses the www web page, until the MateYou EAS Update that adds `/connect/moetable` is confirmed. Dev harness: `&myapp=1`.
   - The button renders only when `App.MATEYOU_ON` (`00-config.js`) is true. It is off until the MateYou server and the DB functions are live. In the dev harness, `&myon=1` turns it on.
 - **Logout.** Call `staff_signout`, then remove the key.
 - **Other storage keys** (same as production): `push_ask_dismiss`, `install_dismiss`, `noti_seen_ids`.

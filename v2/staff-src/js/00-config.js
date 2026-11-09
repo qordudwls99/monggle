@@ -10,6 +10,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
   const A = window.App = window.App || {};
   A.CONFIG = CONFIG;
   A.VAPID_PUBLIC = VAPID_PUBLIC;
-  A.MATEYOU_ON = false;   // 메이트유로 로그인 버튼: 메이트유 서버와 DB 함수가 준비되면 true
+  A.MATEYOU_ON = true;    // 메이트유로 로그인 버튼
+  A.MATEYOU_APP = false;  // 휴대폰에서 메이트유 앱(mateyou://)으로 열기: 앱 업데이트(EAS Update)가 나간 걸 확인하면 true. 그 전엔 웹으로만
   A.supa = createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
 }

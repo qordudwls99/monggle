@@ -48,7 +48,7 @@
       intent: `intent://connect/moetable?${q}#Intent;scheme=mateyou;package=${MY_PKG};S.browser_fallback_url=${encodeURIComponent(web)};end`,
     };
   }
-  const myTarget = (L, viaWeb) => viaWeb ? L.web : isAndroid() ? L.intent : isIOS() ? L.app : L.web;
+  const myTarget = (L, viaWeb) => viaWeb || !A.MATEYOU_APP ? L.web : isAndroid() ? L.intent : isIOS() ? L.app : L.web;
   function startMateyou(viaWeb) {
     const n = myNext;
     if (!n) return;
@@ -57,8 +57,9 @@
     localStorage.setItem(MY_STATE, JSON.stringify({ s, v: n.v, t: Date.now() }));
     // 아이폰 홈 화면 앱: 웹은 앱 위에 따로 뜨니 숫자 넣기를 미리 열어 두고, 메이트유 앱은 다녀와서 열어요(watchReturn).
     // 앱이 없어 안 열리면 로그인 시트가 그대로 남아 '웹에서 로그인'을 누를 수 있어요.
-    if (isStandalone() && isIOS() && viaWeb === true) openCodeEntry();
-    location.href = myTarget(myLinks(s), viaWeb === true);
+    const L = myLinks(s), url = myTarget(L, viaWeb === true);
+    if (isStandalone() && isIOS() && url === L.web) openCodeEntry();
+    location.href = url;
   }
   const claimsOf = t => {
     try { const b = t.split('.')[1].replace(/-/g, '+').replace(/_/g, '/'); return JSON.parse(atob(b + '='.repeat((4 - b.length % 4) % 4))); } catch (e) { return null; }
@@ -245,7 +246,7 @@
       <label class="fld-l">PIN<input class="fld" data-l="pin" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="current-password" placeholder="숫자 6자리"></label>
       <p class="sheet-err" hidden></p>
       ${A.MATEYOU_ON ? '<button type="button" class="btn lg my-login" data-l="mateyou"><img src="assets/mateyou.png" alt="" width="22" height="22">메이트유로 로그인</button>' : ''}
-      ${A.MATEYOU_ON && isIOS() ? '<button type="button" class="btn ghost my-web" data-l="mateyou-web">웹에서 로그인</button>' : ''}</div>`;
+      ${A.MATEYOU_ON && A.MATEYOU_APP && isIOS() ? '<button type="button" class="btn ghost my-web" data-l="mateyou-web">웹에서 로그인</button>' : ''}</div>`;
     const submit = async (close, el) => {
       if (busy) return;
       const nameEl = el.querySelector('[data-l="name"]'), pinEl = el.querySelector('[data-l="pin"]'), err = el.querySelector('.sheet-err');
