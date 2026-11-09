@@ -194,10 +194,10 @@
     if (onOpen) onOpen(wrap, close);
     return { el: wrap, close };
   }
-  // 확인: 주 버튼은 오른쪽(마지막) 하나, 지우기·빼기는 연한 빨강. 닫으면 false
+  // 확인: 주 버튼은 오른쪽(마지막) 하나, 지우기·빼기는 연한 빨강. 닫으면 false. text 의 \n 은 줄바꿈
   const confirmBox = ({ title, text = '', ok = '확인', cancel = '취소', danger = false } = {}) => new Promise(res => {
     let done = false; const fin = v => { if (!done) { done = true; res(v); } };
-    sheet({ title, html: text ? `<p class="sheet-p">${esc(text)}</p>` : '', onClose: () => fin(false), actions: [
+    sheet({ title, html: text ? `<p class="sheet-p">${esc(text).replace(/\n/g, '<br>')}</p>` : '', onClose: () => fin(false), actions: [
       { label: cancel, onClick: c => { fin(false); c(); } },
       { label: ok, kind: danger ? 'danger' : 'primary', onClick: c => { fin(true); c(); } }] });
   });

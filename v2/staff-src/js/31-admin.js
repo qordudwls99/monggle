@@ -142,8 +142,7 @@
       ${rows || '<p class="sb-quiet">이 달 야간 일정이 없어요</p>'}
       <div class="ad-sub"><button class="btn lg" id="adNightAdd">날짜 추가</button><button class="btn lg" id="adNightSat">토요일 데빌 모두 추가</button></div></section>`;
   }
-  // 지우기 전에 무엇이, 몇 명의 답이 지워지는지 그대로 보여 줘요 (2026-11-09 사장님 "지우기 같은 건 한 번 더 정확하게")
-  const nameList = ns => ns.length > 8 ? `${ns.slice(0, 6).join(', ')} 외 ${ns.length - 6}명` : ns.join(', ');
+  // 지우기 전에 몇 명의 답이 지워지는지 짧게 (2026-11-09 사장님 "한 번 더 정확하게" → "줄바꿈 많음": 이름 목록·부연 빼고 두 줄 안)
   function bindNights(el, ym, nights, answers) {
     const byq = nightTally(answers);
     el.querySelectorAll('[data-del]').forEach(b => b.onclick = async () => {
@@ -151,10 +150,8 @@
       if (!n) return;
       const { yes, no } = byq[String(n.id)] || { yes: [], no: 0 };
       const what = `${n.date ? A.fmt(n.date) : n.label} ${n.wp || ''} 야간`.replace(/\s+/g, ' ');
-      const ans = yes.length + no
-        ? `가능 ${yes.length}명${yes.length ? `(${nameList(yes)})` : ''} · 불가능 ${no}명이 고른 답도 함께 지워져요.`
-        : '아직 고른 사람은 없어요.';
-      if (!await A.confirm({ title: `${what} 일정을 지울까요?`, text: `직원 제출 화면에서 이 날짜가 빠지고, ${ans} 되돌릴 수 없어요. 스케줄에 넣은 야간 근무는 그대로예요.`, ok: '지우기', danger: true })) return;
+      const ans = yes.length + no ? `가능 ${yes.length}명 · 불가능 ${no}명의 답도 지워져요.\n` : '';
+      if (!await A.confirm({ title: `${what} 일정을 지울까요?`, text: `${ans}되돌릴 수 없어요.`, ok: '지우기', danger: true })) return;
       if (await A.api.rpc('admin_del_night_q', { p_admin_id: me().id, p_id: Number(n.id) }) === false) return;
       await after(`${what} 일정을 지웠어요`, null);
     });

@@ -42,7 +42,7 @@ v2/
 | `20-swap.js`, `21-mine.js` | 대타 board with comments; 내 근무 |
 | `22-bell.js`, `23-account.js` | bell sheet (admin derived items + personal notifications); 내 정보 (photo crop/upload, MateYou photo, IG, MateYou link row, PIN, push, logout) |
 | `30-submit.js` | 시프트 제출 |
-| `31-admin.js` | 관리: month status (submit open/close, publish), night questions with tallies (shown as 야간 일정; delete confirm names the date, store and the answers it removes), submission status, staff management, add staff, 근무 추가 form, bulk temp PIN |
+| `31-admin.js` | 관리: month status (submit open/close, publish), night questions with tallies (shown as 야간 일정; delete confirm names the date and store and counts the answers it removes, no name list), submission status, staff management, add staff, 근무 추가 form, bulk temp PIN |
 | `32-admin-tools.js` | builder matrix, submission matrix, hope calendar, 근무일수, 야간 list, per-person answers, 희망자 배정 sheet |
 | `33-export.js` | 출근표 이미지 for everyone (admin menu and the 월간 button): 2주 per store, 1주 and 1일 combined, story and post |
 | `34-guest.js` | guest → staff conversion |
