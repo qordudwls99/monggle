@@ -103,7 +103,7 @@
       if (args.p_verifier == null) return ok([{ ...none, code: '4821' }]);
       if (q.get('my') === 'linked') return ok([{ ...none, id: 900004, name: '메이트', is_admin: false, avatar_url: null, pin_temp: false, token: 'tk_dev' }]);
       if (q.get('my') === 'no') return ok([{ ...none, err: '파트너+만 메이트유로 로그인할 수 있어요.' }]);
-      return ok([{ ...none, link: 'ml_dev' }]);
+      return ok([{ ...none, link: 'ml_dev', pp: q.get('my') !== 'nopp' }]);   // &my=nopp 파트너+ 아님(관리자 연결만)
     }
     if (fn === 'mateyou_claim') {                                            // &claim=wait 아직 없음 · &claim=token 연결된 사람 · 기본은 연결표 · 숫자 0000 은 틀림
       log(fn, args);
@@ -118,6 +118,7 @@
       const name = String(args.p_name || '').trim();
       if (fn === 'mateyou_link' && name === '없는사람') return ok([]);
       if (fn === 'mateyou_link' && args.p_pin === '000000') return ok([{ err: 'PIN이 틀렸어요. (남은 시도 4회)' }]);
+      if (fn === 'mateyou_link' && q.get('my') === 'nopp' && !name.includes('관리')) return ok([{ err: '파트너+만 메이트유로 연결할 수 있어요.' }]);
       if (fn === 'mateyou_join' && name === '모모') return ok([{ err: '이미 있는 닉네임이에요.' }]);
       return ok([{ id: 900005, name, is_admin: false, avatar_url: null, pin_temp: false, token: 'tk_dev', err: null }]);
     }

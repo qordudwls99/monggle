@@ -92,5 +92,5 @@
     }
   }
 
-  A.api = { rpc, direct, notify, uploadAvatar, errText };
+  A.api = { rpc, direct, notify, uploadAvatar, errText, check: checkAdmin };
 }

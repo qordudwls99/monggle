@@ -156,7 +156,7 @@ select.fld{appearance:none;-webkit-appearance:none}
 /* 로그인 시트 */
 .login-f{display:flex;flex-direction:column;gap:12px}
 .login-f .fld{font-variant-numeric:tabular-nums}
-.login-f[hidden]{display:none}
+.login-f[hidden],.login-f .seg[hidden]{display:none}
 .my-login img{width:22px;height:22px;border-radius:6px;flex:none}
 .login-f .my-web{align-self:center;height:44px;margin-top:-6px}
 .my-code{display:flex;flex-direction:column;align-items:center;gap:10px;padding:6px 0 10px}

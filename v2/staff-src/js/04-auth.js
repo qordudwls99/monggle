@@ -86,7 +86,7 @@
       signedIn(me);
       if (drawn) { if (loginSheet) loginSheet.close(); afterLogin(me); } else A.toast(`${me.name}님 환영해요!`);
     } else if (me.link) {
-      if (drawn) { if (loginSheet) loginSheet.close(); openLink(me.link); } else pendingLink = me.link;
+      if (drawn) { if (loginSheet) loginSheet.close(); openLink(me.link, me.pp); } else pendingLink = { link: me.link, pp: me.pp };
     }
   }
   // 따로 뜬 브라우저: 앱에 넣을 숫자
@@ -139,13 +139,17 @@
   }
   // 돌아왔을 때: 같은 저장소를 쓰는 다른 창(안드로이드, 사파리 새 탭)에서 로그인됐으면 이어받고,
   // 아이폰 홈 화면 앱이 메이트유 앱에 다녀왔으면 숫자 넣기를 열어요
+  // 로그인돼 있으면 돌아올 때마다(1분에 한 번까지) 세션이 살아 있는지 확인해요 (파트너+ 해제로 서버에서 끊긴 경우 등)
   function watchReturn() {
-    let away = 0;
+    let away = 0, checked = Date.now();
     const back = () => {
       if (document.visibilityState === 'hidden') { away = Date.now(); return; }
       const gone = away && Date.now() - away > 1500;
       away = 0;
-      if (session) return;
+      if (session) {
+        if (String(session.pin || '').startsWith('tk_') && Date.now() - checked > 60000) { checked = Date.now(); A.api.check(); }
+        return;
+      }
       const s = load();
       if (s) {
         session = s;
@@ -161,10 +165,11 @@
   }
 
   // 메이트유는 됐는데 아직 연결이 없을 때: PIN 이 있으면 이름 · PIN 으로 연결, 없으면 한글 닉네임으로 새로 가입
-  function openLink(link) {
+  // 파트너+가 아니면(pp=false) 관리자 계정 연결만 돼요: 새로 가입은 빼요
+  function openLink(link, pp) {
     let busy = false, mode = 'pin';
     const html = `<div class="login-f">
-      <div class="seg" role="tablist"><button type="button" class="on" data-m="pin" role="tab" aria-selected="true">PIN으로 연결</button><button type="button" data-m="new" role="tab" aria-selected="false">새로 가입</button></div>
+      <div class="seg" role="tablist"${pp === false ? ' hidden' : ''}><button type="button" class="on" data-m="pin" role="tab" aria-selected="true">PIN으로 연결</button><button type="button" data-m="new" role="tab" aria-selected="false">새로 가입</button></div>
       <div class="login-f" data-p="pin">
         <label class="fld-l">이름<input class="fld" data-l="name" autocomplete="username" autocapitalize="off" spellcheck="false" maxlength="30"></label>
         <label class="fld-l">PIN<input class="fld" data-l="pin" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="current-password" placeholder="숫자 6자리"></label>
@@ -391,7 +396,7 @@
   // core 의 boot 가 불러요: 첫 그리기 전 / 뒤
   async function boot() { wireBars(); await mateyouReturn(); await upgradeSession(); }
   function afterBoot() {
-    if (pendingLink && !session) { openLink(pendingLink); pendingLink = null; }
+    if (pendingLink && !session) { openLink(pendingLink.link, pendingLink.pp); pendingLink = null; }
     if (pendingCode) { showCode(pendingCode); pendingCode = null; }
     watchReturn();
     if (!session && !loginSheet && isStandalone() && isIOS() && myState()) openCodeEntry();   // 앱을 다시 켰을 때 이어서

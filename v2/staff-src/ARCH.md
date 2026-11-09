@@ -77,10 +77,12 @@ v2/
     - The MateYou app returns with `Linking.openURL(redirect)`, which opens Safari or Chrome. The rest of the flow is unchanged.
   - `App.MATEYOU_APP` (`00-config.js`) switches phones to the MateYou app (`mateyou://` / `intent://`). It stays false, so every device uses the www web page, until the MateYou EAS Update that adds `/connect/moetable` is confirmed. Dev harness: `&myapp=1`.
   - The button renders only when `App.MATEYOU_ON` (`00-config.js`) is true. It is off until the MateYou server and the DB functions are live. In the dev harness, `&myon=1` turns it on.
+  - 파트너+ and the admin exception (2026-11-09, owner decision). Tickets carry the real `pp`. When `pp` is false, only a moetable admin can link or log in through MateYou; a non-admin gets '파트너+만 메이트유로 로그인할 수 있어요.' and 새로 가입 needs `pp=true`. `mateyou_signin` / `mateyou_claim` return `pp`, and the 메이트유 연결 sheet hides the 새로 가입 tab when it is false (dev harness: `&my=nopp`; a name containing '관리' links).
+  - Partner+ sync. MateYou signs the full list of current partner+ members (`typ 'pp_sync'`, vault `mateyou_push_secret`) on every change and every 10 minutes, and calls `mateyou_partner_sync(p_token)`. moetable sets `staff.mateyou_pp`. A linked non-admin who is not partner+ is suspended: all sessions are deleted and `staff_signin` refuses the PIN with '파트너+가 해제돼 로그인할 수 없어요. 관리자에게 문의하세요.'. The suspension lifts by itself on the next sync that lists them or on a `pp=true` MateYou login. An admin PIN reset voids the link and so also lifts it. Empty lists and older `ts` are refused. Contract: `.ui-design/mateyou-login/SYNC-CONTRACT.md`.
 - **Logout.** Call `staff_signout`, then remove the key.
 - **Other storage keys** (same as production): `push_ask_dismiss`, `install_dismiss`, `noti_seen_ids`.
 - **Anonymous use is allowed.** Schedule views and the 대타 board list work logged out. Actions open the login sheet. 내 근무 and 제출 show a login prompt. The top bar shows "로그인" when logged out and the avatar circle when logged in.
-- **Stale sessions.** If an RPC error says the token is invalid ("PIN이 올바르지 않습니다" or similar), clear the session and ask to log in again. Production ignores this (bug).
+- **Stale sessions.** If an RPC error says the token is invalid ("PIN이 올바르지 않습니다" or similar), clear the session and ask to log in again. Production ignores this (bug). When a logged-in page comes back into view (at most once a minute), `App.api.check()` calls `my_profile` so a session deleted on the server (for example by the partner+ sync) logs out without waiting for a write.
 - **`is_admin`.** It comes from the signin row. Admin UI is a convenience; the server enforces every `admin_*` RPC.
 
 ## `App.api`
