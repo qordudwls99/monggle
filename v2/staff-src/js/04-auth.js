@@ -247,7 +247,7 @@
       prepMateyou();
       loginSheet = A.sheet({
         title: '메이트유 연결',
-        html: `<div class="login-f"><button type="button" class="btn lg my-login" data-l="mateyou"><img src="assets/mateyou.png" alt="" width="22" height="22">메이트유로 연결</button>
+        html: `<div class="login-f"><button type="button" class="btn lg primary my-login" data-l="mateyou"><img src="assets/mateyou.png" alt="" width="22" height="22">메이트유로 연결</button>
           <button type="button" class="btn ghost my-web" data-l="mateyou-web">웹에서 연결</button></div>`,
         actions: [{ label: '닫기' }],
         onClose: () => { loginSheet = null; },
@@ -280,7 +280,7 @@
     let busy = false;
     // 메이트유가 먼저 (2026-11-09 메이트유로 옮기기 2단계). 이름 · PIN 은 연결률 90% 넘으면 닫아요
     const html = `<div class="login-f">
-      ${A.MATEYOU_ON ? '<button type="button" class="btn lg my-login" data-l="mateyou"><img src="assets/mateyou.png" alt="" width="22" height="22">메이트유로 로그인</button>' : ''}
+      ${A.MATEYOU_ON ? '<button type="button" class="btn lg primary my-login" data-l="mateyou"><img src="assets/mateyou.png" alt="" width="22" height="22">메이트유로 로그인</button>' : ''}
       ${A.MATEYOU_ON && A.MATEYOU_APP && isIOS() ? '<button type="button" class="btn ghost my-web" data-l="mateyou-web">웹에서 로그인</button>' : ''}
       ${A.MATEYOU_ON ? '<div class="login-sep" role="separator"></div>' : ''}
       <label class="fld-l">이름<input class="fld" data-l="name" autocomplete="username" autocapitalize="off" spellcheck="false" maxlength="30"></label>
@@ -289,7 +289,7 @@
     const submit = async (close, el) => {
       if (busy) return;
       const nameEl = el.querySelector('[data-l="name"]'), pinEl = el.querySelector('[data-l="pin"]'), err = el.querySelector('.sheet-err');
-      const btn = el.querySelector('.sheet-a .primary');
+      const btn = el.querySelector('.sheet-a [data-a]:last-child');   // 메이트유가 켜져 있으면 회색 '로그인' 하나
       const name = nameEl.value.trim(), pin = pinEl.value.trim();
       const show = m => { err.hidden = false; err.textContent = m; };
       if (!name) { show('이름을 적어 주세요'); nameEl.focus(); return; }
@@ -310,7 +310,8 @@
     };
     loginSheet = A.sheet({
       title: '로그인', html,
-      actions: [{ label: '취소' }, { label: '로그인', kind: 'primary', onClick: submit }],
+      // 주 버튼은 하나: 메이트유가 켜져 있으면 위의 메이트유로 로그인, 이름 · PIN '로그인'은 회색 (2026-11-09 사장님 "로그인 시트 버튼 색 수정")
+      actions: A.MATEYOU_ON ? [{ label: '로그인', onClick: submit }] : [{ label: '취소' }, { label: '로그인', kind: 'primary', onClick: submit }],
       onClose: () => { loginSheet = null; if (!session) settle(false); },
       onOpen: (el, close) => {
         const nameEl = el.querySelector('[data-l="name"]'), pinEl = el.querySelector('[data-l="pin"]');
