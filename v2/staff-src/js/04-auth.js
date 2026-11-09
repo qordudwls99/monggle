@@ -30,7 +30,11 @@
   const MY_URL = 'https://www.mateyou.me/connect/moetable', MY_PKG = 'com.mateyou.app', MY_STATE = 'mateyou_state';
   let pendingLink = null, pendingCode = null, codeSheet = null, pendingPhoto = false;
   // 메이트유 로그인 · 연결 뒤 사진 고르기 / 올리기 (23-account.js). 임시 PIN 이면 PIN 바꾸기가 먼저라 이번엔 건너뛰어요
-  const photoNext = me => { if (!me.pin_temp && A.account && A.account.afterMateyou) setTimeout(() => A.account.afterMateyou(), 2400); };   // 환영 알림(2.2초)이 사라진 뒤
+  const photoNext = me => {   // 환영 알림(2.2초)이 사라진 뒤. 처음 안내는 사진 시트가 뜰 때까지 기다려요
+    if (me.pin_temp || !A.account || !A.account.afterMateyou) return;
+    if (A.guide) A.guide.hold(4500);
+    setTimeout(() => A.account.afterMateyou(), 2400);
+  };
   const myState = () => {
     try { const w = JSON.parse(localStorage.getItem(MY_STATE) || 'null'); return w && Date.now() - w.t < 15 * 60e3 ? w : null; } catch (e) { return null; }
   };

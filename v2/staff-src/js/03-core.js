@@ -284,7 +284,7 @@
   }
   async function render({ keep = false } = {}) {
     const my = ++seq;
-    if (!A.session) { pendingRoot = null; renderGate(); return true; }
+    if (!A.session) { pendingRoot = null; renderGate(); if (A.guide) A.guide.after(); return true; }
     document.body.classList.remove('gated');
     if (state.tab === 'admin' && !isAdmin()) state.tab = 'schedule';
     syncHash();
@@ -313,6 +313,7 @@
     host.scrollTop = keep ? top : 0;
     host.removeAttribute('aria-busy');
     state.quiet = false;
+    if (A.guide) { try { A.guide.after(); } catch (e) { console.error(e); } }   // 처음 안내 (24-guide.js)
     return true;
   }
   function go(tab, opts = {}) {

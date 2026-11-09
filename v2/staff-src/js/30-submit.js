@@ -50,7 +50,7 @@
   function renderForm(el, ym, dates, nights, map, key) {
     const m = monOf(ym);
     const rows = dates.map(ds => `<div class="sb-row sb-d" role="group" aria-label="${A.fmt(ds)}">${dateLbl(ds)}<div class="sb-cs">${[...STORES, ANY, NO].map(v => choiceBtn(ds, v, map['d:' + ds])).join('')}</div></div>`).join('');
-    el.innerHTML = `${A.pageHead(`${m}월 시프트 제출`, '날짜마다 하나씩 골라 주세요. 마감 전까지 고칠 수 있어요')}${monthBar(ym)}
+    el.innerHTML = `${A.pageHead(`${m}월 시프트 제출`)}${monthBar(ym)}
       <div class="sb-stat"><span class="tag green">제출 받는 중</span><b data-s="cnt"></b></div>
       <div class="prog" role="progressbar" aria-valuemin="0" aria-valuemax="${dates.length}" aria-label="고른 날"><i></i></div>
       <section class="sec sb-sec"><div class="sec-h"><h2>날짜별 근무지</h2></div>${rows}</section>

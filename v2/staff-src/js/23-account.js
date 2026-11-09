@@ -186,6 +186,7 @@
         ${A.MATEYOU_ON ? '<div class="menu-row ro" data-m="my"><span class="ac-l">메이트유<small>불러오는 중…</small></span></div>' : ''}
         <button class="menu-row" data-m="pin"><span class="ac-l">PIN 바꾸기${s.pin_temp ? '<small class="ac-warn">임시 PIN이에요</small>' : ''}</span>${A.ICON.chev}</button>
         <button class="menu-row" data-m="push"><span class="ac-l">푸시 알림<small data-push>확인 중…</small></span>${A.ICON.chev}</button>
+        <button class="menu-row" data-m="guide"><span>사용법</span>${A.ICON.chev}</button>
       </div>`;
     const sh = A.sheet({
       title: '내 정보', html,
@@ -259,6 +260,7 @@
           A.toast(v ? '저장했어요' : '인스타를 지웠어요');
         };
         el.querySelector('[data-m="pin"]').onclick = () => openPin();
+        el.querySelector('[data-m="guide"]').onclick = () => A.guide.open();
         el.querySelector('[data-m="push"]').onclick = async () => {
           if (await A.auth.pushOn()) { A.toast('이 기기는 알림이 켜져 있어요'); return; }
           await A.auth.enablePush();

@@ -1,0 +1,19 @@
+/* 처음 안내 (js/24-guide.js): 화면을 어둡게 하고 한 군데만 밝혀요. 시트(80)·알림(90)보다 아래 */
+.coach{position:fixed;inset:0;z-index:70;opacity:0;transition:opacity .25s ease}
+.coach.in{opacity:1}
+.coach-hole{position:fixed;border-radius:16px;box-shadow:0 0 0 200vmax rgba(20,14,22,.62);pointer-events:none;
+  transition:left .32s cubic-bezier(.32,.72,0,1),top .32s cubic-bezier(.32,.72,0,1),width .32s cubic-bezier(.32,.72,0,1),height .32s cubic-bezier(.32,.72,0,1),border-radius .32s ease}
+.coach-tip{position:fixed;width:min(300px,calc(100vw - 24px));background:#fff;border-radius:18px;padding:16px 16px 12px;
+  transition:top .32s cubic-bezier(.32,.72,0,1),left .32s cubic-bezier(.32,.72,0,1)}
+.coach-n{font-size:13px;font-weight:800;color:var(--muted);font-variant-numeric:tabular-nums}
+.coach-n:empty{display:none}
+.coach-t{display:block;font-size:18px;font-weight:800;letter-spacing:-.3px;margin-top:1px}
+.coach-d{font-size:15px;color:var(--ink2);margin-top:3px;line-height:1.45}
+.coach-a{display:flex;justify-content:space-between;align-items:center;margin-top:12px}
+.coach-a .ghost{margin-left:-12px}
+@media (prefers-reduced-motion:reduce){.coach,.coach-hole,.coach-tip{transition:none}}
+
+/* 사용법 글: 번호 붙은 짧은 줄 */
+.gd-steps{list-style:none;counter-reset:g;display:grid;gap:14px;padding:4px 0 6px}
+.gd-steps li{counter-increment:g;display:flex;gap:12px;font-size:16px;font-weight:600;line-height:1.5}
+.gd-steps li::before{content:counter(g);flex:none;width:26px;height:26px;border-radius:50%;background:var(--fill);font-size:14px;font-weight:800;display:grid;place-items:center}
