@@ -421,7 +421,7 @@
   // core 의 boot 가 불러요: 첫 그리기 전 / 뒤
   async function boot() { wireBars(); await mateyouReturn(); await upgradeSession(); }
   function afterBoot() {
-    if (pendingLink && !session) { openLink(pendingLink.link, pendingLink.pp); pendingLink = null; }
+    if (pendingLink) { openLink(pendingLink.link, pendingLink.pp); pendingLink = null; }   // 로그인한 채로 연결하러 다녀와도 열어요 (내 정보)
     if (pendingCode) { showCode(pendingCode); pendingCode = null; }
     watchReturn();
     if (!loginSheet && isStandalone() && isIOS() && myState()) openCodeEntry();   // 앱을 다시 켰을 때 이어서 (로그인한 채 연결 중이어도)
