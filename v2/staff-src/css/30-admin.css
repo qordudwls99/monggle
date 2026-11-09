@@ -104,6 +104,8 @@
 .ad-q .ad-yes b{font-weight:800}
 .ad-q .lt{white-space:normal}
 .ad-st .tag{font-size:11px;padding:2px 7px}
+/* 메이트유 연결된 직원: 오른쪽 끝(화살표 앞)에 동그란 로고 (admin_staff_directory.mateyou) */
+.ad-st .ad-my{width:22px;height:22px;border-radius:50%;flex:none;margin-left:auto;display:block}
 .ad-pin{font-size:36px;font-weight:800;letter-spacing:6px;text-align:center;font-variant-numeric:tabular-nums;background:var(--cell);border-radius:var(--r-md);padding:18px 0;user-select:all}
 /* "토요일 데빌 모두 추가"가 한 줄에 들어가지 않는 폭에서는 위아래로. flex:1 은 세로에서 높이를 0으로 만들어서 풀어요 */
 @media (max-width:380px){.ad-sub{flex-direction:column}.ad-sub .btn{flex:none;width:100%}}

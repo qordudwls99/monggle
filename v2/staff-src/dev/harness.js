@@ -83,7 +83,7 @@
     if (fn === 'admin_staff_directory') {
       if (FAIL_STALE) return stale();
       return Promise.resolve(realRpc('staff_directory')).then(r => r.error ? r : {
-        data: (r.data || []).map((s, i) => ({ ...s, has_pin: i % 6 !== 5, locked: i % 9 === 4, pin_temp: i % 7 === 3 })), error: null, status: 200 });
+        data: (r.data || []).map((s, i) => ({ ...s, has_pin: i % 6 !== 5, locked: i % 9 === 4, pin_temp: i % 7 === 3, mateyou: i % 4 === 1 })), error: null, status: 200 });
     }
     // 내 정보의 메이트유: &myp=linked 연결(이름 · 파트너+ · 사진) · noname 연결됐는데 이름 · 사진 아직 없음 · noimg 메이트유 사진 없음 · admin 파트너+ 아닌 관리자 · 기본은 연결 안 됨
     if (fn === 'my_profile') {

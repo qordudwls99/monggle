@@ -492,3 +492,22 @@ revoke execute on function public.mateyou_signin(text, text), public.mateyou_cla
   public.mateyou_join(text, text), public.mateyou_partner_sync(text), public.use_mateyou_avatar(bigint, text) from public;
 grant execute on function public.mateyou_signin(text, text), public.mateyou_claim(text, text), public.mateyou_link(text, text, text),
   public.mateyou_join(text, text), public.mateyou_partner_sync(text), public.use_mateyou_avatar(bigint, text) to anon, authenticated;
+
+-- 8) 관리자 직원 목록 (supabase-security.sql 의 admin_staff_directory 그대로 + 메이트유 연결 여부, 2026-11-09)
+--    mateyou: my_profile 과 같은 기준 (연결돼 있고 PIN 지문이 그대로). 반환 칸이 늘어서 지우고 다시 만들어요.
+--    v1 staff.html 도 이 함수를 부르지만 칸 이름으로만 읽어서 칸이 하나 늘어도 그대로예요.
+drop function if exists public.admin_staff_directory(bigint, text);
+create function public.admin_staff_directory(p_admin_id bigint, p_pin text)
+returns table(id bigint, name text, is_admin boolean, has_pin boolean, locked boolean, pin_temp boolean, mateyou boolean)
+language plpgsql security definer set search_path = public as $$
+declare v staff;
+begin
+  v := _verify(p_admin_id, p_pin);
+  if v.id is null or not v.is_admin then raise exception '관리자만 가능합니다'; end if;
+  return query select s.id, s.name, s.is_admin, (s.pin is not null),
+                      coalesce(s.locked, false), coalesce(s.pin_temp, false),
+                      (s.mateyou_member_id is not null and s.mateyou_pin_tag is not distinct from _mateyou_pin_tag(s.pin))
+                 from staff s order by s.name;
+end; $$;
+-- 운영 권한 그대로 (2026-11-09 확인: PUBLIC EXECUTE)
+grant execute on function public.admin_staff_directory(bigint, text) to public;

@@ -869,6 +869,8 @@ button.nt-p:focus-visible,button.nt-pb:focus-visible{outline:2px solid var(--ink
 .ad-q .ad-yes b{font-weight:800}
 .ad-q .lt{white-space:normal}
 .ad-st .tag{font-size:11px;padding:2px 7px}
+/* 메이트유 연결된 직원: 오른쪽 끝(화살표 앞)에 동그란 로고 (admin_staff_directory.mateyou) */
+.ad-st .ad-my{width:22px;height:22px;border-radius:50%;flex:none;margin-left:auto;display:block}
 .ad-pin{font-size:36px;font-weight:800;letter-spacing:6px;text-align:center;font-variant-numeric:tabular-nums;background:var(--cell);border-radius:var(--r-md);padding:18px 0;user-select:all}
 /* "토요일 데빌 모두 추가"가 한 줄에 들어가지 않는 폭에서는 위아래로. flex:1 은 세로에서 높이를 0으로 만들어서 풀어요 */
 @media (max-width:380px){.ad-sub{flex-direction:column}.ad-sub .btn{flex:none;width:100%}}
@@ -4748,7 +4750,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
       .sort((a, b) => String(a.name).localeCompare(String(b.name), 'ko'));   // 이름순만 (사용자 2026-10-28)
     const cut = !q && filt === 'all' && list.length > SHOW + 2, shown = cut && !expanded ? list.slice(0, SHOW) : list;
     el.querySelector('#adFound').textContent = q ? `${list.length}명 찾았어요` : '';
-    box.innerHTML = shown.map(s => `<div class="lrow ad-st"><button class="ad-main" data-st="${s.id}" aria-label="${esc(s.name)}님 관리">${A.avatar(s)}<span class="lt">${esc(s.name)}</span>${stTags(s)}</button>${s.locked ? `<button class="btn sm hit" data-unlock="${s.id}" aria-label="${esc(s.name)}님 잠금 풀기">잠금 풀기</button>` : ''}${I.chev}</div>`).join('')
+    box.innerHTML = shown.map(s => `<div class="lrow ad-st"><button class="ad-main" data-st="${s.id}" aria-label="${esc(s.name)}님 관리">${A.avatar(s)}<span class="lt">${esc(s.name)}</span>${stTags(s)}${s.mateyou ? '<img class="ad-my" src="assets/mateyou.png" alt="메이트유 연결됨" width="22" height="22">' : ''}</button>${s.locked ? `<button class="btn sm hit" data-unlock="${s.id}" aria-label="${esc(s.name)}님 잠금 풀기">잠금 풀기</button>` : ''}${I.chev}</div>`).join('')
       + (cut ? `<button class="btn ad-more" id="adMore" aria-expanded="${expanded}">${expanded ? '접기' : `나머지 ${list.length - SHOW}명 보기`}</button>` : '')
       || '<div class="none">찾는 이름이 없어요</div>';
     const more = box.querySelector('#adMore');
