@@ -83,6 +83,61 @@
     });
   }
 
+  // ── 메이트유 로그인 뒤 사진 (2026-11-09 사장님) ──
+  //    모에 · 메이트유 사진이 둘 다 있고 다르면 고르기, 모에에만 없으면 서버가 이미 가져왔어요, 둘 다 없으면 올리기(건너뛰기).
+  //    고르거나 건너뛰면 이 기기에서는 다시 묻지 않아요 (메이트유 사진이 바뀌면 다시 골라요)
+  const ASK = id => `photo_ask:${id}`;
+  const askGet = id => { try { return localStorage.getItem(ASK(id)); } catch (e) { return null; } };
+  const askSet = (id, v) => { try { localStorage.setItem(ASK(id), v); } catch (e) { /* 기억 못 해도 괜찮아요 */ } };
+  async function afterMateyou() {
+    const s = A.session; if (!s) return;
+    const r = await A.api.direct('my_profile', { p_staff_id: s.id, p_pin: s.pin });
+    if (r.error || !r.data || !r.data.mateyou || !A.session || A.session.id !== s.id) return;
+    const cur = r.data.avatar_url || null, my = r.data.mateyou.avatar || null;
+    if (cur !== (A.session.avatar || null)) A.auth.update({ avatar: cur });
+    if (cur && my && cur !== my) { if (askGet(s.id) !== my) openCompare(cur, my); }
+    else if (!cur && !my && askGet(s.id) !== 'skip') openUpload();
+  }
+  function openCompare(cur, my) {
+    const s = A.session;
+    let pick = 'cur', busy = false;
+    const opt = (k, url, label, on) => `<button type="button" class="ph-opt${on ? ' on' : ''}" data-k="${k}" role="radio" aria-checked="${on}">${A.avatar({ name: s.name, avatar: url }, 'av ph-av')}<span>${label}</span></button>`;
+    A.sheet({
+      title: '프로필 사진',
+      html: `<div class="ph-cmp" role="radiogroup" aria-label="프로필 사진">${opt('cur', cur, '지금 사진', true)}${opt('my', my, '메이트유 사진', false)}</div>`,
+      actions: [{ label: '이 사진으로', kind: 'primary', onClick: async (close, el) => {
+        if (busy) return;
+        if (pick === 'cur') { askSet(s.id, my); close(); return; }
+        const btn = el.querySelector('.sheet-a .primary');
+        busy = true; if (btn) btn.setAttribute('aria-busy', 'true');
+        const url = await A.api.rpc('use_mateyou_avatar', { p_staff_id: s.id });
+        busy = false; if (btn) btn.removeAttribute('aria-busy');
+        if (url === false || typeof url !== 'string') return;
+        askSet(s.id, my);
+        A.auth.update({ avatar: url });
+        close();
+        A.store.invalidateAll();
+        await A.render({ keep: true });
+        A.toast('사진을 바꿨어요');
+      } }],
+      onOpen: el => el.querySelectorAll('.ph-opt').forEach(b => b.addEventListener('click', () => {
+        pick = b.dataset.k;
+        el.querySelectorAll('.ph-opt').forEach(x => { const on = x === b; x.classList.toggle('on', on); x.setAttribute('aria-checked', String(on)); });
+      })),
+    });
+  }
+  function openUpload() {
+    const s = A.session;
+    A.sheet({
+      title: '프로필 사진',
+      html: `<div class="ph-one">${A.avatar({ name: s.name }, 'av ph-av')}</div>`,
+      actions: [
+        { label: '건너뛰기', onClick: close => { askSet(s.id, 'skip'); close(); } },
+        { label: '사진 올리기', kind: 'primary', onClick: close => { pickPhoto(); close(); } },   // 파일 고르기는 누른 순간에 열어야 해요
+      ],
+    });
+  }
+
   // ── PIN 바꾸기 (운영 1134-1141) ──
   function openPin({ note } = {}) {
     let busy = false;
@@ -215,7 +270,7 @@
     return sh;
   }
 
-  A.account = { open };
+  A.account = { open, afterMateyou };
   // 임시 PIN 으로 로그인했을 때 (04-auth afterLogin)
   A.onTempPin = () => open({ focus: 'pin', note: '임시 PIN으로 로그인했어요. 앞으로 쓸 PIN 6자리를 정해 주세요.' });
 }

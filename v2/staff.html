@@ -402,6 +402,12 @@ select.fld{appearance:none;-webkit-appearance:none}
 .menu-row.ro{cursor:default}
 .menu-row.ro:active{background:none}
 .av.my-av{width:30px;height:30px;font-size:13px}
+/* 메이트유 로그인 뒤 사진 고르기 · 올리기 */
+.ph-cmp{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:4px 0 8px}
+.ph-opt{display:flex;flex-direction:column;align-items:center;gap:10px;min-width:0;padding:18px 8px 14px;border:1px solid var(--line);border-radius:14px;background:none;cursor:pointer;font-size:15px;font-weight:700;color:var(--ink2)}
+.ph-opt.on{border-color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink);color:var(--ink)}
+.av.ph-av{width:96px;height:96px;font-size:36px}
+.ph-one{display:flex;justify-content:center;padding:8px 0 12px}
 
 /* 아주 좁은 화면(320): 매장 칩은 로고·이름만 */
 @media (max-width:359px){.chips{gap:4px}.chip{gap:5px;padding:0 4px}.chip img{width:24px;height:24px}.chip .ct b{font-size:13px}.chip .ct small{display:none}}
@@ -1769,7 +1775,9 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
   // 앱이 있으면 메이트유 앱(mateyou://)으로. 안드로이드는 intent:// 라 앱이 없으면 크롬이 웹으로 보내요.
   // 아이폰은 앱이 깔렸는지 알 수 없어서 앱으로 열고, 앱이 없는 사람은 '웹에서 로그인'을 눌러요. 컴퓨터는 바로 웹.
   const MY_URL = 'https://www.mateyou.me/connect/moetable', MY_PKG = 'com.mateyou.app', MY_STATE = 'mateyou_state';
-  let pendingLink = null, pendingCode = null, codeSheet = null;
+  let pendingLink = null, pendingCode = null, codeSheet = null, pendingPhoto = false;
+  // 메이트유 로그인 · 연결 뒤 사진 고르기 / 올리기 (23-account.js). 임시 PIN 이면 PIN 바꾸기가 먼저라 이번엔 건너뛰어요
+  const photoNext = me => { if (!me.pin_temp && A.account && A.account.afterMateyou) setTimeout(() => A.account.afterMateyou(), 2400); };   // 환영 알림(2.2초)이 사라진 뒤
   const myState = () => {
     try { const w = JSON.parse(localStorage.getItem(MY_STATE) || 'null'); return w && Date.now() - w.t < 15 * 60e3 ? w : null; } catch (e) { return null; }
   };
@@ -1825,7 +1833,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
   function mateyouDone(me, drawn) {
     if (me.token) {
       signedIn(me);
-      if (drawn) { if (loginSheet) loginSheet.close(); afterLogin(me); } else A.toast(`${me.name}님 환영해요!`);
+      if (drawn) { if (loginSheet) loginSheet.close(); afterLogin(me); photoNext(me); } else { A.toast(`${me.name}님 환영해요!`); pendingPhoto = true; }
     } else if (me.link) {
       if (drawn) { if (loginSheet) loginSheet.close(); openLink(me.link, me.pp); } else pendingLink = { link: me.link, pp: me.pp };
     }
@@ -1948,6 +1956,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
       signedIn(me);
       close();
       afterLogin(me);
+      photoNext(me);
     };
     loginSheet = A.sheet({
       title: '메이트유 연결', html,
@@ -2164,6 +2173,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
   function afterBoot() {
     if (pendingLink) { openLink(pendingLink.link, pendingLink.pp); pendingLink = null; }   // 로그인한 채로 연결하러 다녀와도 열어요 (내 정보)
     if (pendingCode) { showCode(pendingCode); pendingCode = null; }
+    if (pendingPhoto && session) { pendingPhoto = false; photoNext(session); }
     watchReturn();
     if (!loginSheet && isStandalone() && isIOS() && myState()) openCodeEntry();   // 앱을 다시 켰을 때 이어서 (로그인한 채 연결 중이어도)
     if (session) setTimeout(maybeAskPush, 1200);
@@ -3949,6 +3959,61 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
     });
   }
 
+  // ── 메이트유 로그인 뒤 사진 (2026-11-09 사장님) ──
+  //    모에 · 메이트유 사진이 둘 다 있고 다르면 고르기, 모에에만 없으면 서버가 이미 가져왔어요, 둘 다 없으면 올리기(건너뛰기).
+  //    고르거나 건너뛰면 이 기기에서는 다시 묻지 않아요 (메이트유 사진이 바뀌면 다시 골라요)
+  const ASK = id => `photo_ask:${id}`;
+  const askGet = id => { try { return localStorage.getItem(ASK(id)); } catch (e) { return null; } };
+  const askSet = (id, v) => { try { localStorage.setItem(ASK(id), v); } catch (e) { /* 기억 못 해도 괜찮아요 */ } };
+  async function afterMateyou() {
+    const s = A.session; if (!s) return;
+    const r = await A.api.direct('my_profile', { p_staff_id: s.id, p_pin: s.pin });
+    if (r.error || !r.data || !r.data.mateyou || !A.session || A.session.id !== s.id) return;
+    const cur = r.data.avatar_url || null, my = r.data.mateyou.avatar || null;
+    if (cur !== (A.session.avatar || null)) A.auth.update({ avatar: cur });
+    if (cur && my && cur !== my) { if (askGet(s.id) !== my) openCompare(cur, my); }
+    else if (!cur && !my && askGet(s.id) !== 'skip') openUpload();
+  }
+  function openCompare(cur, my) {
+    const s = A.session;
+    let pick = 'cur', busy = false;
+    const opt = (k, url, label, on) => `<button type="button" class="ph-opt${on ? ' on' : ''}" data-k="${k}" role="radio" aria-checked="${on}">${A.avatar({ name: s.name, avatar: url }, 'av ph-av')}<span>${label}</span></button>`;
+    A.sheet({
+      title: '프로필 사진',
+      html: `<div class="ph-cmp" role="radiogroup" aria-label="프로필 사진">${opt('cur', cur, '지금 사진', true)}${opt('my', my, '메이트유 사진', false)}</div>`,
+      actions: [{ label: '이 사진으로', kind: 'primary', onClick: async (close, el) => {
+        if (busy) return;
+        if (pick === 'cur') { askSet(s.id, my); close(); return; }
+        const btn = el.querySelector('.sheet-a .primary');
+        busy = true; if (btn) btn.setAttribute('aria-busy', 'true');
+        const url = await A.api.rpc('use_mateyou_avatar', { p_staff_id: s.id });
+        busy = false; if (btn) btn.removeAttribute('aria-busy');
+        if (url === false || typeof url !== 'string') return;
+        askSet(s.id, my);
+        A.auth.update({ avatar: url });
+        close();
+        A.store.invalidateAll();
+        await A.render({ keep: true });
+        A.toast('사진을 바꿨어요');
+      } }],
+      onOpen: el => el.querySelectorAll('.ph-opt').forEach(b => b.addEventListener('click', () => {
+        pick = b.dataset.k;
+        el.querySelectorAll('.ph-opt').forEach(x => { const on = x === b; x.classList.toggle('on', on); x.setAttribute('aria-checked', String(on)); });
+      })),
+    });
+  }
+  function openUpload() {
+    const s = A.session;
+    A.sheet({
+      title: '프로필 사진',
+      html: `<div class="ph-one">${A.avatar({ name: s.name }, 'av ph-av')}</div>`,
+      actions: [
+        { label: '건너뛰기', onClick: close => { askSet(s.id, 'skip'); close(); } },
+        { label: '사진 올리기', kind: 'primary', onClick: close => { pickPhoto(); close(); } },   // 파일 고르기는 누른 순간에 열어야 해요
+      ],
+    });
+  }
+
   // ── PIN 바꾸기 (운영 1134-1141) ──
   function openPin({ note } = {}) {
     let busy = false;
@@ -4081,7 +4146,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
     return sh;
   }
 
-  A.account = { open };
+  A.account = { open, afterMateyou };
   // 임시 PIN 으로 로그인했을 때 (04-auth afterLogin)
   A.onTempPin = () => open({ focus: 'pin', note: '임시 PIN으로 로그인했어요. 앞으로 쓸 PIN 6자리를 정해 주세요.' });
 }

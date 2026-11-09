@@ -133,6 +133,12 @@ select.fld{appearance:none;-webkit-appearance:none}
 .menu-row.ro{cursor:default}
 .menu-row.ro:active{background:none}
 .av.my-av{width:30px;height:30px;font-size:13px}
+/* 메이트유 로그인 뒤 사진 고르기 · 올리기 */
+.ph-cmp{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:4px 0 8px}
+.ph-opt{display:flex;flex-direction:column;align-items:center;gap:10px;min-width:0;padding:18px 8px 14px;border:1px solid var(--line);border-radius:14px;background:none;cursor:pointer;font-size:15px;font-weight:700;color:var(--ink2)}
+.ph-opt.on{border-color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink);color:var(--ink)}
+.av.ph-av{width:96px;height:96px;font-size:36px}
+.ph-one{display:flex;justify-content:center;padding:8px 0 12px}
 
 /* 아주 좁은 화면(320): 매장 칩은 로고·이름만 */
 @media (max-width:359px){.chips{gap:4px}.chip{gap:5px;padding:0 4px}.chip img{width:24px;height:24px}.chip .ct b{font-size:13px}.chip .ct small{display:none}}

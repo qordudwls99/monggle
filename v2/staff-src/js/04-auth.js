@@ -28,7 +28,9 @@
   // 앱이 있으면 메이트유 앱(mateyou://)으로. 안드로이드는 intent:// 라 앱이 없으면 크롬이 웹으로 보내요.
   // 아이폰은 앱이 깔렸는지 알 수 없어서 앱으로 열고, 앱이 없는 사람은 '웹에서 로그인'을 눌러요. 컴퓨터는 바로 웹.
   const MY_URL = 'https://www.mateyou.me/connect/moetable', MY_PKG = 'com.mateyou.app', MY_STATE = 'mateyou_state';
-  let pendingLink = null, pendingCode = null, codeSheet = null;
+  let pendingLink = null, pendingCode = null, codeSheet = null, pendingPhoto = false;
+  // 메이트유 로그인 · 연결 뒤 사진 고르기 / 올리기 (23-account.js). 임시 PIN 이면 PIN 바꾸기가 먼저라 이번엔 건너뛰어요
+  const photoNext = me => { if (!me.pin_temp && A.account && A.account.afterMateyou) setTimeout(() => A.account.afterMateyou(), 2400); };   // 환영 알림(2.2초)이 사라진 뒤
   const myState = () => {
     try { const w = JSON.parse(localStorage.getItem(MY_STATE) || 'null'); return w && Date.now() - w.t < 15 * 60e3 ? w : null; } catch (e) { return null; }
   };
@@ -84,7 +86,7 @@
   function mateyouDone(me, drawn) {
     if (me.token) {
       signedIn(me);
-      if (drawn) { if (loginSheet) loginSheet.close(); afterLogin(me); } else A.toast(`${me.name}님 환영해요!`);
+      if (drawn) { if (loginSheet) loginSheet.close(); afterLogin(me); photoNext(me); } else { A.toast(`${me.name}님 환영해요!`); pendingPhoto = true; }
     } else if (me.link) {
       if (drawn) { if (loginSheet) loginSheet.close(); openLink(me.link, me.pp); } else pendingLink = { link: me.link, pp: me.pp };
     }
@@ -207,6 +209,7 @@
       signedIn(me);
       close();
       afterLogin(me);
+      photoNext(me);
     };
     loginSheet = A.sheet({
       title: '메이트유 연결', html,
@@ -423,6 +426,7 @@
   function afterBoot() {
     if (pendingLink) { openLink(pendingLink.link, pendingLink.pp); pendingLink = null; }   // 로그인한 채로 연결하러 다녀와도 열어요 (내 정보)
     if (pendingCode) { showCode(pendingCode); pendingCode = null; }
+    if (pendingPhoto && session) { pendingPhoto = false; photoNext(session); }
     watchReturn();
     if (!loginSheet && isStandalone() && isIOS() && myState()) openCodeEntry();   // 앱을 다시 켰을 때 이어서 (로그인한 채 연결 중이어도)
     if (session) setTimeout(maybeAskPush, 1200);

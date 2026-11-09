@@ -53,6 +53,7 @@
   const realStorage = supa.storage;
   const me = () => { try { return JSON.parse(localStorage.getItem(KEY) || 'null'); } catch (e) { return null; } };
   const MY_AV = new URL('assets/logo-maid.jpg', location.href.replace(/\.ui-design\/v2-dev\/.*$/, 'v2/')).href;   // 가짜 메이트유 사진
+  const DEV_AV = q.get('av') === '1' ? new URL('logo-devil.jpg', MY_AV).href : null;   // &av=1 : 모에에 올린 사진이 있는 사람
   let nextId = 990000;
 
   // 쓰기 RPC 가 돌려줄 값: 새 id 가 필요한 것, 개수를 돌려주는 것, 나머지는 true
@@ -84,13 +85,13 @@
       return Promise.resolve(realRpc('staff_directory')).then(r => r.error ? r : {
         data: (r.data || []).map((s, i) => ({ ...s, has_pin: i % 6 !== 5, locked: i % 9 === 4, pin_temp: i % 7 === 3 })), error: null, status: 200 });
     }
-    // 내 정보의 메이트유: &myp=linked 연결(이름 · 파트너+ · 사진) · noname 연결됐는데 이름 · 사진 아직 없음 · admin 파트너+ 아닌 관리자 · 기본은 연결 안 됨
+    // 내 정보의 메이트유: &myp=linked 연결(이름 · 파트너+ · 사진) · noname 연결됐는데 이름 · 사진 아직 없음 · noimg 메이트유 사진 없음 · admin 파트너+ 아닌 관리자 · 기본은 연결 안 됨
     if (fn === 'my_profile') {
       if (FAIL_STALE) return stale();
       const s = me() || {}, myp = q.get('myp');
       const mateyou = myp === 'linked' ? { name: '메이트유닉네임', pp: true, avatar: MY_AV } : myp === 'noname' ? { name: null, pp: true, avatar: null }
-        : myp === 'admin' ? { name: '사장님', pp: false, avatar: MY_AV } : null;
-      return ok({ name: s.name || '', instagram: '', avatar_url: s.avatar || null, is_admin: !!s.is_admin, mateyou });
+        : myp === 'noimg' ? { name: '메이트유닉네임', pp: true, avatar: null } : myp === 'admin' ? { name: '사장님', pp: false, avatar: MY_AV } : null;
+      return ok({ name: s.name || '', instagram: '', avatar_url: s.avatar || DEV_AV, is_admin: !!s.is_admin, mateyou });
     }
     if (fn === 'use_mateyou_avatar') { log(fn, args); return FAIL_STALE ? stale() : ok(MY_AV); }
     if (fn === 'my_submission') return FAIL_STALE ? stale() : ok([]);
@@ -106,7 +107,7 @@
       log(fn, args);
       const none = { id: null, name: null, is_admin: null, avatar_url: null, pin_temp: null, token: null, link: null, err: null, code: null };
       if (args.p_verifier == null) return ok([{ ...none, code: '4821' }]);
-      if (q.get('my') === 'linked') return ok([{ ...none, id: 900004, name: '메이트', is_admin: false, avatar_url: null, pin_temp: false, token: 'tk_dev' }]);
+      if (q.get('my') === 'linked') return ok([{ ...none, id: 900004, name: '메이트', is_admin: false, avatar_url: DEV_AV, pin_temp: false, token: 'tk_dev' }]);
       if (q.get('my') === 'no') return ok([{ ...none, err: '파트너+만 메이트유로 로그인할 수 있어요.' }]);
       return ok([{ ...none, link: 'ml_dev', pp: q.get('my') !== 'nopp' }]);   // &my=nopp 파트너+ 아님(관리자 연결만)
     }
