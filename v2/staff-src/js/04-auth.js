@@ -337,7 +337,7 @@
         setTimeout(() => A.toast('임시 PIN으로 로그인했어요. 내 정보에서 PIN을 바꿔 주세요'), 700);
       }
     } else {
-      setTimeout(maybeAskPush, 800);
+      setTimeout(askNext, 800);
     }
   }
   // 로그인이 필요한 동작 앞에서: 이미 로그인했으면 true, 아니면 시트를 열고 로그인하면 true / 닫으면 false
@@ -357,6 +357,7 @@
   function logout() {
     if (session) { const s = session; Promise.resolve(A.supa.rpc('staff_signout', { p_staff_id: s.id, p_pin: s.pin })).then(() => {}, () => {}); }
     session = null; save();
+    bar('myBar').hidden = true;
     A.store.invalidateAll();
     A.go('schedule');
     A.toast('로그아웃 했어요');
@@ -408,11 +409,30 @@
     bar('pushBar').hidden = false;
   }
 
+  // ── 메이트유 연결 띠 (2026-11-09 사장님: 이름 · PIN 로그인은 차츰 없애고 메이트유로, 연결 90% 넘으면 전환) ──
+  // 연결 안 된 사람에게 앱을 열 때마다 보여요. 닫으면 3일 쉬어요. 이 띠가 뜨면 알림 띠는 이번엔 안 띄워요
+  const MY_ASK_KEY = 'my_link_dismiss', MY_ASK_REST = 3 * 864e5;
+  async function maybeAskLink() {
+    if (!session || session.pin_temp || !A.MATEYOU_ON) return false;
+    let t = 0; try { t = +localStorage.getItem(MY_ASK_KEY) || 0; } catch (e) { /* 저장소를 못 쓰면 매번 */ }
+    if (Date.now() - t < MY_ASK_REST) return false;
+    const id = session.id, r = await A.api.direct('my_profile', { p_staff_id: id, p_pin: session.pin });
+    if (!session || session.id !== id || !r || r.error || !r.data || r.data.mateyou) { bar('myBar').hidden = true; return false; }
+    bar('pushBar').hidden = true;
+    bar('myBar').hidden = false;
+    window.dispatchEvent(new Event('resize'));   // 사용법 안내가 떠 있으면 자리를 다시 잡아요
+    return true;
+  }
+  async function askNext() { if (!await maybeAskLink()) maybeAskPush(); }
+
   // ── 앱 설치 띠 (운영 2638-2652) ──
   let deferredPrompt = null;
   function showInstallBar() { if (isStandalone() || localStorage.getItem('install_dismiss')) return; bar('installBar').hidden = false; }
   window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); deferredPrompt = e; showInstallBar(); });
   function wireBars() {
+    bar('myBarX').innerHTML = A.ICON.x;
+    bar('myBarBtn').onclick = () => connectMateyou();
+    bar('myBarX').onclick = () => { bar('myBar').hidden = true; try { localStorage.setItem(MY_ASK_KEY, String(Date.now())); } catch (e) { /* 이번만 닫혀요 */ } };
     bar('installX').innerHTML = A.ICON.x;
     bar('pushAskX').innerHTML = A.ICON.x;
     bar('installX').onclick = () => { bar('installBar').hidden = true; localStorage.setItem('install_dismiss', '1'); };
@@ -433,7 +453,7 @@
     if (pendingPhoto && session) { pendingPhoto = false; photoNext(session); }
     watchReturn();
     if (!loginSheet && isStandalone() && isIOS() && myState()) openCodeEntry();   // 앱을 다시 켰을 때 이어서 (로그인한 채 연결 중이어도)
-    if (session) setTimeout(maybeAskPush, 1200);
+    if (session) setTimeout(askNext, 1200);
     if (isIOS() && !isStandalone() && !localStorage.getItem('install_dismiss')) showInstallBar();
   }
 

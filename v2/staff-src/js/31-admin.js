@@ -223,12 +223,15 @@
   const cho = A.cho;
   // 확인 필요 = 잠김, PIN 없음 (admin_staff_directory 의 locked / has_pin). 임시 PIN 은 대부분이라 빼요 (사용자 2026-10-28)
   const need = s => !!(s.locked || s.has_pin === false);
-  const FILTERS = [['all', '전체', () => true], ['need', '확인 필요', need], ['admin', '관리자', s => !!s.is_admin]];
+  const FILTERS = [['all', '전체', () => true], ['need', '확인 필요', need], ['nomy', '미연결', s => s.mateyou === false], ['admin', '관리자', s => !!s.is_admin]];
   const stTags = s => [s.is_admin ? '<span class="tag">관리자</span>' : '', s.locked ? '<span class="tag red">잠김</span>' : '',
     s.has_pin === false ? '<span class="tag soft">PIN 없음</span>' : ''].join('');
 
   function staffSec(staff) {
-    return `<section class="sec ad-sec" id="adStaffSec"><div class="sec-h"><h2>직원 ${staff.length}명</h2><button class="btn sm ad-addb" id="adStaffAdd">${I.plus}직원 추가</button></div>
+    // 메이트유 연결률 (90% 넘으면 이름 · PIN 로그인을 닫아요, 2026-11-09). 내림해서 90% 를 일찍 보여 주지 않아요
+    const known = staff.filter(s => typeof s.mateyou === 'boolean'), linked = known.filter(s => s.mateyou).length;
+    const myRate = known.length ? `<span class="ad-myr">메이트유 연결 ${Math.floor(linked * 100 / known.length)}%</span>` : '';
+    return `<section class="sec ad-sec" id="adStaffSec"><div class="sec-h"><h2>직원 ${staff.length}명${myRate}</h2><button class="btn sm ad-addb" id="adStaffAdd">${I.plus}직원 추가</button></div>
       <input class="fld" id="adQ" type="search" placeholder="이름 찾기 (초성도 돼요)" aria-label="직원 이름 찾기" autocomplete="off" value="${esc(query)}">
       <div class="seg ad-filt" role="group" aria-label="직원 거르기" id="adFilt"></div>
       <p class="ad-found" id="adFound" aria-live="polite"></p>

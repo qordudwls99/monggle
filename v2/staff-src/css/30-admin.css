@@ -73,7 +73,9 @@
 .ad-addb{gap:4px;padding:0 10px 0 8px;align-self:center}
 .ad-addb svg{width:16px;height:16px}
 .ad-filt{margin-top:8px}
-.ad-filt b{font-weight:800;font-variant-numeric:tabular-nums;margin-left:2px}
+/* 거르기 4칸(미연결 추가 2026-11-09): 한 줄에 안 들어가 일부만 꺾이던 것을 이름 위 · 숫자 아래로 모두 같게 */
+.ad-filt button{padding:6px 2px;line-height:1.3;white-space:nowrap}
+.ad-filt b{display:block;font-weight:800;font-variant-numeric:tabular-nums}
 .ad-found{font-size:13px;font-weight:700;color:var(--ink2);padding:8px 2px 0}
 .ad-found:empty{display:none}
 #adStaff{margin-top:4px}
@@ -106,6 +108,7 @@
 .ad-st .tag{font-size:11px;padding:2px 7px}
 /* 메이트유 연결된 직원: 오른쪽 끝(화살표 앞)에 동그란 로고 (admin_staff_directory.mateyou) */
 .ad-st .ad-my{width:22px;height:22px;border-radius:50%;flex:none;margin-left:auto;display:block}
+.ad-myr{margin-left:8px;font-size:13px;font-weight:700;color:var(--ink2);letter-spacing:0;font-variant-numeric:tabular-nums;white-space:nowrap}
 .ad-pin{font-size:36px;font-weight:800;letter-spacing:6px;text-align:center;font-variant-numeric:tabular-nums;background:var(--cell);border-radius:var(--r-md);padding:18px 0;user-select:all}
 /* "토요일 데빌 모두 추가"가 한 줄에 들어가지 않는 폭에서는 위아래로. flex:1 은 세로에서 높이를 0으로 만들어서 풀어요 */
 @media (max-width:380px){.ad-sub{flex-direction:column}.ad-sub .btn{flex:none;width:100%}}
