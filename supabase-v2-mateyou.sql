@@ -15,6 +15,12 @@
 --   연결된 직원이 목록에 없으면 mateyou_pp = false: 관리자가 아니면 모든 세션을 끊고 PIN 로그인까지 막아요(정지).
 --   다시 목록에 들어오면(또는 파트너+ 티켓으로 로그인하면) 저절로 풀려요.
 --   staff_signin 은 supabase-security.sql 의 정의에 정지 확인만 더해 여기서 다시 만들어요(이 파일이 최신).
+-- 메이트유 이름 · 사진 (2026-11-09, 사장님 결정 "사진 없을 때만 자동")
+--   티켓에 nm(메이트유 이름)과 img(메이트유 프로필 사진 주소, 없으면 null)가 더 붙어요. 예전 티켓(키 없음)은 아무것도 바꾸지 않아요.
+--   img 는 메이트유 사진 주소(img.mateyou.me 등 /profile-images/)만 받고, 아니면 없는 것으로 봐요(로그인은 막지 않아요).
+--   모에 사진(avatar_url)이 비었거나 메이트유 사진이면 메이트유 사진을 따라가요. 직접 올린 사진은 건드리지 않아요.
+--   이름 · 사진은 본인 내 정보(my_profile)에만 나가요. 연결이 풀리면 지워요. use_mateyou_avatar 로 메이트유 사진으로 바꿀 수 있어요.
+--   my_profile 은 supabase-update.sql 의 정의에 메이트유 정보만 더해 여기서 다시 만들어요.
 -- 서명 키는 vault 에만 있어요: 'mateyou_link_secret'(로그인 티켓, 메이트유 MOETABLE_LINK_SECRET),
 --   'mateyou_push_secret'(파트너+ 동기화, 메이트유 MOETABLE_PUSH_SECRET). 이 파일에는 키를 두지 않아요.
 -- 적용: begin; … commit; 으로 감싸서 db query -f. 키는 따로 vault.create_secret 으로 넣어요.
@@ -22,6 +28,8 @@
 alter table public.staff add column if not exists mateyou_member_id uuid unique;
 alter table public.staff add column if not exists mateyou_pin_tag text;
 alter table public.staff add column if not exists mateyou_pp boolean;   -- 연결된 메이트유 회원의 파트너+ 여부 (모르면 null)
+alter table public.staff add column if not exists mateyou_name text;    -- 연결된 메이트유 이름 (본인 내 정보에만)
+alter table public.staff add column if not exists mateyou_avatar text;  -- 연결된 메이트유 프로필 사진 주소
 
 create table if not exists public.mateyou_used_tickets (
   jti text primary key,
@@ -41,6 +49,8 @@ create table if not exists public.mateyou_handoffs (
 );
 alter table public.mateyou_link_tickets add column if not exists pp boolean not null default true;
 alter table public.mateyou_handoffs add column if not exists pp boolean not null default true;
+alter table public.mateyou_link_tickets add column if not exists prof jsonb;   -- 티켓의 {nm, img} (예전 티켓이면 null)
+alter table public.mateyou_handoffs add column if not exists prof jsonb;
 create table if not exists public.mateyou_sync_state (
   id int primary key default 1 check (id = 1),
   last_ts bigint not null default 0,
@@ -135,13 +145,48 @@ language sql immutable set search_path = public as $$
   select _token_hash('mateyou:' || coalesce(p_pin, ''))
 $$;
 
+-- 메이트유 프로필 사진 주소인가요 (메이트유 서버 publicAvatarUrl 이 주는 곳 + 옛 S3)
+create or replace function public._mateyou_is_img(u text) returns boolean
+language sql immutable set search_path = public as $$
+  select coalesce(char_length(u) <= 500
+    and u ~ '^https://(img\.mateyou\.me|api\.mateyou\.me|www\.mateyou\.me|mateyou-media\.s3\.ap-northeast-2\.amazonaws\.com)/([^/?#[:space:]"''<>\\]+/)*profile-images/[^?#[:space:]"''<>\\]+$', false)
+$$;
+
+-- 티켓 claims → {nm, img} (티켓에 있던 키만). 둘 다 없으면 null (예전 티켓)
+create or replace function public._mateyou_prof(c jsonb) returns jsonb
+language plpgsql immutable set search_path = public as $$
+declare o jsonb := '{}'::jsonb; n text; u text;
+begin
+  if c ? 'nm' then
+    if jsonb_typeof(c->'nm') = 'string' then n := left(btrim(regexp_replace(c->>'nm', '[[:cntrl:]]', '', 'g')), 40); end if;
+    o := o || jsonb_build_object('nm', nullif(n, ''));
+  end if;
+  if c ? 'img' then
+    if jsonb_typeof(c->'img') = 'string' and _mateyou_is_img(c->>'img') then u := c->>'img'; end if;
+    o := o || jsonb_build_object('img', u);
+  end if;
+  return nullif(o, '{}'::jsonb);
+end $$;
+
+-- 이름 · 사진 반영. 모에 사진이 비었거나 메이트유 사진이면 새 메이트유 사진을 따라가요 (없어졌으면 비워요)
+create or replace function public._mateyou_apply_prof(p_id bigint, p jsonb) returns void
+language sql security definer set search_path = public as $$
+  update staff set
+    mateyou_name = case when p ? 'nm' then p->>'nm' else staff.mateyou_name end,
+    mateyou_avatar = case when p ? 'img' then p->>'img' else staff.mateyou_avatar end,
+    avatar_url = case when p ? 'img' and (coalesce(staff.avatar_url, '') = '' or _mateyou_is_img(staff.avatar_url))
+                      then p->>'img' else staff.avatar_url end
+   where staff.id = p_id and p is not null
+$$;
+
 -- 메이트유 회원 m 을 모에 계정으로: 연결돼 있고 PIN 이 그대로면 세션(파트너+가 아니면 관리자만), 아니면 (PIN 이 바뀌었으면 연결을 풀고) 연결표
 drop function if exists public._mateyou_resolve(uuid);
-create or replace function public._mateyou_resolve(m uuid, p_pp boolean)
+drop function if exists public._mateyou_resolve(uuid, boolean);
+create or replace function public._mateyou_resolve(m uuid, p_pp boolean, p_prof jsonb)
 returns table(id bigint, name text, is_admin boolean, avatar_url text, pin_temp boolean, token text, link text, err text, pp boolean)
 language plpgsql security definer set search_path = public as $$
 #variable_conflict use_column
-declare s staff; lk text;
+declare s staff; lk text; av text;
 begin
   select * into s from staff where staff.mateyou_member_id = m;
   if s.id is not null and s.mateyou_pin_tag is not distinct from _mateyou_pin_tag(s.pin) then
@@ -152,20 +197,24 @@ begin
         '파트너+만 메이트유로 로그인할 수 있어요.'::text, p_pp;
       return;
     end if;
-    return query select s.id, s.name, s.is_admin, s.avatar_url, false, _mateyou_session(s.id), null::text, null::text, p_pp;
+    perform _mateyou_apply_prof(s.id, p_prof);
+    select staff.avatar_url into av from staff where staff.id = s.id;
+    return query select s.id, s.name, s.is_admin, av, false, _mateyou_session(s.id), null::text, null::text, p_pp;
     return;
   end if;
   if s.id is not null then
-    update staff set mateyou_member_id = null, mateyou_pin_tag = null, mateyou_pp = null where staff.id = s.id;
+    update staff set mateyou_member_id = null, mateyou_pin_tag = null, mateyou_pp = null, mateyou_name = null, mateyou_avatar = null
+     where staff.id = s.id;
   end if;
   delete from mateyou_link_tickets where expires_at < now();
   lk := 'ml_' || encode(extensions.gen_random_bytes(24), 'hex');
-  insert into mateyou_link_tickets(token_hash, member_id, expires_at, pp) values (_token_hash(lk), m, now() + interval '10 minutes', p_pp);
+  insert into mateyou_link_tickets(token_hash, member_id, expires_at, pp, prof) values (_token_hash(lk), m, now() + interval '10 minutes', p_pp, p_prof);
   return query select null::bigint, null::text, null::boolean, null::text, null::boolean, null::text, lk, null::text, p_pp;
 end $$;
 
 revoke execute on function public._b64url(text), public._mateyou_claims(text), public._mateyou_push_claims(text), public._mateyou_session(bigint),
-  public._mateyou_link_member(text), public._mateyou_pin_tag(text), public._mateyou_resolve(uuid, boolean) from public, anon, authenticated;
+  public._mateyou_link_member(text), public._mateyou_pin_tag(text), public._mateyou_is_img(text), public._mateyou_prof(jsonb),
+  public._mateyou_apply_prof(bigint, jsonb), public._mateyou_resolve(uuid, boolean, jsonb) from public, anon, authenticated;
 
 -- 1) 메이트유에서 돌아왔을 때. p_verifier: 이 브라우저가 로그인을 시작한 곳이면 그 비밀값 v (맞으면 결과를 바로),
 --    아니면 null (아이폰 홈 화면 앱이 따로 연 브라우저: state 로 맡기고 숫자를 돌려줘요)
@@ -177,7 +226,7 @@ create or replace function public.mateyou_signin(p_ticket text, p_verifier text 
 returns table(id bigint, name text, is_admin boolean, avatar_url text, pin_temp boolean, token text, link text, err text, code text, pp boolean)
 language plpgsql security definer set search_path = public as $$
 #variable_conflict use_column
-declare c jsonb; m uuid; cd text; ppv boolean;
+declare c jsonb; m uuid; cd text; ppv boolean; pf jsonb;
 begin
   c := _mateyou_claims(p_ticket);
   if c is null then
@@ -187,13 +236,14 @@ begin
   end if;
   ppv := coalesce(c->'pp' = 'true'::jsonb, false);
   m := (c->>'sub')::uuid;
+  pf := _mateyou_prof(c);
   if p_verifier is null then
     delete from mateyou_handoffs where expires_at < now();
     cd := lpad(((('x' || encode(extensions.gen_random_bytes(3), 'hex'))::bit(24)::int) % 10000)::text, 4, '0');
-    insert into mateyou_handoffs(state_hash, member_id, code_hash, tries, expires_at, pp)
-      values (_token_hash(c->>'state'), m, _token_hash((c->>'state') || ':' || cd), 0, now() + interval '5 minutes', ppv)
+    insert into mateyou_handoffs(state_hash, member_id, code_hash, tries, expires_at, pp, prof)
+      values (_token_hash(c->>'state'), m, _token_hash((c->>'state') || ':' || cd), 0, now() + interval '5 minutes', ppv, pf)
       on conflict (state_hash) do update set member_id = excluded.member_id, code_hash = excluded.code_hash, tries = 0,
-        expires_at = excluded.expires_at, pp = excluded.pp;
+        expires_at = excluded.expires_at, pp = excluded.pp, prof = excluded.prof;
     return query select null::bigint, null::text, null::boolean, null::text, null::boolean, null::text, null::text, null::text, cd, null::boolean;
     return;
   end if;
@@ -202,7 +252,7 @@ begin
       '메이트유 로그인을 다시 해 주세요.'::text, null::text, null::boolean;
     return;
   end if;
-  return query select r.id, r.name, r.is_admin, r.avatar_url, r.pin_temp, r.token, r.link, r.err, null::text, r.pp from _mateyou_resolve(m, ppv) r;
+  return query select r.id, r.name, r.is_admin, r.avatar_url, r.pin_temp, r.token, r.link, r.err, null::text, r.pp from _mateyou_resolve(m, ppv, pf) r;
 end $$;
 
 -- 1b) 홈 화면 앱: 메이트유 브라우저에 뜬 숫자 + 이 앱의 비밀값 v 로 맡겨 둔 결과 찾아가기. 맡긴 게 없으면 빈 결과
@@ -230,7 +280,7 @@ begin
     return;
   end if;
   delete from mateyou_handoffs where state_hash = h.state_hash;
-  return query select r.id, r.name, r.is_admin, r.avatar_url, r.pin_temp, r.token, r.link, r.err, r.pp from _mateyou_resolve(h.member_id, h.pp) r;
+  return query select r.id, r.name, r.is_admin, r.avatar_url, r.pin_temp, r.token, r.link, r.err, r.pp from _mateyou_resolve(h.member_id, h.pp, h.prof) r;
 end $$;
 
 -- 2) PIN 이 있는 사람: 이름 · PIN 으로 기존 계정에 연결. 틀린 PIN 은 staff_signin 과 똑같이 셉니다 (5번이면 잠김)
@@ -239,7 +289,7 @@ create or replace function public.mateyou_link(p_link text, p_name text, p_pin t
 returns table(id bigint, name text, is_admin boolean, avatar_url text, pin_temp boolean, token text, err text)
 language plpgsql security definer set search_path = public as $$
 #variable_conflict use_column
-declare t mateyou_link_tickets; m uuid; s staff; n int;
+declare t mateyou_link_tickets; m uuid; s staff; n int; av text;
 begin
   t := _mateyou_link_member(p_link);
   m := t.member_id;
@@ -263,10 +313,16 @@ begin
       return;
     end if;
     -- PIN 을 아는 사람이 이 이름의 연결을 정해요: 이 메이트유가 다른 이름에 붙어 있었으면 떼고, 이 이름에 다른 메이트유가 있었으면 바꿔요
-    update staff set mateyou_member_id = null, mateyou_pin_tag = null, mateyou_pp = null where staff.mateyou_member_id = m and staff.id <> s.id;
-    update staff set failed_attempts = 0, mateyou_member_id = m, mateyou_pin_tag = _mateyou_pin_tag(s.pin), mateyou_pp = t.pp where staff.id = s.id;
+    update staff set mateyou_member_id = null, mateyou_pin_tag = null, mateyou_pp = null, mateyou_name = null, mateyou_avatar = null
+     where staff.mateyou_member_id = m and staff.id <> s.id;
+    update staff set failed_attempts = 0, mateyou_member_id = m, mateyou_pin_tag = _mateyou_pin_tag(s.pin), mateyou_pp = t.pp,
+                     mateyou_name = case when staff.mateyou_member_id = m then staff.mateyou_name end,
+                     mateyou_avatar = case when staff.mateyou_member_id = m then staff.mateyou_avatar end
+     where staff.id = s.id;
+    perform _mateyou_apply_prof(s.id, t.prof);
+    select staff.avatar_url into av from staff where staff.id = s.id;
     delete from mateyou_link_tickets where member_id = m;
-    return query select s.id, s.name, s.is_admin, s.avatar_url, coalesce(s.pin_temp, false), _mateyou_session(s.id), null::text;
+    return query select s.id, s.name, s.is_admin, av, coalesce(s.pin_temp, false), _mateyou_session(s.id), null::text;
   else
     update staff set failed_attempts = staff.failed_attempts + 1,
                      locked = (staff.failed_attempts + 1 >= 5)
@@ -316,6 +372,8 @@ begin
     return;
   end if;
   insert into staff(name, pin, is_admin, mateyou_member_id, mateyou_pin_tag, mateyou_pp) values (nm, null, false, m, _mateyou_pin_tag(null), true) returning * into s;
+  perform _mateyou_apply_prof(s.id, t.prof);
+  select * into s from staff where staff.id = s.id;
   delete from mateyou_link_tickets where member_id = m;
   return query select s.id, s.name, s.is_admin, s.avatar_url, false, _mateyou_session(s.id), null::text;
 exception when unique_violation then
@@ -353,7 +411,7 @@ begin
     return;
   end if;
   -- PIN 이 바뀌어 무효가 된 연결은 풀어요 (정지도 같이 풀려요)
-  update staff set mateyou_member_id = null, mateyou_pin_tag = null, mateyou_pp = null
+  update staff set mateyou_member_id = null, mateyou_pin_tag = null, mateyou_pp = null, mateyou_name = null, mateyou_avatar = null
    where staff.mateyou_member_id is not null and staff.mateyou_pin_tag is distinct from _mateyou_pin_tag(staff.pin);
   update staff set mateyou_pp = (staff.mateyou_member_id = any(act))
    where staff.mateyou_member_id is not null and staff.mateyou_pp is distinct from (staff.mateyou_member_id = any(act));
@@ -405,7 +463,32 @@ begin
   end if;
 end $$;
 
+-- 6) 내 정보 (supabase-update.sql 의 my_profile 그대로 + 메이트유). 연결(PIN 지문이 그대로)돼 있을 때만 mateyou 가 나가요
+create or replace function public.my_profile(p_staff_id bigint, p_pin text)
+returns json language plpgsql security definer set search_path = public as $$
+declare v staff;
+begin
+  v := _verify(p_staff_id, p_pin);
+  if v.id is null then raise exception 'PIN이 올바르지 않습니다'; end if;
+  return json_build_object('name',v.name,'instagram',v.instagram,'avatar_url',v.avatar_url,'is_admin',v.is_admin,
+    'mateyou', case when v.mateyou_member_id is not null and v.mateyou_pin_tag is not distinct from _mateyou_pin_tag(v.pin)
+                    then json_build_object('name', v.mateyou_name, 'pp', v.mateyou_pp, 'avatar', v.mateyou_avatar) end);
+end; $$;
+
+-- 7) 메이트유 사진 쓰기: 저장된 메이트유 사진으로 바꿔요 (주소는 서버가 정해요). 바뀐 주소를 돌려줘요
+create or replace function public.use_mateyou_avatar(p_staff_id bigint, p_pin text)
+returns text language plpgsql security definer set search_path = public as $$
+declare v staff;
+begin
+  v := _verify(p_staff_id, p_pin);
+  if v.id is null then raise exception 'PIN이 올바르지 않습니다'; end if;
+  if v.mateyou_member_id is null or v.mateyou_pin_tag is distinct from _mateyou_pin_tag(v.pin) or v.mateyou_avatar is null then
+    raise exception '메이트유 사진이 없어요'; end if;
+  update staff set avatar_url = v.mateyou_avatar where staff.id = v.id;
+  return v.mateyou_avatar;
+end; $$;
+
 revoke execute on function public.mateyou_signin(text, text), public.mateyou_claim(text, text), public.mateyou_link(text, text, text),
-  public.mateyou_join(text, text), public.mateyou_partner_sync(text) from public;
+  public.mateyou_join(text, text), public.mateyou_partner_sync(text), public.use_mateyou_avatar(bigint, text) from public;
 grant execute on function public.mateyou_signin(text, text), public.mateyou_claim(text, text), public.mateyou_link(text, text, text),
-  public.mateyou_join(text, text), public.mateyou_partner_sync(text) to anon, authenticated;
+  public.mateyou_join(text, text), public.mateyou_partner_sync(text), public.use_mateyou_avatar(bigint, text) to anon, authenticated;
