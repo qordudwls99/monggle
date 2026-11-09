@@ -147,6 +147,8 @@
       const gone = away && Date.now() - away > 1500;
       away = 0;
       if (session) {
+        // 로그인한 채로 메이트유 연결(내 정보)을 하러 메이트유 앱에 다녀온 홈 화면 앱
+        if (gone && isStandalone() && isIOS() && myState() && !codeSheet) { openCodeEntry(); return; }
         if (String(session.pin || '').startsWith('tk_') && Date.now() - checked > 60000) { checked = Date.now(); A.api.check(); }
         return;
       }
@@ -228,6 +230,29 @@
       },
     });
     return loginSheet;
+  }
+
+  // 로그인한 채로 메이트유 연결 (내 정보 '연결 안 됨'). 다녀오면 연결 시트(이름 · PIN)가 떠요.
+  // 아이폰에서 앱으로 열 때는 앱이 없을 수 있어서 '웹에서 연결'도 있는 시트를 먼저 보여요
+  async function connectMateyou() {
+    if (A.MATEYOU_APP && isIOS()) {
+      if (loginSheet) return loginSheet;
+      prepMateyou();
+      loginSheet = A.sheet({
+        title: '메이트유 연결',
+        html: `<div class="login-f"><button type="button" class="btn lg my-login" data-l="mateyou"><img src="assets/mateyou.png" alt="" width="22" height="22">메이트유로 연결</button>
+          <button type="button" class="btn ghost my-web" data-l="mateyou-web">웹에서 연결</button></div>`,
+        actions: [{ label: '닫기' }],
+        onClose: () => { loginSheet = null; },
+        onOpen: el => {
+          el.querySelector('[data-l="mateyou"]').addEventListener('click', () => startMateyou(false));
+          el.querySelector('[data-l="mateyou-web"]').addEventListener('click', () => startMateyou(true));
+        },
+      });
+      return loginSheet;
+    }
+    if (!myNext) await prepMateyou();
+    startMateyou(false);
   }
 
   // 세션 일부 바꾸기 (사진·관리자 여부·임시 PIN 표시)
@@ -399,13 +424,13 @@
     if (pendingLink && !session) { openLink(pendingLink.link, pendingLink.pp); pendingLink = null; }
     if (pendingCode) { showCode(pendingCode); pendingCode = null; }
     watchReturn();
-    if (!session && !loginSheet && isStandalone() && isIOS() && myState()) openCodeEntry();   // 앱을 다시 켰을 때 이어서
+    if (!loginSheet && isStandalone() && isIOS() && myState()) openCodeEntry();   // 앱을 다시 켰을 때 이어서 (로그인한 채 연결 중이어도)
     if (session) setTimeout(maybeAskPush, 1200);
     if (isIOS() && !isStandalone() && !localStorage.getItem('install_dismiss')) showInstallBar();
   }
 
   A.auth = {
     openLogin, require: requireLogin, logout, expire, update, upgradeSession,
-    enablePush, pushOn, maybeAskPush, isIOS, isStandalone, boot, afterBoot, myLinks, myTarget,
+    enablePush, pushOn, maybeAskPush, isIOS, isStandalone, boot, afterBoot, myLinks, myTarget, connectMateyou,
   };
 }

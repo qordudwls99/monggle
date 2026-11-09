@@ -130,6 +130,9 @@ select.fld{appearance:none;-webkit-appearance:none}
 .menu-row svg{width:18px;height:18px;color:var(--muted)}
 .menu-row:active{background:var(--cell)}
 .menu-row small{font-size:13px;font-weight:600;color:var(--ink2)}
+.menu-row.ro{cursor:default}
+.menu-row.ro:active{background:none}
+.av.my-av{width:30px;height:30px;font-size:13px}
 
 /* 아주 좁은 화면(320): 매장 칩은 로고·이름만 */
 @media (max-width:359px){.chips{gap:4px}.chip{gap:5px;padding:0 4px}.chip img{width:24px;height:24px}.chip .ct b{font-size:13px}.chip .ct small{display:none}}

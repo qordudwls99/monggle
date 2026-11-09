@@ -52,6 +52,7 @@
   const realFrom = supa.from.bind(supa);
   const realStorage = supa.storage;
   const me = () => { try { return JSON.parse(localStorage.getItem(KEY) || 'null'); } catch (e) { return null; } };
+  const MY_AV = new URL('assets/logo-maid.jpg', location.href.replace(/\.ui-design\/v2-dev\/.*$/, 'v2/')).href;   // 가짜 메이트유 사진
   let nextId = 990000;
 
   // 쓰기 RPC 가 돌려줄 값: 새 id 가 필요한 것, 개수를 돌려주는 것, 나머지는 true
@@ -83,11 +84,15 @@
       return Promise.resolve(realRpc('staff_directory')).then(r => r.error ? r : {
         data: (r.data || []).map((s, i) => ({ ...s, has_pin: i % 6 !== 5, locked: i % 9 === 4, pin_temp: i % 7 === 3 })), error: null, status: 200 });
     }
+    // 내 정보의 메이트유: &myp=linked 연결(이름 · 파트너+ · 사진) · noname 연결됐는데 이름 · 사진 아직 없음 · admin 파트너+ 아닌 관리자 · 기본은 연결 안 됨
     if (fn === 'my_profile') {
       if (FAIL_STALE) return stale();
-      const s = me() || {};
-      return ok({ name: s.name || '', instagram: '', avatar_url: s.avatar || null, is_admin: !!s.is_admin });
+      const s = me() || {}, myp = q.get('myp');
+      const mateyou = myp === 'linked' ? { name: '메이트유닉네임', pp: true, avatar: MY_AV } : myp === 'noname' ? { name: null, pp: true, avatar: null }
+        : myp === 'admin' ? { name: '사장님', pp: false, avatar: MY_AV } : null;
+      return ok({ name: s.name || '', instagram: '', avatar_url: s.avatar || null, is_admin: !!s.is_admin, mateyou });
     }
+    if (fn === 'use_mateyou_avatar') { log(fn, args); return FAIL_STALE ? stale() : ok(MY_AV); }
     if (fn === 'my_submission') return FAIL_STALE ? stale() : ok([]);
     if (fn === 'staff_signin') {
       log(fn, args);

@@ -399,6 +399,9 @@ select.fld{appearance:none;-webkit-appearance:none}
 .menu-row svg{width:18px;height:18px;color:var(--muted)}
 .menu-row:active{background:var(--cell)}
 .menu-row small{font-size:13px;font-weight:600;color:var(--ink2)}
+.menu-row.ro{cursor:default}
+.menu-row.ro:active{background:none}
+.av.my-av{width:30px;height:30px;font-size:13px}
 
 /* 아주 좁은 화면(320): 매장 칩은 로고·이름만 */
 @media (max-width:359px){.chips{gap:4px}.chip{gap:5px;padding:0 4px}.chip img{width:24px;height:24px}.chip .ct b{font-size:13px}.chip .ct small{display:none}}
@@ -1885,6 +1888,8 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
       const gone = away && Date.now() - away > 1500;
       away = 0;
       if (session) {
+        // 로그인한 채로 메이트유 연결(내 정보)을 하러 메이트유 앱에 다녀온 홈 화면 앱
+        if (gone && isStandalone() && isIOS() && myState() && !codeSheet) { openCodeEntry(); return; }
         if (String(session.pin || '').startsWith('tk_') && Date.now() - checked > 60000) { checked = Date.now(); A.api.check(); }
         return;
       }
@@ -1966,6 +1971,29 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
       },
     });
     return loginSheet;
+  }
+
+  // 로그인한 채로 메이트유 연결 (내 정보 '연결 안 됨'). 다녀오면 연결 시트(이름 · PIN)가 떠요.
+  // 아이폰에서 앱으로 열 때는 앱이 없을 수 있어서 '웹에서 연결'도 있는 시트를 먼저 보여요
+  async function connectMateyou() {
+    if (A.MATEYOU_APP && isIOS()) {
+      if (loginSheet) return loginSheet;
+      prepMateyou();
+      loginSheet = A.sheet({
+        title: '메이트유 연결',
+        html: `<div class="login-f"><button type="button" class="btn lg my-login" data-l="mateyou"><img src="assets/mateyou.png" alt="" width="22" height="22">메이트유로 연결</button>
+          <button type="button" class="btn ghost my-web" data-l="mateyou-web">웹에서 연결</button></div>`,
+        actions: [{ label: '닫기' }],
+        onClose: () => { loginSheet = null; },
+        onOpen: el => {
+          el.querySelector('[data-l="mateyou"]').addEventListener('click', () => startMateyou(false));
+          el.querySelector('[data-l="mateyou-web"]').addEventListener('click', () => startMateyou(true));
+        },
+      });
+      return loginSheet;
+    }
+    if (!myNext) await prepMateyou();
+    startMateyou(false);
   }
 
   // 세션 일부 바꾸기 (사진·관리자 여부·임시 PIN 표시)
@@ -2137,14 +2165,14 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
     if (pendingLink && !session) { openLink(pendingLink.link, pendingLink.pp); pendingLink = null; }
     if (pendingCode) { showCode(pendingCode); pendingCode = null; }
     watchReturn();
-    if (!session && !loginSheet && isStandalone() && isIOS() && myState()) openCodeEntry();   // 앱을 다시 켰을 때 이어서
+    if (!loginSheet && isStandalone() && isIOS() && myState()) openCodeEntry();   // 앱을 다시 켰을 때 이어서 (로그인한 채 연결 중이어도)
     if (session) setTimeout(maybeAskPush, 1200);
     if (isIOS() && !isStandalone() && !localStorage.getItem('install_dismiss')) showInstallBar();
   }
 
   A.auth = {
     openLogin, require: requireLogin, logout, expire, update, upgradeSession,
-    enablePush, pushOn, maybeAskPush, isIOS, isStandalone, boot, afterBoot, myLinks, myTarget,
+    enablePush, pushOn, maybeAskPush, isIOS, isStandalone, boot, afterBoot, myLinks, myTarget, connectMateyou,
   };
 }
 
@@ -3956,11 +3984,17 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
   function open({ focus, note } = {}) {
     const s = A.session;
     if (!s) { A.auth.openLogin(); return; }
-    let ig = '', igLoaded = false;
+    let ig = '', igLoaded = false, myAv = null;
+    // 메이트유 줄: 연결돼 있으면 이름 · 파트너+ (누를 것 없음), 아니면 '연결 안 됨' → 메이트유 연결
+    const myRow = (m, failed) => m || failed
+      ? `<div class="menu-row ro" data-m="my"><span class="ac-l">메이트유<small>${failed ? '불러오지 못했어요' : esc([m.name || '연결됨', m.pp === true ? '파트너+' : ''].filter(Boolean).join(' · '))}</small></span></div>`
+      : `<button class="menu-row" data-m="my"><span class="ac-l">메이트유<small>연결 안 됨</small></span>${A.ICON.chev}</button>`;
     const html = `<div class="me-card"><span data-av>${A.avatar({ name: s.name, avatar: s.avatar }, 'me-av lg')}</span><div><b>${esc(s.name)}</b><span class="tag soft">${s.is_admin ? '관리자' : '직원'}</span></div></div>
       <div class="menu-list">
         <button class="menu-row" data-m="photo"><span>프로필 사진 바꾸기</span>${A.ICON.chev}</button>
+        <button class="menu-row" data-m="myphoto" hidden><span>메이트유 사진 쓰기</span><span data-myav></span></button>
         <button class="menu-row" data-m="ig"><span class="ac-l">인스타그램<small data-ig>불러오는 중…</small></span>${A.ICON.chev}</button>
+        ${A.MATEYOU_ON ? '<div class="menu-row ro" data-m="my"><span class="ac-l">메이트유<small>불러오는 중…</small></span></div>' : ''}
         <button class="menu-row" data-m="pin"><span class="ac-l">PIN 바꾸기${s.pin_temp ? '<small class="ac-warn">임시 PIN이에요</small>' : ''}</span>${A.ICON.chev}</button>
         <button class="menu-row" data-m="push"><span class="ac-l">푸시 알림<small data-push>확인 중…</small></span>${A.ICON.chev}</button>
       </div>`;
@@ -3971,20 +4005,57 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
         c(); A.auth.logout();
       } }],
       onOpen: el => {
-        const igEl = el.querySelector('[data-ig]'), pushEl = el.querySelector('[data-push]');
+        const igEl = el.querySelector('[data-ig]'), pushEl = el.querySelector('[data-push]'), phEl = el.querySelector('[data-m="myphoto"]');
         const showIg = () => { igEl.textContent = igLoaded ? (ig ? ig : '아직 없어요') : '불러오지 못했어요'; };
+        const setAv = url => { const box = el.querySelector('[data-av]'); if (box) box.innerHTML = A.avatar({ name: s.name, avatar: url }, 'me-av lg'); };
+        // 메이트유 줄 · '메이트유 사진 쓰기'(메이트유 사진이 있고 지금 사진과 다를 때만)
+        const showMy = (d, failed) => {
+          const row = el.querySelector('[data-m="my"]');
+          if (row) {
+            row.outerHTML = myRow(d && d.mateyou, failed);
+            const b = el.querySelector('button[data-m="my"]');
+            if (b) b.onclick = () => A.auth.connectMateyou();
+          }
+          const m = d && d.mateyou, cur = (d && d.avatar_url) || null;
+          myAv = m && m.avatar && m.avatar !== cur ? m.avatar : null;
+          phEl.hidden = !myAv;
+          phEl.querySelector('[data-myav]').innerHTML = myAv ? A.avatar({ name: s.name, avatar: myAv }, 'av my-av') : '';
+        };
         const loadIg = async () => {
           const cur = A.session; if (!cur) return;
           const r = await A.api.direct('my_profile', { p_staff_id: cur.id, p_pin: cur.pin });
-          if (!r.error && r.data) { ig = r.data.instagram || ''; igLoaded = true; }
-          if (document.contains(igEl)) showIg();
+          const okd = !r.error && r.data;
+          if (okd) { ig = r.data.instagram || ''; igLoaded = true; }
+          if (!document.contains(igEl)) return;
+          showIg();
+          if (!okd) { if (A.MATEYOU_ON) showMy(null, true); return; }
+          // 다른 기기나 메이트유 로그인으로 사진이 바뀌었으면 이 기기도 맞춰요
+          const av = r.data.avatar_url || null;
+          if (A.session && av !== (A.session.avatar || null)) { A.auth.update({ avatar: av }); setAv(av); }
+          if (A.MATEYOU_ON) showMy(r.data, false);
         };
         const loadPush = async () => { const on = await A.auth.pushOn(); if (document.contains(pushEl)) pushEl.textContent = on ? '이 기기에서 켜져 있어요' : '꺼져 있어요'; return on; };
         loadIg(); loadPush();
         el.querySelector('[data-m="photo"]').onclick = () => pickPhoto(url => {
           const box = el.querySelector('[data-av]');
           if (box && document.contains(box)) box.innerHTML = A.avatar({ name: s.name, avatar: url }, 'me-av lg');
+          if (document.contains(phEl)) loadIg();   // 메이트유 사진 쓰기 줄을 다시 정해요
         });
+        let myBusy = false;
+        phEl.onclick = async () => {
+          if (!myAv || myBusy) return;
+          if (!await A.confirm({ title: '메이트유 사진으로 바꿀까요?', ok: '바꾸기' })) return;
+          const cur = A.session; if (!cur) return;
+          myBusy = true;
+          const url = await A.api.rpc('use_mateyou_avatar', { p_staff_id: cur.id });
+          myBusy = false;
+          if (url === false || typeof url !== 'string') return;
+          A.auth.update({ avatar: url });
+          if (document.contains(phEl)) { setAv(url); myAv = null; phEl.hidden = true; }
+          A.store.invalidateAll();
+          await A.render({ keep: true });
+          A.toast('사진을 바꿨어요');
+        };
         el.querySelector('[data-m="ig"]').onclick = async () => {
           if (!igLoaded) await loadIg();
           if (!igLoaded) { A.toast('인스타 정보를 불러오지 못했어요. 잠시 뒤에 다시 해 주세요', true); return; }   // 빈 값으로 덮어쓰지 않게
