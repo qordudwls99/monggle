@@ -278,12 +278,14 @@
   function openLogin() {
     if (loginSheet) return loginSheet;
     let busy = false;
+    // 메이트유가 먼저 (2026-11-09 메이트유로 옮기기 2단계). 이름 · PIN 은 연결률 90% 넘으면 닫아요
     const html = `<div class="login-f">
+      ${A.MATEYOU_ON ? '<button type="button" class="btn lg my-login" data-l="mateyou"><img src="assets/mateyou.png" alt="" width="22" height="22">메이트유로 로그인</button>' : ''}
+      ${A.MATEYOU_ON && A.MATEYOU_APP && isIOS() ? '<button type="button" class="btn ghost my-web" data-l="mateyou-web">웹에서 로그인</button>' : ''}
+      ${A.MATEYOU_ON ? '<div class="login-sep" role="separator"></div>' : ''}
       <label class="fld-l">이름<input class="fld" data-l="name" autocomplete="username" autocapitalize="off" spellcheck="false" maxlength="30"></label>
       <label class="fld-l">PIN<input class="fld" data-l="pin" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="current-password" placeholder="숫자 6자리"></label>
-      <p class="sheet-err" hidden></p>
-      ${A.MATEYOU_ON ? '<button type="button" class="btn lg my-login" data-l="mateyou"><img src="assets/mateyou.png" alt="" width="22" height="22">메이트유로 로그인</button>' : ''}
-      ${A.MATEYOU_ON && A.MATEYOU_APP && isIOS() ? '<button type="button" class="btn ghost my-web" data-l="mateyou-web">웹에서 로그인</button>' : ''}</div>`;
+      <p class="sheet-err" hidden></p></div>`;
     const submit = async (close, el) => {
       if (busy) return;
       const nameEl = el.querySelector('[data-l="name"]'), pinEl = el.querySelector('[data-l="pin"]'), err = el.querySelector('.sheet-err');
@@ -318,7 +320,7 @@
         if (myBtn) { prepMateyou(); myBtn.addEventListener('click', () => startMateyou(false)); }
         const myWeb = el.querySelector('[data-l="mateyou-web"]');
         if (myWeb) myWeb.addEventListener('click', () => startMateyou(true));
-        nameEl.focus();
+        if (!myBtn) nameEl.focus();
       },
     });
     return loginSheet;

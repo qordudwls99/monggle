@@ -276,7 +276,7 @@
     const host = document.getElementById('screen');
     const root = document.createElement('div');
     root.className = 'screen-root gate';
-    root.innerHTML = `${emptyBox('lock', '직원만 볼 수 있어요', '이름과 PIN으로 로그인해 주세요')}
+    root.innerHTML = `${emptyBox('lock', '직원만 볼 수 있어요', A.MATEYOU_ON ? '메이트유로 로그인해 주세요' : '이름과 PIN으로 로그인해 주세요')}
       <div class="gate-a"><button class="btn lg primary" id="gateLogin">로그인</button><a class="gate-guest" href="/v2/main.html">손님용 출근표 보기</a></div>`;
     root.querySelector('#gateLogin').onclick = () => A.auth.openLogin();
     host.replaceChildren(root);

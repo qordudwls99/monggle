@@ -229,9 +229,10 @@
 
   function staffSec(staff) {
     // 메이트유 연결률 (90% 넘으면 이름 · PIN 로그인을 닫아요, 2026-11-09). 내림해서 90% 를 일찍 보여 주지 않아요
+    // 직원 추가는 없어요: 새 직원은 메이트유로 로그인해 '새로 가입'으로 들어와요 (2026-11-09 메이트유로 옮기기 2단계)
     const known = staff.filter(s => typeof s.mateyou === 'boolean'), linked = known.filter(s => s.mateyou).length;
     const myRate = known.length ? `<span class="ad-myr">메이트유 연결 ${Math.floor(linked * 100 / known.length)}%</span>` : '';
-    return `<section class="sec ad-sec" id="adStaffSec"><div class="sec-h"><h2>직원 ${staff.length}명${myRate}</h2><button class="btn sm ad-addb" id="adStaffAdd">${I.plus}직원 추가</button></div>
+    return `<section class="sec ad-sec" id="adStaffSec"><div class="sec-h"><h2>직원 ${staff.length}명${myRate}</h2></div>
       <input class="fld" id="adQ" type="search" placeholder="이름 찾기 (초성도 돼요)" aria-label="직원 이름 찾기" autocomplete="off" value="${esc(query)}">
       <div class="seg ad-filt" role="group" aria-label="직원 거르기" id="adFilt"></div>
       <p class="ad-found" id="adFound" aria-live="polite"></p>
@@ -263,7 +264,6 @@
   function bindStaff(el, staff) {
     staffFilters(el, staff); staffRows(el, staff);
     el.querySelector('#adQ').oninput = e => { query = e.target.value; staffRows(el, staff); };
-    el.querySelector('#adStaffAdd').onclick = () => openStaffAdd(staff);
     el.querySelector('#adBulkPin').onclick = bulkPin;
   }
 
@@ -335,35 +335,6 @@
     if (!await A.confirm({ title: `${s.name}님을 삭제할까요?`, text: '배정된 근무는 빈 자리가 돼요. 되돌릴 수 없어요.', ok: '삭제', danger: true })) return;
     if (await A.api.rpc('admin_delete_staff', { p_admin_id: me().id, p_target_id: Number(s.id) }) === false) return;
     await after(`${s.name}님을 삭제했어요`);
-  }
-  function openStaffAdd(staff) {
-    let admin = false, busy = false;
-    A.sheet({
-      title: '직원 추가',
-      html: `<label class="fld-l">이름<input class="fld" data-nm maxlength="30" autocomplete="off" placeholder="예: 하나"></label>
-        <label class="fld-l">PIN (숫자 6자리, 없으면 비워 둬요)<input class="fld" data-pin inputmode="numeric" maxlength="6" autocomplete="off" placeholder="숫자 6자리"></label>
-        <div class="seg" role="group" aria-label="권한"><button type="button" class="on" data-r="0" aria-pressed="true">직원</button><button type="button" data-r="1" aria-pressed="false">관리자</button></div>
-        <p class="sheet-note">PIN 없이 추가하면 로그인할 수 없어요. 나중에 PIN을 정해 주세요.</p><p class="sheet-err" hidden></p>`,
-      onOpen: el => {
-        el.querySelector('[data-nm]').focus();
-        el.querySelectorAll('[data-r]').forEach(b => b.onclick = () => {
-          admin = b.dataset.r === '1';
-          el.querySelectorAll('[data-r]').forEach(x => { x.classList.toggle('on', x === b); x.setAttribute('aria-pressed', String(x === b)); });
-        });
-      },
-      actions: [{ label: '취소' }, { label: '추가', kind: 'primary', onClick: async (close, el) => {
-        if (busy) return;
-        const name = el.querySelector('[data-nm]').value.trim(), pin = el.querySelector('[data-pin]').value.trim(), err = el.querySelector('.sheet-err');
-        const bad = !name ? '이름을 적어 주세요' : staff.some(x => x.name === name) ? '이미 있는 이름이에요' : pin && pinCheck(pin) ? pinCheck(pin) : '';
-        if (bad) { err.hidden = false; err.textContent = bad; return; }
-        busy = true;
-        const r = await A.api.rpc('admin_add_staff', { p_admin_id: me().id, p_name: name, p_new_pin: pin, p_is_admin: admin });
-        busy = false;
-        if (r === false) return;
-        query = ''; close();
-        await after(`${name}님을 추가했어요`, null);
-      } }],
-    });
   }
   async function bulkPin() {
     const np = await A.prompt({ title: '임시 PIN 한 번에 정하기', text: 'PIN이 없는 직원에게 같은 임시 PIN을 정해요. 다음 로그인 때 자기 PIN으로 바꾸게 해요.', label: '임시 PIN (숫자 6자리)', inputmode: 'numeric', maxlength: 6, validate: pinCheck, ok: '정하기' });
