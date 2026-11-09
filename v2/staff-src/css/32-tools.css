@@ -92,5 +92,6 @@
 .ex-nav{width:44px;height:44px;border:none;background:var(--fill);border-radius:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--ink)}
 .ex-nav svg{width:18px;height:18px}
 .ex-nav.prev svg{transform:rotate(180deg)}
-.ex-prev{display:flex;justify-content:center;min-height:200px}
-.ex-prev canvas{display:block;max-width:100%;max-height:58vh;width:auto;height:auto;border-radius:10px}
+/* 미리보기는 줄어들지 않고(시트가 스크롤돼요), 크기는 JS 가 비율대로 정해요. Safari 는 늘어난 높이에 폭을 맞추지 않아 찌부가 됐어요 */
+.ex-prev{display:flex;justify-content:center;align-items:flex-start;flex:none;min-height:200px}
+.ex-prev canvas{display:block;flex:none;max-width:100%;object-fit:contain;border-radius:10px}

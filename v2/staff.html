@@ -948,8 +948,9 @@ button.nt-p:focus-visible,button.nt-pb:focus-visible{outline:2px solid var(--ink
 .ex-nav{width:44px;height:44px;border:none;background:var(--fill);border-radius:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--ink)}
 .ex-nav svg{width:18px;height:18px}
 .ex-nav.prev svg{transform:rotate(180deg)}
-.ex-prev{display:flex;justify-content:center;min-height:200px}
-.ex-prev canvas{display:block;max-width:100%;max-height:58vh;width:auto;height:auto;border-radius:10px}
+/* 미리보기는 줄어들지 않고(시트가 스크롤돼요), 크기는 JS 가 비율대로 정해요. Safari 는 늘어난 높이에 폭을 맞추지 않아 찌부가 됐어요 */
+.ex-prev{display:flex;justify-content:center;align-items:flex-start;flex:none;min-height:200px}
+.ex-prev canvas{display:block;flex:none;max-width:100%;object-fit:contain;border-radius:10px}
 </style>
 </head>
 <body data-theme="all">
@@ -5134,7 +5135,10 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
         if (!alive || me !== seq) return;
         // 공유는 누른 직후에 불러야 해서 PNG 는 미리 만들어 둬요
         png = new Promise(r => cv.toBlob(r, 'image/png'));
-        box.replaceChildren(thumb(cv, box.clientWidth * (window.devicePixelRatio || 1))); btn.disabled = false;
+        // 보이는 크기는 폭과 화면 높이 58% 안에서 비율대로 직접 정해요 (엔진마다 auto 크기 계산이 달라서)
+        const t = thumb(cv, box.clientWidth * (window.devicePixelRatio || 1)), k = Math.min(box.clientWidth / cv.width, window.innerHeight * .58 / cv.height);
+        const w = Math.floor(cv.width * k); t.style.width = `${w}px`; t.style.height = `${Math.round(w * cv.height / cv.width)}px`;
+        box.replaceChildren(t); btn.disabled = false;
       } catch (e) {
         if (alive && me === seq) box.innerHTML = A.emptyBox('cal', '이미지를 만들지 못했어요', (e && e.message) || '');
       }

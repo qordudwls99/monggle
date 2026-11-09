@@ -297,7 +297,10 @@
         if (!alive || me !== seq) return;
         // 공유는 누른 직후에 불러야 해서 PNG 는 미리 만들어 둬요
         png = new Promise(r => cv.toBlob(r, 'image/png'));
-        box.replaceChildren(thumb(cv, box.clientWidth * (window.devicePixelRatio || 1))); btn.disabled = false;
+        // 보이는 크기는 폭과 화면 높이 58% 안에서 비율대로 직접 정해요 (엔진마다 auto 크기 계산이 달라서)
+        const t = thumb(cv, box.clientWidth * (window.devicePixelRatio || 1)), k = Math.min(box.clientWidth / cv.width, window.innerHeight * .58 / cv.height);
+        const w = Math.floor(cv.width * k); t.style.width = `${w}px`; t.style.height = `${Math.round(w * cv.height / cv.width)}px`;
+        box.replaceChildren(t); btn.disabled = false;
       } catch (e) {
         if (alive && me === seq) box.innerHTML = A.emptyBox('cal', '이미지를 만들지 못했어요', (e && e.message) || '');
       }
