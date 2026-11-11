@@ -4127,6 +4127,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
         <button class="menu-row" data-m="pin"><span class="ac-l">PIN 바꾸기${s.pin_temp ? '<small class="ac-warn">임시 PIN이에요</small>' : ''}</span>${A.ICON.chev}</button>
         <button class="menu-row" data-m="push"><span class="ac-l">푸시 알림<small data-push>확인 중…</small></span>${A.ICON.chev}</button>
         <button class="menu-row" data-m="guide"><span>사용법</span>${A.ICON.chev}</button>
+        <button class="menu-row" data-m="oldui"><span>예전 화면으로</span>${A.ICON.chev}</button>
       </div>`;
     const sh = A.sheet({
       title: '내 정보', html,
@@ -4201,6 +4202,11 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
         };
         el.querySelector('[data-m="pin"]').onclick = () => openPin();
         el.querySelector('[data-m="guide"]').onclick = () => A.guide.open();
+        // 이 기기의 새 화면 켜기(ui_v2, 옛 /staff.html 머리에서 읽어요)를 끄고 예전 화면으로. 옛 화면의 '바꾸기' 띠도 다시 안 띄워요
+        el.querySelector('[data-m="oldui"]').onclick = () => {
+          try { localStorage.removeItem('ui_v2'); localStorage.setItem('ui_v2_x', '1'); } catch (e) { /* 저장 못 하면 이번만 */ }
+          location.replace('/staff.html' + location.hash);
+        };
         el.querySelector('[data-m="push"]').onclick = async () => {
           if (await A.auth.pushOn()) { A.toast('이 기기는 알림이 켜져 있어요'); return; }
           await A.auth.enablePush();
