@@ -3,6 +3,11 @@
 <head>
 <!-- Lucide icons © Lucide Contributors (ISC License) — https://lucide.dev -->
 <meta charset="UTF-8" />
+<script>
+/* 주소는 늘 / (2026-11-11 사장님: 저장한 링크가 나중에 합쳐도 그대로 쓰이게).
+   /v2/main.html 로 열리면 이 기기를 새 디자인으로 켜고(ui_v2_main) 주소만 / 로 바꿔요. 그림은 /v2/assets/ 로 적어요 */
+(function(){try{if(location.pathname==='/v2/main.html'){localStorage.setItem('ui_v2_main','1');history.replaceState(history.state,'','/'+location.search+location.hash);}}catch(e){}})();
+</script>
 <meta name="robots" content="noindex, nofollow" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
 <title>모에 스케줄</title>
@@ -954,7 +959,7 @@ const BUILDING = '<svg viewBox="0 0 30 30" aria-hidden="true"><circle cx="15" cy
 function renderChips(){
   const c = $('wpChips');
   c.innerHTML = ['전체',...FLOORS.map(f=>f[0])].map(w=>{ const t=THEMES[w];
-    const ic = w==='전체' ? `<span class="tab-ic">${BUILDING}</span>` : `<img src="assets/logo-${t.key}.jpg" alt="" onerror="this.dataset.missing=1">`;
+    const ic = w==='전체' ? `<span class="tab-ic">${BUILDING}</span>` : `<img src="/v2/assets/logo-${t.key}.jpg" alt="" onerror="this.dataset.missing=1">`;
     const label = w==='전체' ? '전체' : `${floorOf(w)} ${w}`;
     return `<button class="tab${w===wpFilter?' on':''}" data-w="${w}" style="--c:${t.c};--ci:${t.ci}"${w===wpFilter?' aria-current="true"':''}>${ic}<span>${label}</span></button>`; }).join('');
   c.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{ wpFilter=b.dataset.w; applyTheme(wpFilter); renderChips(); navDir=0; render(); });
@@ -1095,7 +1100,7 @@ function buildDay(){
     const t = THEMES[wp];
     const cnt = isClosed ? '휴무' : nightHrs ? `주간 ${named.length} · 야간 ${mem.length}` : `${named.length}명`;
     // 매장 이름(로고)을 누르면 공식 인스타그램으로
-    const head = `<a class="store" href="${t.ig}" target="_blank" rel="noopener" aria-label="${wp} 공식 인스타그램"><img src="assets/logo-${t.key}.jpg" alt="" onerror="this.remove()"><span class="fl">${floorOf(wp)}</span><b>${wp}</b><span class="ig-mini">${IG_SVG}</span></a>`;
+    const head = `<a class="store" href="${t.ig}" target="_blank" rel="noopener" aria-label="${wp} 공식 인스타그램"><img src="/v2/assets/logo-${t.key}.jpg" alt="" onerror="this.remove()"><span class="fl">${floorOf(wp)}</span><b>${wp}</b><span class="ig-mini">${IG_SVG}</span></a>`;
     html += `<section class="floor" data-theme="${t.key}"><div class="floor-h">${head}<span class="cnt">${isClosed?'':guestPill(guests)}${cnt}</span></div>${inner}</section>`;
   });
   return (total===0 || (all && !shown))
@@ -1372,7 +1377,7 @@ async function openFinder(){
 function drawFinder(){
   if(!fPeople.length) return;
   const q = $('fQ').value, list = fPeople.filter(p=>nameHit(p.name, q));
-  $('fList').innerHTML = list.length ? `<div class="f-grid">${list.map(p=>`<button class="f-tile" data-fid="${esc(p.id)}"><span class="f-pic" style="${avStyle(p.avatar||`assets/logo-${THEMES[topFloor(p)].key}.jpg`)}"></span><b>${esc(p.name)}</b></button>`).join('')}</div>`
+  $('fList').innerHTML = list.length ? `<div class="f-grid">${list.map(p=>`<button class="f-tile" data-fid="${esc(p.id)}"><span class="f-pic" style="${avStyle(p.avatar||`/v2/assets/logo-${THEMES[topFloor(p)].key}.jpg`)}"></span><b>${esc(p.name)}</b></button>`).join('')}</div>`
     : `<div class="none">'${esc(q.trim())}' 이름이 없어요</div>`;
   // 고른 달에 출근이 없으면 마지막으로 출근한 달을 열어요
   $('fList').querySelectorAll('[data-fid]').forEach(b=>b.onclick=()=>{ const p=fPeople.find(x=>String(x.id)===b.dataset.fid); if(!p) return; const ym=ymOf(selectedDate); fSheet.close(); openPerson(p, p.months.has(ym) ? ym : [...p.months].sort().pop()); });

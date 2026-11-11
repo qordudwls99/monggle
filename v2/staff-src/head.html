@@ -2,6 +2,11 @@
 <html lang="ko">
 <head>
 <meta charset="utf-8">
+<script>
+/* 주소는 늘 /staff.html (2026-11-11 사장님: 저장한 링크가 나중에 합쳐도 그대로 쓰이게).
+   /v2/staff.html 로 열리면 이 기기를 새 화면으로 켜고(ui_v2) 주소만 /staff.html 로 바꿔요. 그림 · 파일은 /v2/assets/ 로 적어요 */
+(function(){try{if(location.pathname==='/v2/staff.html'){localStorage.setItem('ui_v2','1');history.replaceState(history.state,'','/staff.html'+location.search+location.hash);}}catch(e){}})();
+</script>
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="robots" content="noindex, nofollow">
 <title>모에 스케줄 · 직원용</title>
@@ -18,7 +23,7 @@
   <header class="top" id="top"></header>
   <div class="bars" id="bars">
     <div class="installbar" id="myBar" hidden>
-      <img class="ib-my" src="assets/mateyou.png" alt="" width="22" height="22">
+      <img class="ib-my" src="/v2/assets/mateyou.png" alt="" width="22" height="22">
       <span class="ib-t">메이트유 계정을 연결할까요?</span>
       <button class="btn sm ib-go" id="myBarBtn">연결</button>
       <button class="ib-x" id="myBarX" aria-label="닫기"></button>

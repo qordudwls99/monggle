@@ -75,7 +75,7 @@
   };
   const images = new Map();
   const imageOf = key => {
-    if (!images.has(key)) images.set(key, new Promise((ok, no) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => { images.delete(key); no(new Error('배경을 불러오지 못했어요')); }; i.src = `assets/export-${key}.jpg`; }));
+    if (!images.has(key)) images.set(key, new Promise((ok, no) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => { images.delete(key); no(new Error('배경을 불러오지 못했어요')); }; i.src = `/v2/assets/export-${key}.jpg`; }));
     return images.get(key);
   };
 

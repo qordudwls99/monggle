@@ -31,7 +31,7 @@
   };
   const floorOf = wp => (FLOORS.find(f => f[0] === wp) || [])[1] || '';
   const themeKey = wp => (THEMES[wp] || THEMES['전체']).key;
-  const logo = wp => `assets/logo-${themeKey(wp)}.jpg`;
+  const logo = wp => `/v2/assets/logo-${themeKey(wp)}.jpg`;
   // 층 번호는 출근표 층 머리와 매장 칩에만. 나머지 문장·표시는 매장 이름만
   const storeName = wp => wp;
   // 받침에 따라 을/를 같은 조사 고르기

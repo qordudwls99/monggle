@@ -3,6 +3,11 @@
 <html lang="ko">
 <head>
 <meta charset="utf-8">
+<script>
+/* 주소는 늘 /staff.html (2026-11-11 사장님: 저장한 링크가 나중에 합쳐도 그대로 쓰이게).
+   /v2/staff.html 로 열리면 이 기기를 새 화면으로 켜고(ui_v2) 주소만 /staff.html 로 바꿔요. 그림 · 파일은 /v2/assets/ 로 적어요 */
+(function(){try{if(location.pathname==='/v2/staff.html'){localStorage.setItem('ui_v2','1');history.replaceState(history.state,'','/staff.html'+location.search+location.hash);}}catch(e){}})();
+</script>
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="robots" content="noindex, nofollow">
 <title>모에 스케줄 · 직원용</title>
@@ -995,7 +1000,7 @@ button.nt-p:focus-visible,button.nt-pb:focus-visible{outline:2px solid var(--ink
   <header class="top" id="top"></header>
   <div class="bars" id="bars">
     <div class="installbar" id="myBar" hidden>
-      <img class="ib-my" src="assets/mateyou.png" alt="" width="22" height="22">
+      <img class="ib-my" src="/v2/assets/mateyou.png" alt="" width="22" height="22">
       <span class="ib-t">메이트유 계정을 연결할까요?</span>
       <button class="btn sm ib-go" id="myBarBtn">연결</button>
       <button class="ib-x" id="myBarX" aria-label="닫기"></button>
@@ -1410,7 +1415,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
   };
   const floorOf = wp => (FLOORS.find(f => f[0] === wp) || [])[1] || '';
   const themeKey = wp => (THEMES[wp] || THEMES['전체']).key;
-  const logo = wp => `assets/logo-${themeKey(wp)}.jpg`;
+  const logo = wp => `/v2/assets/logo-${themeKey(wp)}.jpg`;
   // 층 번호는 출근표 층 머리와 매장 칩에만. 나머지 문장·표시는 매장 이름만
   const storeName = wp => wp;
   // 받침에 따라 을/를 같은 조사 고르기
@@ -1830,7 +1835,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
     myNext = { v, s: hex(new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(v)))).slice(0, 32) };
   }
   function myLinks(s) {
-    const q = `state=${s}&return=${encodeURIComponent(location.origin + location.pathname)}`, web = `${MY_URL}?${q}`;
+    const q = `state=${s}&return=${encodeURIComponent(location.origin + (location.pathname === '/staff.html' ? '/v2/staff.html' : location.pathname))}`, web = `${MY_URL}?${q}`;
     return {
       web, app: `mateyou://connect/moetable?${q}`,
       intent: `intent://connect/moetable?${q}#Intent;scheme=mateyou;package=${MY_PKG};S.browser_fallback_url=${encodeURIComponent(web)};end`,
@@ -2029,7 +2034,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
       prepMateyou();
       loginSheet = A.sheet({
         title: '메이트유 연결',
-        html: `<div class="login-f"><button type="button" class="btn lg primary my-login" data-l="mateyou"><img src="assets/mateyou.png" alt="" width="22" height="22">메이트유로 연결</button>
+        html: `<div class="login-f"><button type="button" class="btn lg primary my-login" data-l="mateyou"><img src="/v2/assets/mateyou.png" alt="" width="22" height="22">메이트유로 연결</button>
           <button type="button" class="btn ghost my-web" data-l="mateyou-web">웹에서 연결</button></div>`,
         actions: [{ label: '닫기' }],
         onClose: () => { loginSheet = null; },
@@ -2062,7 +2067,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
     let busy = false;
     // 메이트유가 먼저 (2026-11-09 메이트유로 옮기기 2단계). 이름 · PIN 은 연결률 90% 넘으면 닫아요
     const html = `<div class="login-f">
-      ${A.MATEYOU_ON ? '<button type="button" class="btn lg primary my-login" data-l="mateyou"><img src="assets/mateyou.png" alt="" width="22" height="22">메이트유로 로그인</button>' : ''}
+      ${A.MATEYOU_ON ? '<button type="button" class="btn lg primary my-login" data-l="mateyou"><img src="/v2/assets/mateyou.png" alt="" width="22" height="22">메이트유로 로그인</button>' : ''}
       ${A.MATEYOU_ON && A.MATEYOU_APP && isIOS() ? '<button type="button" class="btn ghost my-web" data-l="mateyou-web">웹에서 로그인</button>' : ''}
       ${A.MATEYOU_ON ? '<div class="login-sep" role="separator"></div>' : ''}
       <label class="fld-l">이름<input class="fld" data-l="name" autocomplete="username" autocapitalize="off" spellcheck="false" maxlength="30"></label>
@@ -4792,7 +4797,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
       .sort((a, b) => String(a.name).localeCompare(String(b.name), 'ko'));   // 이름순만 (사용자 2026-10-28)
     const cut = !q && filt === 'all' && list.length > SHOW + 2, shown = cut && !expanded ? list.slice(0, SHOW) : list;
     el.querySelector('#adFound').textContent = q ? `${list.length}명 찾았어요` : '';
-    box.innerHTML = shown.map(s => `<div class="lrow ad-st"><button class="ad-main" data-st="${s.id}" aria-label="${esc(s.name)}님 관리">${A.avatar(s)}<span class="lt">${esc(s.name)}</span>${stTags(s)}${s.mateyou ? '<img class="ad-my" src="assets/mateyou.png" alt="메이트유 연결됨" width="22" height="22">' : ''}</button>${s.locked ? `<button class="btn sm hit" data-unlock="${s.id}" aria-label="${esc(s.name)}님 잠금 풀기">잠금 풀기</button>` : ''}${I.chev}</div>`).join('')
+    box.innerHTML = shown.map(s => `<div class="lrow ad-st"><button class="ad-main" data-st="${s.id}" aria-label="${esc(s.name)}님 관리">${A.avatar(s)}<span class="lt">${esc(s.name)}</span>${stTags(s)}${s.mateyou ? '<img class="ad-my" src="/v2/assets/mateyou.png" alt="메이트유 연결됨" width="22" height="22">' : ''}</button>${s.locked ? `<button class="btn sm hit" data-unlock="${s.id}" aria-label="${esc(s.name)}님 잠금 풀기">잠금 풀기</button>` : ''}${I.chev}</div>`).join('')
       + (cut ? `<button class="btn ad-more" id="adMore" aria-expanded="${expanded}">${expanded ? '접기' : `나머지 ${list.length - SHOW}명 보기`}</button>` : '')
       || '<div class="none">찾는 이름이 없어요</div>';
     const more = box.querySelector('#adMore');
@@ -5261,7 +5266,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
   };
   const images = new Map();
   const imageOf = key => {
-    if (!images.has(key)) images.set(key, new Promise((ok, no) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => { images.delete(key); no(new Error('배경을 불러오지 못했어요')); }; i.src = `assets/export-${key}.jpg`; }));
+    if (!images.has(key)) images.set(key, new Promise((ok, no) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => { images.delete(key); no(new Error('배경을 불러오지 못했어요')); }; i.src = `/v2/assets/export-${key}.jpg`; }));
     return images.get(key);
   };
 

@@ -48,7 +48,7 @@
     myNext = { v, s: hex(new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(v)))).slice(0, 32) };
   }
   function myLinks(s) {
-    const q = `state=${s}&return=${encodeURIComponent(location.origin + location.pathname)}`, web = `${MY_URL}?${q}`;
+    const q = `state=${s}&return=${encodeURIComponent(location.origin + (location.pathname === '/staff.html' ? '/v2/staff.html' : location.pathname))}`, web = `${MY_URL}?${q}`;
     return {
       web, app: `mateyou://connect/moetable?${q}`,
       intent: `intent://connect/moetable?${q}#Intent;scheme=mateyou;package=${MY_PKG};S.browser_fallback_url=${encodeURIComponent(web)};end`,
@@ -247,7 +247,7 @@
       prepMateyou();
       loginSheet = A.sheet({
         title: '메이트유 연결',
-        html: `<div class="login-f"><button type="button" class="btn lg primary my-login" data-l="mateyou"><img src="assets/mateyou.png" alt="" width="22" height="22">메이트유로 연결</button>
+        html: `<div class="login-f"><button type="button" class="btn lg primary my-login" data-l="mateyou"><img src="/v2/assets/mateyou.png" alt="" width="22" height="22">메이트유로 연결</button>
           <button type="button" class="btn ghost my-web" data-l="mateyou-web">웹에서 연결</button></div>`,
         actions: [{ label: '닫기' }],
         onClose: () => { loginSheet = null; },
@@ -280,7 +280,7 @@
     let busy = false;
     // 메이트유가 먼저 (2026-11-09 메이트유로 옮기기 2단계). 이름 · PIN 은 연결률 90% 넘으면 닫아요
     const html = `<div class="login-f">
-      ${A.MATEYOU_ON ? '<button type="button" class="btn lg primary my-login" data-l="mateyou"><img src="assets/mateyou.png" alt="" width="22" height="22">메이트유로 로그인</button>' : ''}
+      ${A.MATEYOU_ON ? '<button type="button" class="btn lg primary my-login" data-l="mateyou"><img src="/v2/assets/mateyou.png" alt="" width="22" height="22">메이트유로 로그인</button>' : ''}
       ${A.MATEYOU_ON && A.MATEYOU_APP && isIOS() ? '<button type="button" class="btn ghost my-web" data-l="mateyou-web">웹에서 로그인</button>' : ''}
       ${A.MATEYOU_ON ? '<div class="login-sep" role="separator"></div>' : ''}
       <label class="fld-l">이름<input class="fld" data-l="name" autocomplete="username" autocapitalize="off" spellcheck="false" maxlength="30"></label>

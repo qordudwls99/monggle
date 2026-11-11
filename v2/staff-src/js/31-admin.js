@@ -253,7 +253,7 @@
       .sort((a, b) => String(a.name).localeCompare(String(b.name), 'ko'));   // 이름순만 (사용자 2026-10-28)
     const cut = !q && filt === 'all' && list.length > SHOW + 2, shown = cut && !expanded ? list.slice(0, SHOW) : list;
     el.querySelector('#adFound').textContent = q ? `${list.length}명 찾았어요` : '';
-    box.innerHTML = shown.map(s => `<div class="lrow ad-st"><button class="ad-main" data-st="${s.id}" aria-label="${esc(s.name)}님 관리">${A.avatar(s)}<span class="lt">${esc(s.name)}</span>${stTags(s)}${s.mateyou ? '<img class="ad-my" src="assets/mateyou.png" alt="메이트유 연결됨" width="22" height="22">' : ''}</button>${s.locked ? `<button class="btn sm hit" data-unlock="${s.id}" aria-label="${esc(s.name)}님 잠금 풀기">잠금 풀기</button>` : ''}${I.chev}</div>`).join('')
+    box.innerHTML = shown.map(s => `<div class="lrow ad-st"><button class="ad-main" data-st="${s.id}" aria-label="${esc(s.name)}님 관리">${A.avatar(s)}<span class="lt">${esc(s.name)}</span>${stTags(s)}${s.mateyou ? '<img class="ad-my" src="/v2/assets/mateyou.png" alt="메이트유 연결됨" width="22" height="22">' : ''}</button>${s.locked ? `<button class="btn sm hit" data-unlock="${s.id}" aria-label="${esc(s.name)}님 잠금 풀기">잠금 풀기</button>` : ''}${I.chev}</div>`).join('')
       + (cut ? `<button class="btn ad-more" id="adMore" aria-expanded="${expanded}">${expanded ? '접기' : `나머지 ${list.length - SHOW}명 보기`}</button>` : '')
       || '<div class="none">찾는 이름이 없어요</div>';
     const more = box.querySelector('#adMore');
