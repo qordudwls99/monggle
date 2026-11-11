@@ -74,6 +74,9 @@ button{font-family:inherit;color:inherit}
 .today-btn{border:1px solid var(--line);background:#fff;color:var(--ink2);font-size:12.5px;font-weight:700;border-radius:99px;padding:4px 12px;cursor:pointer}
 .today-tag[hidden],.today-btn[hidden]{display:none}
 #list{margin-top:12px}
+/* 이 기기에서 새 디자인을 켰을 때만(ui_v2_main) 맨 아래에 예전 디자인으로 (2026-11-11) */
+.ui-old{display:flex;justify-content:center;margin-top:20px}.ui-old[hidden]{display:none}
+.ui-old button{border:none;background:none;color:var(--muted);font:inherit;font-size:13px;font-weight:700;min-height:44px;padding:0 12px;cursor:pointer}
 
 /* event day */
 .event{display:flex;align-items:center;gap:10px;background:var(--acc);color:#fff;border-radius:14px;padding:14px 16px;margin-bottom:6px}
@@ -631,6 +634,7 @@ html[data-appearance="dark"] .eb-sw i,html[data-appearance="dark"] .p-pill i{box
         <div class="eb-all" id="ebAll" hidden></div>
       </section>
       <div id="list"></div>
+      <div class="ui-old" id="uiOld" hidden><button type="button" id="uiOldBtn">예전 디자인으로</button></div>
     </div>
     <nav class="tabbar" id="wpChips" aria-label="매장"></nav>
   </div>
@@ -1556,6 +1560,13 @@ async function openFromUrl(){
   openPerson(p, ym);
 }
 
+// 이 기기에서 새 디자인을 켰으면(ui_v2_main, 옛 / 머리에서 읽어요) 맨 아래 '예전 디자인으로'. 누르면 끄고 / 로
+(() => {
+  let on = false; try { on = localStorage.getItem('ui_v2_main') === '1'; } catch (e) { /* 저장소를 못 쓰면 안 보여요 */ }
+  if (!on) return;
+  document.getElementById('uiOld').hidden = false;
+  document.getElementById('uiOldBtn').onclick = () => { try { localStorage.removeItem('ui_v2_main'); } catch (e) { /* 이번만 */ } location.replace('/' + location.search + location.hash); };
+})();
 boot();
 </script>
 </body>
