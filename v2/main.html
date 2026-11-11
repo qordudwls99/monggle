@@ -1565,7 +1565,7 @@ async function openFromUrl(){
   let on = false; try { on = localStorage.getItem('ui_v2_main') === '1'; } catch (e) { /* 저장소를 못 쓰면 안 보여요 */ }
   if (!on) return;
   document.getElementById('uiOld').hidden = false;
-  document.getElementById('uiOldBtn').onclick = () => { try { localStorage.removeItem('ui_v2_main'); } catch (e) { /* 이번만 */ } location.replace('/' + location.search + location.hash); };
+  document.getElementById('uiOldBtn').onclick = () => { try { localStorage.removeItem('ui_v2_main'); const d = new Date(); localStorage.setItem('ui_v2_main_notice', d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate()); } catch (e) { /* 이번만 */ } location.replace('/' + location.search + location.hash); };
 })();
 boot();
 </script>

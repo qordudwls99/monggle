@@ -264,7 +264,7 @@
         el.querySelector('[data-m="guide"]').onclick = () => A.guide.open();
         // 이 기기의 새 화면 켜기(ui_v2, 옛 /staff.html 머리에서 읽어요)를 끄고 예전 화면으로. 옛 화면의 '바꾸기' 띠도 다시 안 띄워요
         el.querySelector('[data-m="oldui"]').onclick = () => {
-          try { localStorage.removeItem('ui_v2'); localStorage.setItem('ui_v2_x', '1'); } catch (e) { /* 저장 못 하면 이번만 */ }
+          try { localStorage.removeItem('ui_v2'); localStorage.setItem('ui_v2_x', '1'); const d = new Date(); localStorage.setItem('ui_v2_notice', d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate()); } catch (e) { /* 저장 못 하면 이번만 */ }
           location.replace('/staff.html' + location.hash);
         };
         el.querySelector('[data-m="push"]').onclick = async () => {
