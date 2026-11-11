@@ -427,6 +427,7 @@ a.p-ig:active{transform:scale(.92)}
 .p-pill{display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 11px;border-radius:15px;background:var(--fill);font-size:13px;font-weight:700;color:var(--ink)}
 .p-pill i{width:9px;height:9px;border-radius:3px;background:var(--c)}
 .pc-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}
+#pBody{transition:opacity .15s}#pBody.loading{opacity:.45;transition-delay:.15s;pointer-events:none}
 .pc{min-width:0;min-height:60px;border:1px solid var(--line);border-radius:12px;background:#fff;padding:6px 2px 5px;display:flex;flex-direction:column;align-items:center;gap:2px;font:inherit;color:var(--ink);overflow:hidden}
 .pc.blank{border:none;background:none}
 .pc .d{font-size:13.5px;font-weight:800;line-height:1.2;font-variant-numeric:tabular-nums}
@@ -1390,6 +1391,7 @@ function openPerson(p, ymArg){
   $('pWho').innerHTML = `${avatarHtml('av', p.name, p.avatar)}<span style="min-width:0"><b>${esc(p.name)}</b><small>출근 달력</small></span>`;
   const ig = igUrl(p.insta);
   $('pIg').innerHTML = ig ? `<a class="p-ig" href="${esc(ig)}" target="_blank" rel="noopener" aria-label="${esc(p.name)} 인스타그램">${IG_SVG}</a>` : '';
+  pMonths.clear(); $('pBody').innerHTML = ''; $('pBody').classList.remove('loading');
   pSheet.open();
   drawPerson();
 }
@@ -1398,6 +1400,12 @@ function stepPerson(k){
   const ym = ymStep(person.ym, k);
   if(!monthOk(ym)) return;
   person.ym = ym; drawPerson();
+}
+const pMonths = new Map();   // '사람|달' → 받는 중이거나 받은 한 달. 시트를 열 때마다 비워요
+function personMonth(id, ym){
+  const k = id + '|' + ym;
+  if(!pMonths.has(k)) pMonths.set(k, loadPersonMonth(id, ym).then(d => { if(!d) pMonths.delete(k); return d; }, () => { pMonths.delete(k); return null; }));
+  return pMonths.get(k);
 }
 // 한 사람의 한 달 출근 (days: 날짜 → [{wp, day, night, time}], memo: '날짜|매장' → 이벤트 이름)
 async function loadPersonMonth(id, ym){
@@ -1424,10 +1432,14 @@ async function drawPerson(){
   $('pPrev').disabled = !prevOk; $('pPrev').style.opacity = prevOk ? '' : '.3';
   $('pNext').disabled = !nextOk; $('pNext').style.opacity = nextOk ? '' : '.3';
   $('pShare').disabled = draftMonths.has(ym);
-  if(draftMonths.has(ym)){ $('pBody').innerHTML = emptyBox('lock', '아직 공개되지 않은 달이에요', '스케줄이 확정되면 볼 수 있어요'); return; }
-  $('pBody').innerHTML = '<div style="text-align:center;padding:24px"><span class="spin"></span></div>';
-  const data = await loadPersonMonth(p.id, ym);
+  const body = $('pBody');
+  if(draftMonths.has(ym)){ body.classList.remove('loading'); body.innerHTML = emptyBox('lock', '아직 공개되지 않은 달이에요', '스케줄이 확정되면 볼 수 있어요'); return; }
+  if(body.querySelector('.pc-grid')) body.classList.add('loading');
+  else body.innerHTML = '<div style="text-align:center;padding:24px"><span class="spin"></span></div>';
+  const data = await personMonth(p.id, ym);
   if(seq !== pSeq) return;
+  body.classList.remove('loading');
+  [-1, 1].forEach(k => { const y2 = ymStep(ym, k); if(monthOk(y2) && !draftMonths.has(y2)) personMonth(p.id, y2); });
   if(!data){ $('pBody').innerHTML = emptyBox('alert', '불러오지 못했어요', '잠시 뒤 다시 해 주세요'); return; }
   p.cache = { ym, ...data };
   const { days, memo } = data;
