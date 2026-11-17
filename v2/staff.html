@@ -5269,6 +5269,12 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
     if (!images.has(key)) images.set(key, new Promise((ok, no) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => { images.delete(key); no(new Error('배경을 불러오지 못했어요')); }; i.src = `/v2/assets/export-${key}.jpg`; }));
     return images.get(key);
   };
+  // 로고는 못 불러와도 출근표는 그려요 (로고만 빠져요)
+  const logoOf = code => {
+    const k = 'logo-' + code;
+    if (!images.has(k)) images.set(k, new Promise(ok => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => { images.delete(k); ok(null); }; i.src = `/v2/assets/logo-${code}.jpg`; }));
+    return images.get(k);
+  };
 
   // ── 칸 하나 = 줄 목록 ──
   const line = (kind, text) => ({ kind, text });
@@ -5426,17 +5432,24 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
     const days = span(from, Math.round((A.parse(to) - A.parse(from)) / 864e5) + 1);
     const names = days.flatMap(ds => WPS().flatMap(w => { const d = A.store.day(ds, w); return [...d.shifts.map(s => s.name), ...nightOf(d).map(m => m.name), d.event || '']; })).join('');
     const fonts = o.fonts || FONT;
-    const [img] = await Promise.all([imageOf(key), fontsFor(`${title}${names}층데빌메이드마츠리휴무폐업게스트주간야간0123456789/·`, fonts)]);
+    const [img, logo] = await Promise.all([imageOf(key), logoOf(o.scope === '2w' ? codeOf(o.wp) : 'maid'), fontsFor(`${title}${names}층데빌메이드마츠리휴무폐업게스트주간야간0123456789/·`, fonts)]);
     F = fonts;
     const cv = document.createElement('canvas'); cv.width = W * SCALE; cv.height = H * SCALE;
     const c = cv.getContext('2d');
     c.scale(SCALE, SCALE); c.imageSmoothingQuality = 'high';
     c.drawImage(img, 0, 0, W, H);
     c.textAlign = 'center'; c.textBaseline = 'middle';
-    const [tx, ty, tw, th, tc] = L.title;
+    // 제목판 = 동그란 매장 로고 + 제목. 2주는 그 층 로고, 1주 · 1일은 모에모에큥 메이드 로고 (2026-11-17 사장님)
+    const [tx, ty, tw, th, tc] = L.title, d = logo ? Math.round(th * .8) : 0, gap = logo ? Math.round(th * .16) : 0;
     let tf = Math.min(54, Math.round(th * .62));
-    do c.font = fontOf(F.title, tf); while (c.measureText(title).width > tw - 48 && --tf > 24);
-    c.fillStyle = tc; c.fillText(title, tx + tw / 2, ty + th / 2, tw - 32);
+    do c.font = fontOf(F.title, tf); while (c.measureText(title).width > tw - 48 - d - gap && --tf > 24);
+    const textW = Math.min(c.measureText(title).width, tw - 32 - d - gap), sx = tx + (tw - d - gap - textW) / 2;
+    if (logo) {
+      const cx = sx + d / 2, cy = ty + th / 2;
+      c.save(); c.beginPath(); c.arc(cx, cy, d / 2, 0, Math.PI * 2); c.clip(); c.drawImage(logo, cx - d / 2, cy - d / 2, d, d); c.restore();
+      c.beginPath(); c.arc(cx, cy, d / 2, 0, Math.PI * 2); c.lineWidth = 2; c.strokeStyle = tc === LIGHT ? 'rgba(255,255,255,.8)' : 'rgba(35,19,24,.18)'; c.stroke();
+    }
+    c.fillStyle = tc; c.fillText(title, sx + d + gap + textW / 2, ty + th / 2, tw - 32 - d - gap);
     if (L.labels) {
       c.font = fontOf(F.body, L.labels[0][3] * .86);
       WPS().forEach((wp, i) => { const [x, y, w, h] = L.labels[i]; c.fillStyle = TH[wp].ac; c.fillText(`${A.floorOf(wp)} ${wp}`, x + w / 2, y + h / 2, w - 12); });
