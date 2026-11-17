@@ -5426,6 +5426,19 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
     });
   }
 
+  // 매장 로고 (2026-11-17 사장님): 표 아래 빈 자리 가운데에 동그랗게. 2주는 그 층 로고, 1주 · 1일은 모에모에큥 메이드 로고.
+  // 자리는 LAYOUT 의 logo: [가운데 x, 가운데 y, 지름] 으로 바꿀 수 있어요
+  const bottomOf = L => L.y ? L.y[L.y.length - 1] : L.week ? L.week[L.week.length - 1][2] : Math.max(...L.panels.map(p => p[1] + p[3]));
+  function drawLogo(c, L, W, H, img) {
+    const b = bottomOf(L), free = H - b;
+    const [cx, cy, d] = L.logo || [W / 2, b + free * .46, Math.round(Math.max(96, Math.min(150, free * .6)))];
+    c.save();
+    c.shadowColor = 'rgba(40,10,20,.28)'; c.shadowBlur = 14; c.shadowOffsetY = 3;
+    c.beginPath(); c.arc(cx, cy, d / 2 + 5, 0, Math.PI * 2); c.fillStyle = '#fff'; c.fill();
+    c.restore();
+    c.save(); c.beginPath(); c.arc(cx, cy, d / 2, 0, Math.PI * 2); c.clip(); c.drawImage(img, cx - d / 2, cy - d / 2, d, d); c.restore();
+  }
+
   // 옵션 { scope:'2w'|'1w'|'1d', fmt:'story'|'post', wp, ds, fonts? } → 캔버스. 일정은 미리 불러 둔 뒤 불러요
   async function render(o) {
     const key = keyOf(o), L = LAYOUT[key], [W, H] = SIZE[o.fmt], title = titleOf(o), [from, to] = rangeOf(o);
@@ -5439,17 +5452,10 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
     c.scale(SCALE, SCALE); c.imageSmoothingQuality = 'high';
     c.drawImage(img, 0, 0, W, H);
     c.textAlign = 'center'; c.textBaseline = 'middle';
-    // 제목판 = 동그란 매장 로고 + 제목. 2주는 그 층 로고, 1주 · 1일은 모에모에큥 메이드 로고 (2026-11-17 사장님)
-    const [tx, ty, tw, th, tc] = L.title, d = logo ? Math.round(th * .8) : 0, gap = logo ? Math.round(th * .16) : 0;
+    const [tx, ty, tw, th, tc] = L.title;
     let tf = Math.min(54, Math.round(th * .62));
-    do c.font = fontOf(F.title, tf); while (c.measureText(title).width > tw - 48 - d - gap && --tf > 24);
-    const textW = Math.min(c.measureText(title).width, tw - 32 - d - gap), sx = tx + (tw - d - gap - textW) / 2;
-    if (logo) {
-      const cx = sx + d / 2, cy = ty + th / 2;
-      c.save(); c.beginPath(); c.arc(cx, cy, d / 2, 0, Math.PI * 2); c.clip(); c.drawImage(logo, cx - d / 2, cy - d / 2, d, d); c.restore();
-      c.beginPath(); c.arc(cx, cy, d / 2, 0, Math.PI * 2); c.lineWidth = 2; c.strokeStyle = tc === LIGHT ? 'rgba(255,255,255,.8)' : 'rgba(35,19,24,.18)'; c.stroke();
-    }
-    c.fillStyle = tc; c.fillText(title, sx + d + gap + textW / 2, ty + th / 2, tw - 32 - d - gap);
+    do c.font = fontOf(F.title, tf); while (c.measureText(title).width > tw - 48 && --tf > 24);
+    c.fillStyle = tc; c.fillText(title, tx + tw / 2, ty + th / 2, tw - 32);
     if (L.labels) {
       c.font = fontOf(F.body, L.labels[0][3] * .86);
       WPS().forEach((wp, i) => { const [x, y, w, h] = L.labels[i]; c.fillStyle = TH[wp].ac; c.fillText(`${A.floorOf(wp)} ${wp}`, x + w / 2, y + h / 2, w - 12); });
@@ -5457,6 +5463,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
     if (o.scope === '2w') drawTwoWeeks(c, L, o, from);
     else if (o.scope === '1w') drawWeek(c, L, from);
     else WPS().forEach((wp, i) => drawPanel(c, L.panels[i], wp, o.ds, L.fs));
+    if (logo) drawLogo(c, L, W, H, logo);
     return cv;
   }
 
