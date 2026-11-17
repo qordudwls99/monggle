@@ -5272,7 +5272,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
   // 로고는 못 불러와도 출근표는 그려요 (로고만 빠져요)
   const logoOf = code => {
     const k = 'logo-' + code;
-    if (!images.has(k)) images.set(k, new Promise(ok => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => { images.delete(k); ok(null); }; i.src = `/v2/assets/logo-${code}.jpg`; }));
+    if (!images.has(k)) images.set(k, new Promise(ok => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => { images.delete(k); ok(null); }; i.src = `/v2/assets/logo-${code}-mark.png`; }));
     return images.get(k);
   };
 
@@ -5426,17 +5426,17 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
     });
   }
 
-  // 매장 로고 (2026-11-17 사장님): 표 아래 빈 자리 가운데에 동그랗게. 2주는 그 층 로고, 1주 · 1일은 모에모에큥 메이드 로고.
-  // 자리는 LAYOUT 의 logo: [가운데 x, 가운데 y, 지름] 으로 바꿀 수 있어요
+  // 매장 로고 (2026-11-17 사장님): 표 아래 빈 자리 가운데에 투명 배경 로고(logo-*-mark.png, 원본 100px 를 고해상도로 다시 그린 것) 그대로. 2주는 그 층 로고, 1주 · 1일은 모에모에큥 메이드 로고.
+  // 자리는 LAYOUT 의 logo: [가운데 x, 가운데 y, 상자 크기] 로 바꿀 수 있어요. 로고는 상자 안에 비율대로 들어가요
   const bottomOf = L => L.y ? L.y[L.y.length - 1] : L.week ? L.week[L.week.length - 1][2] : Math.max(...L.panels.map(p => p[1] + p[3]));
   function drawLogo(c, L, W, H, img) {
     const b = bottomOf(L), free = H - b;
-    const [cx, cy, d] = L.logo || [W / 2, b + free * .46, Math.round(Math.max(96, Math.min(150, free * .6)))];
+    const [cx, cy, d] = L.logo || [W / 2, b + free * .47, Math.round(Math.max(120, Math.min(220, free * .78)))];
+    const k = d / Math.max(img.width, img.height), w = img.width * k, h = img.height * k;
     c.save();
-    c.shadowColor = 'rgba(40,10,20,.28)'; c.shadowBlur = 14; c.shadowOffsetY = 3;
-    c.beginPath(); c.arc(cx, cy, d / 2 + 5, 0, Math.PI * 2); c.fillStyle = '#fff'; c.fill();
+    c.shadowColor = 'rgba(40,10,20,.22)'; c.shadowBlur = 10; c.shadowOffsetY = 2;
+    c.drawImage(img, cx - w / 2, cy - h / 2, w, h);
     c.restore();
-    c.save(); c.beginPath(); c.arc(cx, cy, d / 2, 0, Math.PI * 2); c.clip(); c.drawImage(img, cx - d / 2, cy - d / 2, d, d); c.restore();
   }
 
   // 옵션 { scope:'2w'|'1w'|'1d', fmt:'story'|'post', wp, ds, fonts? } → 캔버스. 일정은 미리 불러 둔 뒤 불러요
