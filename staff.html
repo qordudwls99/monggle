@@ -1049,6 +1049,9 @@ function maybeAskPush(){
 }
 
 /* ---------- 데이터 ---------- */
+// 직원 목록은 처음 한 번만 받았어요. 메이트유로 새로 가입한 직원이 열어 둔 관리자 화면에도 뜨게, 화면으로 돌아올 때 1분이 지났으면 다시 받아요 (2026-11-19)
+let dirAt = 0;
+document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='visible' && supa && session && session.is_admin && dirAt && Date.now()-dirAt>60000) loadDirectory(); });
 async function loadDirectory(){
   // 관리자는 PIN·잠김 상태가 포함된 목록, 그 외에는 공개 목록
   let r = (session && session.is_admin) ? await supa.rpc('admin_staff_directory', { p_admin_id:session.id, p_pin:session.pin }) : null;
@@ -1056,6 +1059,7 @@ async function loadDirectory(){
   const { data, error } = r;
   if(error){ toast('스태프 목록 로딩 실패: '+error.message, true); return; }
   staffList = (data || []).sort((a,b)=> ((b.is_admin?1:0)-(a.is_admin?1:0)) || a.name.localeCompare(b.name,'ko'));
+  dirAt = Date.now();
   fillLoginNames();
   fillAdminStaffSelect();
 }
@@ -1356,6 +1360,7 @@ function renderWho(){
 /* ---------- 탭 ---------- */
 function switchTab(tab){
   if((tab==='admin'||tab==='noti') && !(session && session.is_admin)){ tab='schedule'; }
+  if(tab==='admin' && dirAt && Date.now()-dirAt>60000) loadDirectory();
   currentTab = tab;
   document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('on', t.dataset.tab===tab));
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('on'));

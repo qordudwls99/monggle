@@ -425,7 +425,7 @@
 
   // ── 근무 시트 (관리자): 직원 / 게스트 / 빈 자리, 시작·끝, 지우기 (운영 2223-2267, 2305-2310) ──
   async function shiftSheet(s, ds, wp) {
-    const staff = A.store.staff().length ? A.store.staff() : await A.store.directory();
+    const staff = await A.store.directory({ maxAge: 30000 });   // 방금 가입한 직원도 고를 수 있게
     const edit = !!s;
     let kind = !s ? 'staff' : s.staffId != null ? 'staff' : s.gname ? 'guest' : 'open';
     const KINDS = [['staff', '직원'], ['guest', '게스트'], ['open', '빈 자리']];

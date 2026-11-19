@@ -80,9 +80,10 @@
   const openMonths = () => [...statusMap].filter(([, v]) => v.submit_open).map(([k]) => k).sort();
 
   // ── 직원 목록 (관리자는 admin_staff_directory, 실패하면 공개 목록) ──
-  let staff = [], dirP = null;
-  function directory({ fresh = false } = {}) {
-    if (fresh) dirP = null;
+  // maxAge: 받은 지 이만큼(ms) 지났으면 다시 받아요. 메이트유로 새로 가입한 직원이 열어 둔 화면에도 뜨게 (2026-11-19)
+  let staff = [], dirP = null, dirAt = 0;
+  function directory({ fresh = false, maxAge = 0 } = {}) {
+    if (fresh || (maxAge && dirAt && Date.now() - dirAt > maxAge)) dirP = null;
     if (dirP) return dirP;
     const p = dirP = (async () => {
       const s = A.session;
@@ -92,10 +93,16 @@
       if (r.error) { if (dirP === p) dirP = null; failToast(); return staff; }
       staff = (r.data || []).map(x => ({ ...x }))
         .sort((a, b) => ((b.is_admin ? 1 : 0) - (a.is_admin ? 1 : 0)) || coll.compare(a.name || '', b.name || ''));
+      dirAt = Date.now();
       return staff;
     })();
     return p;
   }
+
+  // 관리자가 열어 둔 화면으로 돌아왔을 때 1분이 지났으면 직원 목록을 다시 받아요
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible' && A.session && A.session.is_admin && dirAt && Date.now() - dirAt > 60000) directory({ fresh: true });
+  });
 
   // ── 달 단위 스케줄 ──
   const months = new Map();   // ym -> {p, data}

@@ -878,6 +878,8 @@ button.nt-p:focus-visible,button.nt-pb:focus-visible{outline:2px solid var(--ink
 .ad-st .tag{font-size:11px;padding:2px 7px}
 /* 메이트유 연결된 직원: 오른쪽 끝(화살표 앞)에 동그란 로고 (admin_staff_directory.mateyou) */
 .ad-st .ad-my{width:22px;height:22px;border-radius:50%;flex:none;margin-left:auto;display:block}
+.ad-addb{gap:4px;padding:0 10px 0 8px;align-self:center}
+.ad-addb svg{width:16px;height:16px}
 .ad-myr{margin-left:8px;font-size:13px;font-weight:700;color:var(--ink2);letter-spacing:0;font-variant-numeric:tabular-nums;white-space:nowrap}
 .ad-pin{font-size:36px;font-weight:800;letter-spacing:6px;text-align:center;font-variant-numeric:tabular-nums;background:var(--cell);border-radius:var(--r-md);padding:18px 0;user-select:all}
 /* "토요일 데빌 모두 추가"가 한 줄에 들어가지 않는 폭에서는 위아래로. flex:1 은 세로에서 높이를 0으로 만들어서 풀어요 */
@@ -1224,9 +1226,10 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
   const openMonths = () => [...statusMap].filter(([, v]) => v.submit_open).map(([k]) => k).sort();
 
   // ── 직원 목록 (관리자는 admin_staff_directory, 실패하면 공개 목록) ──
-  let staff = [], dirP = null;
-  function directory({ fresh = false } = {}) {
-    if (fresh) dirP = null;
+  // maxAge: 받은 지 이만큼(ms) 지났으면 다시 받아요. 메이트유로 새로 가입한 직원이 열어 둔 화면에도 뜨게 (2026-11-19)
+  let staff = [], dirP = null, dirAt = 0;
+  function directory({ fresh = false, maxAge = 0 } = {}) {
+    if (fresh || (maxAge && dirAt && Date.now() - dirAt > maxAge)) dirP = null;
     if (dirP) return dirP;
     const p = dirP = (async () => {
       const s = A.session;
@@ -1236,10 +1239,16 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
       if (r.error) { if (dirP === p) dirP = null; failToast(); return staff; }
       staff = (r.data || []).map(x => ({ ...x }))
         .sort((a, b) => ((b.is_admin ? 1 : 0) - (a.is_admin ? 1 : 0)) || coll.compare(a.name || '', b.name || ''));
+      dirAt = Date.now();
       return staff;
     })();
     return p;
   }
+
+  // 관리자가 열어 둔 화면으로 돌아왔을 때 1분이 지났으면 직원 목록을 다시 받아요
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible' && A.session && A.session.is_admin && dirAt && Date.now() - dirAt > 60000) directory({ fresh: true });
+  });
 
   // ── 달 단위 스케줄 ──
   const months = new Map();   // ym -> {p, data}
@@ -1815,7 +1824,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
   // 앱이 있으면 메이트유 앱(mateyou://)으로. 안드로이드는 intent:// 라 앱이 없으면 크롬이 웹으로 보내요.
   // 아이폰은 앱이 깔렸는지 알 수 없어서 앱으로 열고, 앱이 없는 사람은 '웹에서 로그인'을 눌러요. 컴퓨터는 바로 웹.
   const MY_URL = 'https://www.mateyou.me/connect/moetable', MY_PKG = 'com.mateyou.app', MY_STATE = 'mateyou_state';
-  let pendingLink = null, pendingCode = null, codeSheet = null, pendingPhoto = false;
+  let pendingLink = null, pendingCode = null, codeSheet = null, pendingPhoto = false, pendingRetry = false;
   // 메이트유 로그인 · 연결 뒤 사진 고르기 / 올리기 (23-account.js). 임시 PIN 이면 PIN 바꾸기가 먼저라 이번엔 건너뛰어요
   const photoNext = me => {   // 환영 알림(2.2초)이 사라진 뒤. 처음 안내는 사진 시트가 뜰 때까지 기다려요
     if (me.pin_temp || !A.account || !A.account.afterMateyou) return;
@@ -1842,12 +1851,15 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
     };
   }
   const myTarget = (L, viaWeb) => viaWeb || !A.MATEYOU_APP ? L.web : isAndroid() ? L.intent : isIOS() ? L.app : L.web;
-  function startMateyou(viaWeb) {
+  async function startMateyou(viaWeb) {
+    // 준비(prepMateyou)가 덜 끝났을 때 눌러도 조용히 끝나지 않게 기다렸다가 열어요 (2026-11-19)
+    if (!myNext) { try { await prepMateyou(); } catch (e) { /* 아래에서 알려요 */ } }
     const n = myNext;
-    if (!n) return;
+    if (!n) { A.toast('메이트유를 열지 못했어요. 다시 눌러 주세요', true); return; }
     myNext = null; prepMateyou();
     const s = n.s;
-    localStorage.setItem(MY_STATE, JSON.stringify({ s, v: n.v, t: Date.now() }));
+    try { localStorage.setItem(MY_STATE, JSON.stringify({ s, v: n.v, t: Date.now() })); }
+    catch (e) { A.toast('이 브라우저에서는 메이트유 로그인을 쓸 수 없어요', true); return; }
     // 아이폰 홈 화면 앱: 웹은 앱 위에 따로 뜨니 숫자 넣기를 미리 열어 두고, 메이트유 앱은 다녀와서 열어요(watchReturn).
     // 앱이 없어 안 열리면 로그인 시트가 그대로 남아 '웹에서 로그인'을 누를 수 있어요.
     const L = myLinks(s), url = myTarget(L, viaWeb === true);
@@ -1864,13 +1876,17 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
     const want = myState(), c = claimsOf(m[1]);
     // 이 브라우저에서 시작한 로그인이면 바로, 아이폰 홈 화면 앱이 따로 연 브라우저면 결과를 맡기고 숫자를 받아요
     const here = !!(want && want.v && c && c.state === want.s);
-    if (!here && !(isIOS() && !isStandalone())) { A.toast('메이트유 로그인을 다시 해 주세요', true); return; }
+    // 메이트유 앱은 기본 브라우저로 돌려보내요. 카카오톡 · 인스타 안 브라우저나 다른 브라우저에서 시작했으면 여기엔 비밀값이 없어요.
+    // 그때는 이 화면에서 다시 로그인하게 해요 (2026-11-19: 안내 없이 끝나던 것)
+    if (!here) pendingRetry = true;
+    if (!here && !(isIOS() && !isStandalone())) return;
     if (here) localStorage.removeItem(MY_STATE);
     let res; try { res = await A.supa.rpc('mateyou_signin', { p_ticket: m[1], p_verifier: here ? want.v : null }); } catch (e) { res = { error: e }; }
     const me = res.data && res.data[0];
     if (res.error || !me) { A.toast(A.api.errText(res.error, '메이트유 로그인 실패'), true); return; }
     if (me.err) { A.toast(me.err, true); return; }
     if (me.code) { pendingCode = me.code; return; }
+    pendingRetry = false;
     mateyouDone(me, false);
   }
   // 로그인 결과 처리: token → 로그인, link → 연결 시트 (첫 그리기 전이면 afterBoot 에서 열어요)
@@ -1883,12 +1899,17 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
     }
   }
   // 따로 뜬 브라우저: 앱에 넣을 숫자
+  // code 가 없으면(안드로이드 · PC) 숫자 없이 '여기서 로그인'만 보여요
   function showCode(code) {
+    if (loginSheet) loginSheet.close();
+    prepMateyou();
     loginSheet = A.sheet({
       title: '메이트유 로그인',
-      html: `<div class="my-code"><span class="fld-l">앱에 넣을 숫자</span><b>${A.esc(code)}</b></div>`,
+      html: `<div class="login-f">${code ? `<div class="my-code"><span class="fld-l">앱에 넣을 숫자</span><b>${A.esc(code)}</b></div>` : ''}
+        <button type="button" class="btn lg primary my-login" data-l="here"><img src="/v2/assets/mateyou.png" alt="" width="22" height="22">여기서 로그인</button></div>`,
       actions: [{ label: '닫기' }],
-      onClose: () => { loginSheet = null; },
+      onClose: () => { loginSheet = null; if (!session) settle(false); },
+      onOpen: el => { el.querySelector('[data-l="here"]').addEventListener('click', () => startMateyou(false)); },
     });
   }
   // 홈 화면 앱: 메이트유를 연 동안 열어 두는 숫자 넣기
@@ -2239,7 +2260,8 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
   async function boot() { wireBars(); await mateyouReturn(); await upgradeSession(); }
   function afterBoot() {
     if (pendingLink) { openLink(pendingLink.link, pendingLink.pp); pendingLink = null; }   // 로그인한 채로 연결하러 다녀와도 열어요 (내 정보)
-    if (pendingCode) { showCode(pendingCode); pendingCode = null; }
+    if (pendingCode || (pendingRetry && !session)) showCode(pendingCode);
+    pendingCode = null; pendingRetry = false;
     if (pendingPhoto && session) { pendingPhoto = false; photoNext(session); }
     watchReturn();
     if (!loginSheet && isStandalone() && isIOS() && myState()) openCodeEntry();   // 앱을 다시 켰을 때 이어서 (로그인한 채 연결 중이어도)
@@ -2681,7 +2703,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
   // ── 근무 시트 (관리자): 직원 / 게스트 / 빈 자리, 시작·끝, 지우기 (운영 2223-2267, 2305-2310) ──
   async function shiftSheet(s, ds, wp) {
-    const staff = A.store.staff().length ? A.store.staff() : await A.store.directory();
+    const staff = await A.store.directory({ maxAge: 30000 });   // 방금 가입한 직원도 고를 수 있게
     const edit = !!s;
     let kind = !s ? 'staff' : s.staffId != null ? 'staff' : s.gname ? 'guest' : 'open';
     const KINDS = [['staff', '직원'], ['guest', '게스트'], ['open', '빈 자리']];
@@ -4773,10 +4795,10 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
   function staffSec(staff) {
     // 메이트유 연결률 (90% 넘으면 이름 · PIN 로그인을 닫아요, 2026-11-09). 내림해서 90% 를 일찍 보여 주지 않아요
-    // 직원 추가는 없어요: 새 직원은 메이트유로 로그인해 '새로 가입'으로 들어와요 (2026-11-09 메이트유로 옮기기 2단계)
+    // 직원 추가: 2026-11-09 에 뺐다가 2026-11-19 사장님 요청으로 되살렸어요 (메이트유 '새로 가입'과 같이 써요)
     const known = staff.filter(s => typeof s.mateyou === 'boolean'), linked = known.filter(s => s.mateyou).length;
     const myRate = known.length ? `<span class="ad-myr">메이트유 연결 ${Math.floor(linked * 100 / known.length)}%</span>` : '';
-    return `<section class="sec ad-sec" id="adStaffSec"><div class="sec-h"><h2>직원 ${staff.length}명${myRate}</h2></div>
+    return `<section class="sec ad-sec" id="adStaffSec"><div class="sec-h"><h2>직원 ${staff.length}명${myRate}</h2><button class="btn sm ad-addb" id="adStaffAdd">${I.plus}직원 추가</button></div>
       <input class="fld" id="adQ" type="search" placeholder="이름 찾기 (초성도 돼요)" aria-label="직원 이름 찾기" autocomplete="off" value="${esc(query)}">
       <div class="seg ad-filt" role="group" aria-label="직원 거르기" id="adFilt"></div>
       <p class="ad-found" id="adFound" aria-live="polite"></p>
@@ -4809,9 +4831,39 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
     staffFilters(el, staff); staffRows(el, staff);
     el.querySelector('#adQ').oninput = e => { query = e.target.value; staffRows(el, staff); };
     el.querySelector('#adBulkPin').onclick = bulkPin;
+    el.querySelector('#adStaffAdd').onclick = () => openStaffAdd(staff);
+  }
+  function openStaffAdd(staff) {
+    let admin = false, busy = false;
+    A.sheet({
+      title: '직원 추가',
+      html: `<label class="fld-l">이름<input class="fld" data-nm maxlength="30" autocomplete="off" placeholder="예: 하나"></label>
+        <label class="fld-l">PIN (숫자 6자리, 없으면 비워 둬요)<input class="fld" data-pin inputmode="numeric" maxlength="6" autocomplete="off" placeholder="숫자 6자리"></label>
+        <div class="seg" role="group" aria-label="권한"><button type="button" class="on" data-r="0" aria-pressed="true">직원</button><button type="button" data-r="1" aria-pressed="false">관리자</button></div>
+        <p class="sheet-err" hidden></p>`,
+      onOpen: el => {
+        el.querySelector('[data-nm]').focus();
+        el.querySelectorAll('[data-r]').forEach(b => b.onclick = () => {
+          admin = b.dataset.r === '1';
+          el.querySelectorAll('[data-r]').forEach(x => { x.classList.toggle('on', x === b); x.setAttribute('aria-pressed', String(x === b)); });
+        });
+      },
+      actions: [{ label: '취소' }, { label: '추가', kind: 'primary', onClick: async (close, el) => {
+        if (busy) return;
+        const name = el.querySelector('[data-nm]').value.trim(), pin = el.querySelector('[data-pin]').value.trim(), err = el.querySelector('.sheet-err');
+        const bad = !name ? '이름을 적어 주세요' : staff.some(x => x.name === name) ? '이미 있는 이름이에요' : pin && pinCheck(pin) ? pinCheck(pin) : '';
+        if (bad) { err.hidden = false; err.textContent = bad; return; }
+        busy = true;
+        const r = await A.api.rpc('admin_add_staff', { p_admin_id: me().id, p_name: name, p_new_pin: pin, p_is_admin: admin });
+        busy = false;
+        if (r === false) return;
+        query = ''; close();
+        await after(`${name}님을 추가했어요`, null);
+      } }],
+    });
   }
 
-  const pinCheck = v => /^\d{6}$/.test(v) ? '' : 'PIN은 숫자 6자리예요';
+  function pinCheck(v) { return /^\d{6}$/.test(v) ? '' : 'PIN은 숫자 6자리예요'; }
   async function unlock(s) {
     if (!s) return;
     if (!await A.confirm({ title: `${s.name}님의 잠금을 풀까요?`, text: 'PIN을 여러 번 틀려서 잠겼어요. 풀면 바로 다시 로그인할 수 있어요.', ok: '잠금 풀기' })) return;

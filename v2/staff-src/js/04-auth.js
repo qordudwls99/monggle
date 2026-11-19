@@ -28,7 +28,7 @@
   // 앱이 있으면 메이트유 앱(mateyou://)으로. 안드로이드는 intent:// 라 앱이 없으면 크롬이 웹으로 보내요.
   // 아이폰은 앱이 깔렸는지 알 수 없어서 앱으로 열고, 앱이 없는 사람은 '웹에서 로그인'을 눌러요. 컴퓨터는 바로 웹.
   const MY_URL = 'https://www.mateyou.me/connect/moetable', MY_PKG = 'com.mateyou.app', MY_STATE = 'mateyou_state';
-  let pendingLink = null, pendingCode = null, codeSheet = null, pendingPhoto = false;
+  let pendingLink = null, pendingCode = null, codeSheet = null, pendingPhoto = false, pendingRetry = false;
   // 메이트유 로그인 · 연결 뒤 사진 고르기 / 올리기 (23-account.js). 임시 PIN 이면 PIN 바꾸기가 먼저라 이번엔 건너뛰어요
   const photoNext = me => {   // 환영 알림(2.2초)이 사라진 뒤. 처음 안내는 사진 시트가 뜰 때까지 기다려요
     if (me.pin_temp || !A.account || !A.account.afterMateyou) return;
@@ -55,12 +55,15 @@
     };
   }
   const myTarget = (L, viaWeb) => viaWeb || !A.MATEYOU_APP ? L.web : isAndroid() ? L.intent : isIOS() ? L.app : L.web;
-  function startMateyou(viaWeb) {
+  async function startMateyou(viaWeb) {
+    // 준비(prepMateyou)가 덜 끝났을 때 눌러도 조용히 끝나지 않게 기다렸다가 열어요 (2026-11-19)
+    if (!myNext) { try { await prepMateyou(); } catch (e) { /* 아래에서 알려요 */ } }
     const n = myNext;
-    if (!n) return;
+    if (!n) { A.toast('메이트유를 열지 못했어요. 다시 눌러 주세요', true); return; }
     myNext = null; prepMateyou();
     const s = n.s;
-    localStorage.setItem(MY_STATE, JSON.stringify({ s, v: n.v, t: Date.now() }));
+    try { localStorage.setItem(MY_STATE, JSON.stringify({ s, v: n.v, t: Date.now() })); }
+    catch (e) { A.toast('이 브라우저에서는 메이트유 로그인을 쓸 수 없어요', true); return; }
     // 아이폰 홈 화면 앱: 웹은 앱 위에 따로 뜨니 숫자 넣기를 미리 열어 두고, 메이트유 앱은 다녀와서 열어요(watchReturn).
     // 앱이 없어 안 열리면 로그인 시트가 그대로 남아 '웹에서 로그인'을 누를 수 있어요.
     const L = myLinks(s), url = myTarget(L, viaWeb === true);
@@ -77,13 +80,17 @@
     const want = myState(), c = claimsOf(m[1]);
     // 이 브라우저에서 시작한 로그인이면 바로, 아이폰 홈 화면 앱이 따로 연 브라우저면 결과를 맡기고 숫자를 받아요
     const here = !!(want && want.v && c && c.state === want.s);
-    if (!here && !(isIOS() && !isStandalone())) { A.toast('메이트유 로그인을 다시 해 주세요', true); return; }
+    // 메이트유 앱은 기본 브라우저로 돌려보내요. 카카오톡 · 인스타 안 브라우저나 다른 브라우저에서 시작했으면 여기엔 비밀값이 없어요.
+    // 그때는 이 화면에서 다시 로그인하게 해요 (2026-11-19: 안내 없이 끝나던 것)
+    if (!here) pendingRetry = true;
+    if (!here && !(isIOS() && !isStandalone())) return;
     if (here) localStorage.removeItem(MY_STATE);
     let res; try { res = await A.supa.rpc('mateyou_signin', { p_ticket: m[1], p_verifier: here ? want.v : null }); } catch (e) { res = { error: e }; }
     const me = res.data && res.data[0];
     if (res.error || !me) { A.toast(A.api.errText(res.error, '메이트유 로그인 실패'), true); return; }
     if (me.err) { A.toast(me.err, true); return; }
     if (me.code) { pendingCode = me.code; return; }
+    pendingRetry = false;
     mateyouDone(me, false);
   }
   // 로그인 결과 처리: token → 로그인, link → 연결 시트 (첫 그리기 전이면 afterBoot 에서 열어요)
@@ -96,12 +103,17 @@
     }
   }
   // 따로 뜬 브라우저: 앱에 넣을 숫자
+  // code 가 없으면(안드로이드 · PC) 숫자 없이 '여기서 로그인'만 보여요
   function showCode(code) {
+    if (loginSheet) loginSheet.close();
+    prepMateyou();
     loginSheet = A.sheet({
       title: '메이트유 로그인',
-      html: `<div class="my-code"><span class="fld-l">앱에 넣을 숫자</span><b>${A.esc(code)}</b></div>`,
+      html: `<div class="login-f">${code ? `<div class="my-code"><span class="fld-l">앱에 넣을 숫자</span><b>${A.esc(code)}</b></div>` : ''}
+        <button type="button" class="btn lg primary my-login" data-l="here"><img src="/v2/assets/mateyou.png" alt="" width="22" height="22">여기서 로그인</button></div>`,
       actions: [{ label: '닫기' }],
-      onClose: () => { loginSheet = null; },
+      onClose: () => { loginSheet = null; if (!session) settle(false); },
+      onOpen: el => { el.querySelector('[data-l="here"]').addEventListener('click', () => startMateyou(false)); },
     });
   }
   // 홈 화면 앱: 메이트유를 연 동안 열어 두는 숫자 넣기
@@ -452,7 +464,8 @@
   async function boot() { wireBars(); await mateyouReturn(); await upgradeSession(); }
   function afterBoot() {
     if (pendingLink) { openLink(pendingLink.link, pendingLink.pp); pendingLink = null; }   // 로그인한 채로 연결하러 다녀와도 열어요 (내 정보)
-    if (pendingCode) { showCode(pendingCode); pendingCode = null; }
+    if (pendingCode || (pendingRetry && !session)) showCode(pendingCode);
+    pendingCode = null; pendingRetry = false;
     if (pendingPhoto && session) { pendingPhoto = false; photoNext(session); }
     watchReturn();
     if (!loginSheet && isStandalone() && isIOS() && myState()) openCodeEntry();   // 앱을 다시 켰을 때 이어서 (로그인한 채 연결 중이어도)
