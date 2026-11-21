@@ -878,6 +878,11 @@ button.nt-p:focus-visible,button.nt-pb:focus-visible{outline:2px solid var(--ink
 .ad-st .tag{font-size:11px;padding:2px 7px}
 /* 메이트유 연결된 직원: 오른쪽 끝(화살표 앞)에 동그란 로고 (admin_staff_directory.mateyou) */
 .ad-st .ad-my{width:22px;height:22px;border-radius:50%;flex:none;margin-left:auto;display:block}
+.ad-dow{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin:14px 0 8px}
+.ad-dow button{height:44px;min-width:0;padding:0;border:1px solid var(--line);background:#fff;border-radius:12px;font-size:15px;font-weight:700;color:var(--ink2);cursor:pointer}
+.ad-dow button.on{border-color:var(--ink);background:var(--ink);color:#fff}
+.ad-dow button:active{transform:scale(.97)}
+.ad-dowp{margin:0 0 12px;min-height:20px;font-size:14px;font-weight:600;color:var(--ink2);word-break:keep-all;font-variant-numeric:tabular-nums}
 .ad-addb{gap:4px;padding:0 10px 0 8px;align-self:center}
 .ad-addb svg{width:16px;height:16px}
 .ad-myr{margin-left:8px;font-size:13px;font-weight:700;color:var(--ink2);letter-spacing:0;font-variant-numeric:tabular-nums;white-space:nowrap}
@@ -1824,7 +1829,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
   // 앱이 있으면 메이트유 앱(mateyou://)으로. 안드로이드는 intent:// 라 앱이 없으면 크롬이 웹으로 보내요.
   // 아이폰은 앱이 깔렸는지 알 수 없어서 앱으로 열고, 앱이 없는 사람은 '웹에서 로그인'을 눌러요. 컴퓨터는 바로 웹.
   const MY_URL = 'https://www.mateyou.me/connect/moetable', MY_PKG = 'com.mateyou.app', MY_STATE = 'mateyou_state';
-  let pendingLink = null, pendingCode = null, codeSheet = null, pendingPhoto = false, pendingRetry = false;
+  let pendingLink = null, pendingCode = null, codeSheet = null, pendingPhoto = false, pendingRetry = false, pendingErr = null;
   // 메이트유 로그인 · 연결 뒤 사진 고르기 / 올리기 (23-account.js). 임시 PIN 이면 PIN 바꾸기가 먼저라 이번엔 건너뛰어요
   const photoNext = me => {   // 환영 알림(2.2초)이 사라진 뒤. 처음 안내는 사진 시트가 뜰 때까지 기다려요
     if (me.pin_temp || !A.account || !A.account.afterMateyou) return;
@@ -1883,8 +1888,9 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
     if (here) localStorage.removeItem(MY_STATE);
     let res; try { res = await A.supa.rpc('mateyou_signin', { p_ticket: m[1], p_verifier: here ? want.v : null }); } catch (e) { res = { error: e }; }
     const me = res.data && res.data[0];
-    if (res.error || !me) { A.toast(A.api.errText(res.error, '메이트유 로그인 실패'), true); return; }
-    if (me.err) { A.toast(me.err, true); return; }
+    // 실패 사유는 금방 사라지는 토스트 말고 로그인 시트에 남겨요 (afterBoot, 2026-11-21)
+    if (res.error || !me) { pendingErr = A.api.errText(res.error, '메이트유 로그인 실패'); return; }
+    if (me.err) { pendingErr = me.err; return; }
     if (me.code) { pendingCode = me.code; return; }
     pendingRetry = false;
     mateyouDone(me, false);
@@ -2260,6 +2266,11 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
   async function boot() { wireBars(); await mateyouReturn(); await upgradeSession(); }
   function afterBoot() {
     if (pendingLink) { openLink(pendingLink.link, pendingLink.pp); pendingLink = null; }   // 로그인한 채로 연결하러 다녀와도 열어요 (내 정보)
+    if (pendingErr) {
+      if (session) A.toast(pendingErr, true);
+      else { openLogin(); const e = document.querySelector('.modal .login-f > .sheet-err'); if (e) { e.hidden = false; e.textContent = pendingErr; } }
+      pendingErr = null; pendingRetry = false;
+    }
     if (pendingCode || (pendingRetry && !session)) showCode(pendingCode);
     pendingCode = null; pendingRetry = false;
     if (pendingPhoto && session) { pendingPhoto = false; photoNext(session); }
@@ -4410,12 +4421,15 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
   const STORES = A.FLOORS.map(f => f[0]);          // 데빌 → 메이드 → 마츠리
   const ANY = '상관없음', NO = '출근불가능';
   const N_OK = '가능', N_NO = '불가능';              // DB 값 (화면 글자는 가능 / 불가)
-  let subYM = null;                                  // 고른 달 (처음엔 가장 이른 제출 달, 없으면 다음 달)
+  let subYM = null;                                  // 고른 달 (처음엔 startYM)
   const picks = {};                                  // '직원id|ym' → {qkey: choice} (다시 그려도 고른 값 유지)
   const editing = {};                                // '직원id|ym' → 고치기를 눌렀음
   let busy = false;
 
   const nextYM = () => A.ymShift(A.ymOf(A.today()), 1);
+  // 처음 여는 달: 열린 달 중 다음 달부터 가장 이른 달 → 없으면 이번 달 → 그래도 없으면 가장 늦게 열린 달.
+  // 지난 달(10월)이 열린 채 남아 있으면 그 달이 먼저 뜨던 것을 고쳤어요 (2026-11-21)
+  const startYM = open => { const cur = A.ymOf(A.today()), nx = nextYM(); return open.find(x => x >= nx) || open.find(x => x >= cur) || open[open.length - 1] || nx; };
   const ymLabel = ym => { const [y, m] = ym.split('-').map(Number); return `${y}년 ${m}월`; };
   const monOf = ym => +ym.slice(5);
   const hrs = h => String(h || '').replace('-', '~');
@@ -4537,14 +4551,14 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
       el.dataset.theme = 'all';
       const s = A.session;
       if (!s) {
-        el.innerHTML = `${A.pageHead('시프트 제출')}${A.emptyBox('submit', '로그인하면 시프트를 낼 수 있어요', '이름과 PIN으로 로그인해 주세요')}
+        el.innerHTML = `${A.pageHead('시프트 제출')}${A.emptyBox('submit', '로그인하면 시프트를 낼 수 있어요', A.MATEYOU_ON ? '메이트유로 로그인해 주세요' : '이름과 PIN으로 로그인해 주세요')}
           <button class="btn lg primary" id="sbLogin">로그인하기</button>`;
         el.querySelector('#sbLogin').onclick = () => A.auth.openLogin();
         return;
       }
       await A.store.loadStatus();
       const open = A.store.openMonths();
-      if (!subYM) subYM = open[0] || nextYM();
+      if (!subYM) subYM = startYM(open);
       const ym = subYM;
       if (!open.includes(ym)) {
         const hint = open.length ? `제출 받는 달: ${open.map(ymLabel).join(', ')}` : '아직 관리자가 제출을 열지 않았어요';
@@ -4706,7 +4720,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
     }).join('');
     return `<section class="sec ad-sec"><div class="sec-h"><h2>야간 일정</h2><span class="aside">${nights.length}건</span></div>
       ${rows || '<p class="sb-quiet">이 달 야간 일정이 없어요</p>'}
-      <div class="ad-sub"><button class="btn lg" id="adNightAdd">날짜 추가</button><button class="btn lg" id="adNightSat">토요일 데빌 모두 추가</button></div></section>`;
+      <div class="ad-sub"><button class="btn lg" id="adNightAdd">날짜 추가</button><button class="btn lg" id="adNightDow">요일로 추가</button></div></section>`;
   }
   // 지우기 전에 몇 명의 답이 지워지는지 짧게 (2026-11-09 사장님 "한 번 더 정확하게" → "줄바꿈 많음": 이름 목록·부연 빼고 두 줄 안)
   function bindNights(el, ym, nights, answers) {
@@ -4722,21 +4736,53 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
       await after(`${what} 일정을 지웠어요`, null);
     });
     el.querySelector('#adNightAdd').onclick = () => openNightAdd(ym);
-    el.querySelector('#adNightSat').onclick = async e => {
-      const btn = e.currentTarget;
-      const taken = new Set(nights.filter(n => n.wp === '데빌').map(n => n.date));
-      const sats = daysOf(ym).filter(ds => A.parse(ds).getDay() === 6 && !taken.has(ds));
-      if (!sats.length) { A.toast('이 달 토요일 데빌은 모두 들어가 있어요'); return; }
-      const md = ds => { const d = A.parse(ds); return `${d.getMonth() + 1}/${d.getDate()}`; };
-      const h = await A.prompt({ title: '토요일 데빌 모두 추가', text: `${sats.map(md).join(', ')} · ${sats.length}일`, label: '시간', value: NIGHT_DEFAULT, placeholder: `예: ${NIGHT_DEFAULT}`, ok: '추가' });
-      if (h === null) return;
-      await withBusy(btn, async () => {
+    el.querySelector('#adNightDow').onclick = () => openNightDow(ym, nights);
+  }
+  // 요일로 추가 (2026-11-21 사장님: 토요일 데빌만 되던 것을 매장 · 요일을 골라서). 이미 있는 날은 빼고 넣어요
+  function openNightDow(ym, nights) {
+    const days = daysOf(ym), dows = new Set([6]);
+    let busy = false;
+    const md = ds => { const d = A.parse(ds); return `${d.getMonth() + 1}/${d.getDate()}`; };
+    A.sheet({
+      title: '요일로 추가',
+      html: `<label class="fld-l">매장<select class="fld" data-wp>${STORES.map(w => `<option>${esc(w)}</option>`).join('')}</select></label>
+        <div class="ad-dow" role="group" aria-label="요일">${A.DAYS.map((d, i) => `<button type="button" data-dow="${i}" aria-pressed="${dows.has(i)}" class="${dows.has(i) ? 'on' : ''}">${d}</button>`).join('')}</div>
+        <p class="ad-dowp" data-pv aria-live="polite"></p>
+        <label class="fld-l">시간<input class="fld" data-h value="${NIGHT_DEFAULT}" placeholder="예: ${NIGHT_DEFAULT}" autocomplete="off"></label><p class="sheet-err" hidden></p>`,
+      onOpen: el => {
+        const targets = () => {
+          const wp = el.querySelector('[data-wp]').value, taken = new Set(nights.filter(n => n.wp === wp).map(n => n.date));
+          return days.filter(ds => dows.has(A.parse(ds).getDay()) && !taken.has(ds));
+        };
+        const draw = () => {
+          const t = targets(), all = days.filter(ds => dows.has(A.parse(ds).getDay())).length;
+          el.querySelector('[data-pv]').textContent = !dows.size ? '요일을 골라 주세요' : t.length ? `${t.map(md).join(', ')} · ${t.length}일` : all ? '모두 들어가 있어요' : '';
+          el.querySelector('.sheet-err').hidden = true;
+        };
+        el._targets = targets;
+        el.querySelectorAll('[data-dow]').forEach(b => b.onclick = () => {
+          const i = +b.dataset.dow, on = !dows.has(i);
+          if (on) dows.add(i); else dows.delete(i);
+          b.classList.toggle('on', on); b.setAttribute('aria-pressed', String(on)); draw();
+        });
+        el.querySelector('[data-wp]').onchange = draw;
+        draw();
+      },
+      actions: [{ label: '취소' }, { label: '추가', kind: 'primary', onClick: async (close, el) => {
+        if (busy) return;
+        const wp = el.querySelector('[data-wp]').value, h = el.querySelector('[data-h]').value.trim() || NIGHT_DEFAULT, err = el.querySelector('.sheet-err'), t = el._targets();
+        if (!t.length) { err.hidden = false; err.textContent = dows.size ? '추가할 날이 없어요' : '요일을 골라 주세요'; return; }
+        const btn = el.querySelector('.sheet-a .primary');
+        busy = true; btn.setAttribute('aria-busy', 'true');
         let cnt = 0, bad = 0;
-        for (const ds of sats) { if (await addNightQ(ym, '데빌', ds, h || NIGHT_DEFAULT, true) === false) { bad++; if (!A.session) return; } else cnt++; }
+        for (const ds of t) { if (await addNightQ(ym, wp, ds, h, true) === false) { bad++; if (!A.session) break; } else cnt++; }
+        busy = false; btn.removeAttribute('aria-busy');
+        if (!A.session) return;
+        close();
         await after(null, null);
-        A.toast(bad ? `${cnt}일 추가하고 ${bad}일은 못 넣었어요` : `토요일 데빌 ${cnt}일을 추가했어요`, !!bad);
-      });
-    };
+        A.toast(bad ? `${cnt}일 추가하고 ${bad}일은 못 넣었어요` : `${wp} 야간 ${cnt}일을 추가했어요`, !!bad);
+      } }],
+    });
   }
   function openNightAdd(ym) {
     const days = daysOf(ym), sat = days.find(ds => A.parse(ds).getDay() === 6) || days[0];

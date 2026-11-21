@@ -140,7 +140,7 @@
     }).join('');
     return `<section class="sec ad-sec"><div class="sec-h"><h2>야간 일정</h2><span class="aside">${nights.length}건</span></div>
       ${rows || '<p class="sb-quiet">이 달 야간 일정이 없어요</p>'}
-      <div class="ad-sub"><button class="btn lg" id="adNightAdd">날짜 추가</button><button class="btn lg" id="adNightSat">토요일 데빌 모두 추가</button></div></section>`;
+      <div class="ad-sub"><button class="btn lg" id="adNightAdd">날짜 추가</button><button class="btn lg" id="adNightDow">요일로 추가</button></div></section>`;
   }
   // 지우기 전에 몇 명의 답이 지워지는지 짧게 (2026-11-09 사장님 "한 번 더 정확하게" → "줄바꿈 많음": 이름 목록·부연 빼고 두 줄 안)
   function bindNights(el, ym, nights, answers) {
@@ -156,21 +156,53 @@
       await after(`${what} 일정을 지웠어요`, null);
     });
     el.querySelector('#adNightAdd').onclick = () => openNightAdd(ym);
-    el.querySelector('#adNightSat').onclick = async e => {
-      const btn = e.currentTarget;
-      const taken = new Set(nights.filter(n => n.wp === '데빌').map(n => n.date));
-      const sats = daysOf(ym).filter(ds => A.parse(ds).getDay() === 6 && !taken.has(ds));
-      if (!sats.length) { A.toast('이 달 토요일 데빌은 모두 들어가 있어요'); return; }
-      const md = ds => { const d = A.parse(ds); return `${d.getMonth() + 1}/${d.getDate()}`; };
-      const h = await A.prompt({ title: '토요일 데빌 모두 추가', text: `${sats.map(md).join(', ')} · ${sats.length}일`, label: '시간', value: NIGHT_DEFAULT, placeholder: `예: ${NIGHT_DEFAULT}`, ok: '추가' });
-      if (h === null) return;
-      await withBusy(btn, async () => {
+    el.querySelector('#adNightDow').onclick = () => openNightDow(ym, nights);
+  }
+  // 요일로 추가 (2026-11-21 사장님: 토요일 데빌만 되던 것을 매장 · 요일을 골라서). 이미 있는 날은 빼고 넣어요
+  function openNightDow(ym, nights) {
+    const days = daysOf(ym), dows = new Set([6]);
+    let busy = false;
+    const md = ds => { const d = A.parse(ds); return `${d.getMonth() + 1}/${d.getDate()}`; };
+    A.sheet({
+      title: '요일로 추가',
+      html: `<label class="fld-l">매장<select class="fld" data-wp>${STORES.map(w => `<option>${esc(w)}</option>`).join('')}</select></label>
+        <div class="ad-dow" role="group" aria-label="요일">${A.DAYS.map((d, i) => `<button type="button" data-dow="${i}" aria-pressed="${dows.has(i)}" class="${dows.has(i) ? 'on' : ''}">${d}</button>`).join('')}</div>
+        <p class="ad-dowp" data-pv aria-live="polite"></p>
+        <label class="fld-l">시간<input class="fld" data-h value="${NIGHT_DEFAULT}" placeholder="예: ${NIGHT_DEFAULT}" autocomplete="off"></label><p class="sheet-err" hidden></p>`,
+      onOpen: el => {
+        const targets = () => {
+          const wp = el.querySelector('[data-wp]').value, taken = new Set(nights.filter(n => n.wp === wp).map(n => n.date));
+          return days.filter(ds => dows.has(A.parse(ds).getDay()) && !taken.has(ds));
+        };
+        const draw = () => {
+          const t = targets(), all = days.filter(ds => dows.has(A.parse(ds).getDay())).length;
+          el.querySelector('[data-pv]').textContent = !dows.size ? '요일을 골라 주세요' : t.length ? `${t.map(md).join(', ')} · ${t.length}일` : all ? '모두 들어가 있어요' : '';
+          el.querySelector('.sheet-err').hidden = true;
+        };
+        el._targets = targets;
+        el.querySelectorAll('[data-dow]').forEach(b => b.onclick = () => {
+          const i = +b.dataset.dow, on = !dows.has(i);
+          if (on) dows.add(i); else dows.delete(i);
+          b.classList.toggle('on', on); b.setAttribute('aria-pressed', String(on)); draw();
+        });
+        el.querySelector('[data-wp]').onchange = draw;
+        draw();
+      },
+      actions: [{ label: '취소' }, { label: '추가', kind: 'primary', onClick: async (close, el) => {
+        if (busy) return;
+        const wp = el.querySelector('[data-wp]').value, h = el.querySelector('[data-h]').value.trim() || NIGHT_DEFAULT, err = el.querySelector('.sheet-err'), t = el._targets();
+        if (!t.length) { err.hidden = false; err.textContent = dows.size ? '추가할 날이 없어요' : '요일을 골라 주세요'; return; }
+        const btn = el.querySelector('.sheet-a .primary');
+        busy = true; btn.setAttribute('aria-busy', 'true');
         let cnt = 0, bad = 0;
-        for (const ds of sats) { if (await addNightQ(ym, '데빌', ds, h || NIGHT_DEFAULT, true) === false) { bad++; if (!A.session) return; } else cnt++; }
+        for (const ds of t) { if (await addNightQ(ym, wp, ds, h, true) === false) { bad++; if (!A.session) break; } else cnt++; }
+        busy = false; btn.removeAttribute('aria-busy');
+        if (!A.session) return;
+        close();
         await after(null, null);
-        A.toast(bad ? `${cnt}일 추가하고 ${bad}일은 못 넣었어요` : `토요일 데빌 ${cnt}일을 추가했어요`, !!bad);
-      });
-    };
+        A.toast(bad ? `${cnt}일 추가하고 ${bad}일은 못 넣었어요` : `${wp} 야간 ${cnt}일을 추가했어요`, !!bad);
+      } }],
+    });
   }
   function openNightAdd(ym) {
     const days = daysOf(ym), sat = days.find(ds => A.parse(ds).getDay() === 6) || days[0];

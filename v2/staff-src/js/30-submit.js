@@ -6,12 +6,15 @@
   const STORES = A.FLOORS.map(f => f[0]);          // 데빌 → 메이드 → 마츠리
   const ANY = '상관없음', NO = '출근불가능';
   const N_OK = '가능', N_NO = '불가능';              // DB 값 (화면 글자는 가능 / 불가)
-  let subYM = null;                                  // 고른 달 (처음엔 가장 이른 제출 달, 없으면 다음 달)
+  let subYM = null;                                  // 고른 달 (처음엔 startYM)
   const picks = {};                                  // '직원id|ym' → {qkey: choice} (다시 그려도 고른 값 유지)
   const editing = {};                                // '직원id|ym' → 고치기를 눌렀음
   let busy = false;
 
   const nextYM = () => A.ymShift(A.ymOf(A.today()), 1);
+  // 처음 여는 달: 열린 달 중 다음 달부터 가장 이른 달 → 없으면 이번 달 → 그래도 없으면 가장 늦게 열린 달.
+  // 지난 달(10월)이 열린 채 남아 있으면 그 달이 먼저 뜨던 것을 고쳤어요 (2026-11-21)
+  const startYM = open => { const cur = A.ymOf(A.today()), nx = nextYM(); return open.find(x => x >= nx) || open.find(x => x >= cur) || open[open.length - 1] || nx; };
   const ymLabel = ym => { const [y, m] = ym.split('-').map(Number); return `${y}년 ${m}월`; };
   const monOf = ym => +ym.slice(5);
   const hrs = h => String(h || '').replace('-', '~');
@@ -133,14 +136,14 @@
       el.dataset.theme = 'all';
       const s = A.session;
       if (!s) {
-        el.innerHTML = `${A.pageHead('시프트 제출')}${A.emptyBox('submit', '로그인하면 시프트를 낼 수 있어요', '이름과 PIN으로 로그인해 주세요')}
+        el.innerHTML = `${A.pageHead('시프트 제출')}${A.emptyBox('submit', '로그인하면 시프트를 낼 수 있어요', A.MATEYOU_ON ? '메이트유로 로그인해 주세요' : '이름과 PIN으로 로그인해 주세요')}
           <button class="btn lg primary" id="sbLogin">로그인하기</button>`;
         el.querySelector('#sbLogin').onclick = () => A.auth.openLogin();
         return;
       }
       await A.store.loadStatus();
       const open = A.store.openMonths();
-      if (!subYM) subYM = open[0] || nextYM();
+      if (!subYM) subYM = startYM(open);
       const ym = subYM;
       if (!open.includes(ym)) {
         const hint = open.length ? `제출 받는 달: ${open.map(ymLabel).join(', ')}` : '아직 관리자가 제출을 열지 않았어요';

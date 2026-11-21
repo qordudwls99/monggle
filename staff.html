@@ -1404,7 +1404,8 @@ async function renderSubmit(){
   if(!session){ save.style.display='none'; $('subMonthLabel').textContent='';
     list.innerHTML=`<button class="btn primary full" id="subLogin">로그인하기</button>`; $('subLogin').onclick=openLogin; return; }
   await loadDraftMonths();
-  if(!submitYM) submitYM=[...openMonths].sort()[0] || thisNextYM();
+  // 처음 여는 달: 열린 달 중 다음 달부터 가장 이른 달 → 이번 달 → 가장 늦게 열린 달 (지난 달이 먼저 뜨던 것, 2026-11-21)
+  if(!submitYM){ const op=[...openMonths].sort(), nx=thisNextYM(), cur=ymShift(nx,-1); submitYM=op.find(x=>x>=nx) || op.find(x=>x>=cur) || op[op.length-1] || nx; }
   $('subMonthLabel').textContent=ymLabelText(submitYM);
   if(!openMonths.has(submitYM)){
     save.style.display='none';

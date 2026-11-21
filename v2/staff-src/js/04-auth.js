@@ -28,7 +28,7 @@
   // 앱이 있으면 메이트유 앱(mateyou://)으로. 안드로이드는 intent:// 라 앱이 없으면 크롬이 웹으로 보내요.
   // 아이폰은 앱이 깔렸는지 알 수 없어서 앱으로 열고, 앱이 없는 사람은 '웹에서 로그인'을 눌러요. 컴퓨터는 바로 웹.
   const MY_URL = 'https://www.mateyou.me/connect/moetable', MY_PKG = 'com.mateyou.app', MY_STATE = 'mateyou_state';
-  let pendingLink = null, pendingCode = null, codeSheet = null, pendingPhoto = false, pendingRetry = false;
+  let pendingLink = null, pendingCode = null, codeSheet = null, pendingPhoto = false, pendingRetry = false, pendingErr = null;
   // 메이트유 로그인 · 연결 뒤 사진 고르기 / 올리기 (23-account.js). 임시 PIN 이면 PIN 바꾸기가 먼저라 이번엔 건너뛰어요
   const photoNext = me => {   // 환영 알림(2.2초)이 사라진 뒤. 처음 안내는 사진 시트가 뜰 때까지 기다려요
     if (me.pin_temp || !A.account || !A.account.afterMateyou) return;
@@ -87,8 +87,9 @@
     if (here) localStorage.removeItem(MY_STATE);
     let res; try { res = await A.supa.rpc('mateyou_signin', { p_ticket: m[1], p_verifier: here ? want.v : null }); } catch (e) { res = { error: e }; }
     const me = res.data && res.data[0];
-    if (res.error || !me) { A.toast(A.api.errText(res.error, '메이트유 로그인 실패'), true); return; }
-    if (me.err) { A.toast(me.err, true); return; }
+    // 실패 사유는 금방 사라지는 토스트 말고 로그인 시트에 남겨요 (afterBoot, 2026-11-21)
+    if (res.error || !me) { pendingErr = A.api.errText(res.error, '메이트유 로그인 실패'); return; }
+    if (me.err) { pendingErr = me.err; return; }
     if (me.code) { pendingCode = me.code; return; }
     pendingRetry = false;
     mateyouDone(me, false);
@@ -464,6 +465,11 @@
   async function boot() { wireBars(); await mateyouReturn(); await upgradeSession(); }
   function afterBoot() {
     if (pendingLink) { openLink(pendingLink.link, pendingLink.pp); pendingLink = null; }   // 로그인한 채로 연결하러 다녀와도 열어요 (내 정보)
+    if (pendingErr) {
+      if (session) A.toast(pendingErr, true);
+      else { openLogin(); const e = document.querySelector('.modal .login-f > .sheet-err'); if (e) { e.hidden = false; e.textContent = pendingErr; } }
+      pendingErr = null; pendingRetry = false;
+    }
     if (pendingCode || (pendingRetry && !session)) showCode(pendingCode);
     pendingCode = null; pendingRetry = false;
     if (pendingPhoto && session) { pendingPhoto = false; photoNext(session); }
