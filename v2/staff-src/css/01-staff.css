@@ -170,6 +170,8 @@ select.fld{appearance:none;-webkit-appearance:none}
 .my-login img{width:22px;height:22px;border-radius:6px;flex:none}
 .login-f .my-web{align-self:center;height:44px;margin-top:-6px}
 .login-sep{height:1px;background:var(--line);margin:2px 0}
+.login-pin{align-self:center;min-height:44px;padding:0 16px;border:none;background:none;font-size:12.5px;font-weight:600;color:var(--muted);cursor:pointer}
+.login-pin[hidden],.sheet-a[hidden]{display:none}
 .my-code{display:flex;flex-direction:column;align-items:center;gap:10px;padding:6px 0 10px}
 .my-code b{font-size:44px;font-weight:800;letter-spacing:10px;font-variant-numeric:tabular-nums;color:var(--ink)}
 .login-f .my-code-in{font-size:24px;font-weight:800;letter-spacing:8px;text-align:center}

@@ -295,10 +295,11 @@
     const html = `<div class="login-f">
       ${A.MATEYOU_ON ? '<button type="button" class="btn lg primary my-login" data-l="mateyou"><img src="/v2/assets/mateyou.png" alt="" width="22" height="22">메이트유로 로그인</button>' : ''}
       ${A.MATEYOU_ON && A.MATEYOU_APP && isIOS() ? '<button type="button" class="btn ghost my-web" data-l="mateyou-web">웹에서 로그인</button>' : ''}
-      ${A.MATEYOU_ON ? '<div class="login-sep" role="separator"></div>' : ''}
+      <div class="login-f" data-l="pinbox"${A.MATEYOU_ON ? ' hidden' : ''}>
       <label class="fld-l">이름<input class="fld" data-l="name" autocomplete="username" autocapitalize="off" spellcheck="false" maxlength="30"></label>
-      <label class="fld-l">PIN<input class="fld" data-l="pin" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="current-password" placeholder="숫자 6자리"></label>
-      <p class="sheet-err" hidden></p></div>`;
+      <label class="fld-l">PIN<input class="fld" data-l="pin" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="current-password" placeholder="숫자 6자리"></label></div>
+      <p class="sheet-err" hidden></p>
+      ${A.MATEYOU_ON ? '<button type="button" class="login-pin" data-l="pinopen">이름 · PIN</button>' : ''}</div>`;
     const submit = async (close, el) => {
       if (busy) return;
       const nameEl = el.querySelector('[data-l="name"]'), pinEl = el.querySelector('[data-l="pin"]'), err = el.querySelector('.sheet-err');
@@ -335,6 +336,12 @@
         const myWeb = el.querySelector('[data-l="mateyou-web"]');
         if (myWeb) myWeb.addEventListener('click', () => startMateyou(true));
         if (!myBtn) nameEl.focus();
+        // 메이트유 가입을 먼저 하게: 이름 · PIN 은 아래 작은 글씨를 눌러야 열려요 (2026-11-24 사장님 "코드 로그인을 찾기 어렵게")
+        const pinOpen = el.querySelector('[data-l="pinopen"]'), acts = el.querySelector('.sheet-a');
+        if (pinOpen) {
+          acts.hidden = true;
+          pinOpen.addEventListener('click', () => { el.querySelector('[data-l="pinbox"]').hidden = false; acts.hidden = false; pinOpen.hidden = true; nameEl.focus(); });
+        }
       },
     });
     return loginSheet;
