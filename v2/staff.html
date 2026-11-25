@@ -2447,7 +2447,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
   function floorTools(info) {
     const b = (k, l) => `<button class="btn sm" data-tool="${k}" data-twp="${info.wp}">${l}</button>`;
     if (info.closed) return `<div class="ftools">${b('closed', '휴무 풀기')}</div>`;
-    const add = info.night ? b('add', '+ 주간에 넣기') + b('nadd', '+ 야간에 넣기') + b('nshort', '+ 야간 부족') : b('add', '+ 근무 넣기');
+    const add = info.night ? b('add', '+ 주간에 넣기') + b('nadd', '+ 야간에 넣기') : b('add', '+ 근무 넣기');
     return `<div class="ftools">${add}${b('event', info.event ? '이벤트 바꾸기' : '이벤트')}${info.wp === '데빌' ? b('night', info.night ? '야간 시간' : '야간 열기') : ''}${b('closed', '휴무로')}</div>`;
   }
   // 영업시간 글은 그대로 보여 줘요. '주간 … · 야간 …' 모양이면 칸 머리에 나눠 싣고, 아니면 한 줄로 (손님 페이지와 같음)
@@ -2494,6 +2494,29 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
     if (!h.p.length && !h.any.length) return night;           // 넣을 사람이 있을 때만 (관리자는 늘 이 화면이라서)
     return `<div class="hope"><div class="hope-h"><b>희망</b><span>눌러서 넣어요${h.any.length ? ' · 흐린 이름은 상관없음' : ''}${h.p.some(a => a.also) ? ' · 빨간 글씨는 이미 들어간 매장' : ''}</span></div><div class="hchips">${h.p.map(a => chip(a, false)).join('')}${h.any.map(a => chip(a, true)).join('')}</div></div>` + night;
   }
+  // 부족 자리 − 숫자 ＋ (2026-11-25 사장님 "야간말고도 평상시에도"). 주간은 빈 자리 줄, 야간은 '부족' 멤버 수
+  function stepHtml(info) {
+    const one = (k, label, n) => `<div class="nt-step" role="group" aria-label="${esc(info.wp)} ${label}"><b>${label}</b><button data-step="${k}-" data-swp="${esc(info.wp)}" aria-label="${label} 하나 빼기"${n ? '' : ' disabled'}>−</button><output>${n}</output><button data-step="${k}+" data-swp="${esc(info.wp)}" aria-label="${label} 하나 넣기">＋</button></div>`;
+    return info.night ? one('d', '주간 부족', info.slots.length) + one('n', '야간 부족', info.night.members.filter(m => m.short).length) : one('d', '부족', info.slots.length);
+  }
+  let stepping = false;
+  async function step(ds, b) {
+    if (stepping) return;
+    const wp = b.dataset.swp, k = b.dataset.step, info = A.store.day(ds, wp);
+    stepping = true;
+    try {
+      if (k === 'd+') { if (await rpc('admin_add_shift', { p_admin_id: adminId(), p_work_date: ds, p_workplace: wp, p_start: '', p_end: '', p_assignee: null, p_memo: null, p_guest: null }) !== false) await done(ds, '부족 자리를 넣었어요'); }
+      else if (k === 'd-') {
+        // 신청한 사람이 없는 자리부터 빼요. 신청이 걸린 자리뿐이면 물어봐요
+        const free = info.slots.filter(s => !s.applicants.length), s = free.length ? free[free.length - 1] : info.slots[info.slots.length - 1];
+        if (!s) return;
+        if (!free.length && !await A.confirm({ title: '신청이 들어온 자리예요. 뺄까요?', text: `${where(ds, wp)} · 신청 ${s.applicants.length}명`, ok: '빼기', danger: true })) return;
+        if (await rpc('admin_delete_shift', { p_admin_id: adminId(), p_shift_id: Number(s.id) }) !== false) await done(ds, '부족 자리를 뺐어요');
+      }
+      else if (k === 'n+') await A.night.add(ds, wp, { staffId: null, name: '부족' }, null);
+      else { const m = info.night && info.night.members.filter(x => x.short).pop(); if (m && await rpc('admin_remove_night_member', { p_admin_id: adminId(), p_id: Number(m.id) }) !== false) await done(ds, '부족 자리를 뺐어요'); }
+    } finally { stepping = false; }
+  }
   let hoping = false;
   async function addHope(ds, b) {
     if (hoping) return;
@@ -2528,6 +2551,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
         if (info.night) inner += dnHtml(info, ctx);
         else if (!empty) inner += info.shifts.map(p => memberRow(p, ctx, false)).join('') + info.slots.map(s => slotRow(s, ctx)).join('');
         else inner += '<div class="none">근무 없음</div>';
+        if (edit) inner += stepHtml(info);
         if (hopes) inner += hopeHtml(hopes(w), w);
       }
       const nightPeople = info.night ? info.night.members.filter(p => !p.short) : [];
@@ -2570,6 +2594,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
     list.querySelectorAll('[data-more]').forEach(b => b.onclick = () => { const [k, id] = b.dataset.more.split(':');
       if (k === 'n') { const m = findNight(ds, id); if (m) nightMenu(m); } else { const s = findShift(ds, id); if (s) shiftMenu(s); } });
     list.querySelectorAll('[data-tool]').forEach(b => b.onclick = () => TOOLS[b.dataset.tool](ds, b.dataset.twp));
+    list.querySelectorAll('[data-step]').forEach(b => b.onclick = () => step(ds, b));
     list.querySelectorAll('[data-hope]').forEach(b => b.onclick = () => addHope(ds, b));
     list.querySelectorAll('[data-nhope]').forEach(b => b.onclick = () => { b.disabled = true; A.night.add(ds, b.dataset.hwp, { staffId: Number(b.dataset.nhope), name: null }, b.dataset.hn).then(ok => { if (!ok && b.isConnected) b.disabled = false; }); });
   }
@@ -2689,7 +2714,6 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
   // 층별 도구 (편집 중)
   const TOOLS = {
-    nshort(ds, wp) { return A.night.add(ds, wp, { staffId: null, name: '부족' }, null); },
     async closed(ds, wp) {
       const info = A.store.day(ds, wp);
       if (info.closed) {
