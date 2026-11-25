@@ -283,7 +283,7 @@
         ? `<span class="nt-acts">${info.night && !info.closed ? `<button class="btn sm" data-act="hours" data-ds="${x}" aria-label="${A.fmt(x)} 야간 시간 바꾸기">시간</button>` : ''}${!info.night && !info.closed ? `<button class="btn sm" data-act="open" data-ds="${x}" aria-label="${A.fmt(x)} 야간 열기">야간 열기</button>` : ''}${info.closed ? '' : `<button class="btn sm" data-act="add" data-ds="${x}" aria-label="${A.fmt(x)} 야간에 멤버 넣기">＋ 멤버</button>`}<button class="btn sm nt-day" data-act="day" data-ds="${x}" aria-label="${A.fmt(x)} ${NIGHT_WP} 근무 고치기">${I.more}</button></span>` : '';
       // 부족 자리는 − 숫자 ＋ 로 (2026-11-25 사장님 "부족 + 부족 - 부족 0"). 관리자 화면에서는 부족 이름표 대신 이 숫자로 보여요
       const shorts = members.filter(p => p.short), shown = admin ? members.filter(p => !p.short) : members;
-      const shortBtn = admin && !info.closed ? `<div class="nt-step" role="group" aria-label="${A.fmt(x)} 부족 자리"><b>부족</b><button data-act="shortdn" data-ds="${x}" aria-label="부족 자리 하나 빼기"${shorts.length ? '' : ' disabled'}>−</button><output>${shorts.length}</output><button data-act="short" data-ds="${x}" aria-label="부족 자리 하나 넣기">＋</button></div>` : '';
+      const shortBtn = admin && !info.closed ? `<div class="nt-step" role="group" aria-label="${A.fmt(x)} 부족 자리"><button class="nt-tog" data-act="shorttog" data-ds="${x}" aria-pressed="${shorts.length > 0}" aria-label="부족 상태 ${shorts.length ? '끄기' : '켜기'}">부족</button><button data-act="shortdn" data-ds="${x}" aria-label="부족 자리 하나 빼기"${shorts.length ? '' : ' disabled'}>−</button><output>${shorts.length}</output><button data-act="short" data-ds="${x}" aria-label="부족 자리 하나 넣기">＋</button></div>` : '';
       const body = shown.length
         ? `<div class="nt-m">${shown.map(p => pill(p, admin)).join('')}</div>${shortBtn}`
         : `<div class="nt-none${info.night ? ' wait' : ''}">${info.closed ? '휴무일이에요' : info.night ? '멤버 미정' : '야간 없음'}</div>${shortBtn}`;
@@ -294,6 +294,14 @@
     if (admin) {
       act(listEl, 'add', b => openAdd(b.dataset.ds, NIGHT_WP));
       act(listEl, 'short', b => addMember(b.dataset.ds, NIGHT_WP, { staffId: null, name: '부족' }, null));
+      act(listEl, 'shorttog', async b => {
+        if (addBusy) return;
+        const x = b.dataset.ds, info = A.store.day(x, NIGHT_WP), list = info.night ? info.night.members.filter(p => p.short) : [];
+        if (!list.length) return void addMember(x, NIGHT_WP, { staffId: null, name: '부족' }, null);
+        addBusy = true;
+        try { for (const m of list) if (await A.api.rpc('admin_remove_night_member', { p_admin_id: sid(), p_id: Number(m.id) }, { quiet: true }) === false) break; await after(x, '부족 표시를 껐어요'); }
+        finally { addBusy = false; }
+      });
       act(listEl, 'shortdn', async b => {
         if (addBusy) return;
         const x = b.dataset.ds, info = A.store.day(x, NIGHT_WP), m = info.night && info.night.members.filter(p => p.short).pop();

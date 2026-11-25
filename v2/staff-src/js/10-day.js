@@ -188,7 +188,7 @@
   }
   // 부족 자리 − 숫자 ＋ (2026-11-25 사장님 "야간말고도 평상시에도"). 주간은 빈 자리 줄, 야간은 '부족' 멤버 수
   function stepHtml(info) {
-    const one = (k, label, n) => `<div class="nt-step" role="group" aria-label="${esc(info.wp)} ${label}"><b>${label}</b><button data-step="${k}-" data-swp="${esc(info.wp)}" aria-label="${label} 하나 빼기"${n ? '' : ' disabled'}>−</button><output>${n}</output><button data-step="${k}+" data-swp="${esc(info.wp)}" aria-label="${label} 하나 넣기">＋</button></div>`;
+    const one = (k, label, n) => `<div class="nt-step" role="group" aria-label="${esc(info.wp)} ${label}"><button class="nt-tog" data-step="${k}!" data-swp="${esc(info.wp)}" aria-pressed="${n > 0}" aria-label="${label} 상태 ${n ? '끄기' : '켜기'}">${label}</button><button data-step="${k}-" data-swp="${esc(info.wp)}" aria-label="${label} 하나 빼기"${n ? '' : ' disabled'}>−</button><output>${n}</output><button data-step="${k}+" data-swp="${esc(info.wp)}" aria-label="${label} 하나 넣기">＋</button></div>`;
     return info.night ? one('d', '주간 부족', info.slots.length) + one('n', '야간 부족', info.night.members.filter(m => m.short).length) : one('d', '부족', info.slots.length);
   }
   let stepping = false;
@@ -197,7 +197,16 @@
     const wp = b.dataset.swp, k = b.dataset.step, info = A.store.day(ds, wp);
     stepping = true;
     try {
-      if (k === 'd+') { if (await rpc('admin_add_shift', { p_admin_id: adminId(), p_work_date: ds, p_workplace: wp, p_start: '', p_end: '', p_assignee: null, p_memo: null, p_guest: null }) !== false) await done(ds, '부족 자리를 넣었어요'); }
+      // 부족 상태 켜고 끄기 (2026-11-25 사장님 "지금꺼 + 숫자 없이 켜고 끄기"): 꺼져 있으면 하나 넣고, 켜져 있으면 모두 빼요
+      if (k === 'd!' || k === 'n!') {
+        const day = k === 'd!', list = day ? info.slots : (info.night ? info.night.members.filter(x => x.short) : []);
+        if (!list.length) { if (day) { if (await rpc('admin_add_shift', { p_admin_id: adminId(), p_work_date: ds, p_workplace: wp, p_start: '', p_end: '', p_assignee: null, p_memo: null, p_guest: null }) !== false) await done(ds, '부족으로 표시했어요'); } else await A.night.add(ds, wp, { staffId: null, name: '부족' }, null); return; }
+        const apps = day ? list.reduce((n, s) => n + s.applicants.length, 0) : 0;
+        if (apps && !await A.confirm({ title: '신청이 들어온 자리가 있어요. 모두 뺄까요?', text: `${where(ds, wp)} · 신청 ${apps}명`, ok: '빼기', danger: true })) return;
+        for (const x of list) if (await rpc(day ? 'admin_delete_shift' : 'admin_remove_night_member', day ? { p_admin_id: adminId(), p_shift_id: Number(x.id) } : { p_admin_id: adminId(), p_id: Number(x.id) }, { quiet: true }) === false) break;
+        await done(ds, '부족 표시를 껐어요');
+      }
+      else if (k === 'd+') { if (await rpc('admin_add_shift', { p_admin_id: adminId(), p_work_date: ds, p_workplace: wp, p_start: '', p_end: '', p_assignee: null, p_memo: null, p_guest: null }) !== false) await done(ds, '부족 자리를 넣었어요'); }
       else if (k === 'd-') {
         // 신청한 사람이 없는 자리부터 빼요. 신청이 걸린 자리뿐이면 물어봐요
         const free = info.slots.filter(s => !s.applicants.length), s = free.length ? free[free.length - 1] : info.slots[info.slots.length - 1];
@@ -249,7 +258,7 @@
       const nightPeople = info.night ? info.night.members.filter(p => !p.short) : [];
       const guests = info.shifts.filter(p => p.guest).length + nightPeople.filter(p => p.guest).length;
       const cnt = info.closed ? '휴무' : info.night ? `주간 ${info.shifts.length} · 야간 ${nightPeople.length}` : `${info.shifts.length}명`;
-      html += `<section class="floor" data-theme="${A.themeKey(w)}" data-drop-wp="${w}" data-date="${ds}"><div class="floor-h"><span class="store"><img src="${A.logo(w)}" alt=""><span class="fl">${A.floorOf(w)}</span><b>${w}</b></span><span class="cnt">${!info.closed && guests ? `<span class="gcount">게스트 ${guests}</span>` : ''}${cnt}</span></div>${inner}</section>`;
+      html += `<section class="floor" data-theme="${A.themeKey(w)}" data-drop-wp="${w}" data-date="${ds}"><div class="floor-h"><span class="store"><img src="${A.logo(w)}" alt=""><span class="fl">${A.floorOf(w)}</span><b>${w}</b></span><span class="cnt">${!info.closed && (info.slots.length || (info.night && info.night.members.some(p => p.short))) ? '<span class="tag red">부족</span>' : ''}${!info.closed && guests ? `<span class="gcount">게스트 ${guests}</span>` : ''}${cnt}</span></div>${inner}</section>`;
     });
     if (!shown) html += closedAll ? A.emptyBox('closed', '휴무일이에요', '이 날은 모든 매장이 쉬어요') : A.emptyBox('cal', '이 날은 등록된 근무가 없어요', '다른 날짜를 확인해 보세요');
     list.innerHTML = html;
