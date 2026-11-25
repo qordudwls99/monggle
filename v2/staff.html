@@ -5459,7 +5459,22 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
   // 夜 칸: 그 주의 야간을 날짜마다 이어서 (금 · 토 이틀이면 두 묶음, 2026-11-25).
   // 이 칸이 길어져도 다른 칸 글자는 그대로 두고, 夜 칸만 따로 줄 간격을 좁히고(0.8배까지) 그래도 넘치면 글자를 줄여요(12까지)
   const fitNight = (ls, h, fsMax, lh) => { let fs = fsMax; while (fs > 12 && (heightOf(ls, fs, lh) - 12) * .8 > h - 12) fs--; return [fs, Math.min(1, (h - 12) / (heightOf(ls, fs, lh) - 12))]; };
-  const nightLines = (days, wp) => days.flatMap(ds => { const m = nightOf(A.store.day(ds, wp)); return m.length ? [line('date', `${A.parse(ds).getDate()} 야간`), ...people(m)] : []; });
+  // 야간이 있는 날마다 한 묶음: [{ d: 날짜, m: 멤버 }]
+  const nightSets = (days, wp) => days.map(ds => ({ d: A.parse(ds).getDate(), m: nightOf(A.store.day(ds, wp)) })).filter(n => n.m.length);
+  // 夜 칸 그리기. 하루면 `28 야간` 한 줄로, 이틀이면 칸을 반으로 갈라 날짜별로 나란히 (2026-11-25 사장님: 금 · 토 야간, 글자 크게).
+  // 사흘부터는 한 줄로 이어 붙여요. 반 칸은 좁아서 세 글자 이름이 들어가는 크기까지만 키워요
+  function drawNight(c, x, y, w, h, sets, th, fs, lh, sq) {
+    if (!sets.length) return;
+    if (sets.length !== 2) {
+      const ls = sets.flatMap(n => [line('date', `${n.d} 야간`), ...people(n.m)]), [nf, ns] = fitNight(ls, h, fs, lh);
+      drawCell(c, x, y, w, ls, th, nf, lh, Math.min(sq, ns)); return;
+    }
+    const hw = w / 2, cols = sets.map(n => [line('date', n.d), ...people(n.m)]);
+    const fits = cols.map(ls => fitNight(ls, h, Math.min(fs, Math.floor((hw - 6) / 3.05)), lh));
+    const nf = Math.min(...fits.map(f => f[0])), ns = Math.min(sq, ...cols.map(ls => Math.min(1, (h - 12) / (heightOf(ls, nf, lh) - 12))));
+    cols.forEach((ls, i) => drawCell(c, x + hw * i, y, hw, ls, th, nf, lh, ns));
+    c.save(); c.globalAlpha = .45; c.fillStyle = th.sub; c.fillRect(x + hw - .75, y + 8, 1.5, h - 16); c.restore();
+  }
 
   const roundRect = (c, x, y, w, h, r) => { c.beginPath(); c.moveTo(x + r, y); c.arcTo(x + w, y, x + w, y + h, r); c.arcTo(x + w, y + h, x, y + h, r); c.arcTo(x, y + h, x, y, r); c.arcTo(x, y, x + w, y, r); c.closePath(); };
   const pill = (c, cx, cy, text, maxW, fs, th, maxH = Infinity) => {
@@ -5570,24 +5585,24 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
     const th = TH[o.wp], hasNight = L.x.length === 9, weeks = [0, 7].map(n => span(addDays(from, n), 7));
     const first = (ds, i, r) => { const d = A.parse(ds); return d.getDate() === 1 || (r === 0 && i === 0) ? `${d.getMonth() + 1}/${d.getDate()}` : d.getDate(); };
     const grid = weeks.map((days, r) => days.map((ds, i) => dayLines(ds, o.wp, first(ds, i, r))));
-    const nights = hasNight ? weeks.map(days => nightLines(days, o.wp)) : [];
+    const nights = hasNight ? weeks.map(days => nightSets(days, o.wp)) : [];
     const lh = 1.55, all = grid.flat(), h = Math.min(L.y[1] - L.y[0], L.y[2] - L.y[1]), fs = fitSize(all, h, L.fs, lh), sq = squeeze(all, h, fs, lh);
     grid.forEach((row, r) => row.forEach((ls, i) => drawCell(c, L.x[i], L.y[r], L.x[i + 1] - L.x[i], ls, th, fs, lh, sq)));
-    nights.forEach((ls, r) => { if (ls.length) { const [nf, ns] = fitNight(ls, h, fs, lh); drawCell(c, L.x[7], L.y[r], L.x[8] - L.x[7], ls, th, nf, lh, Math.min(sq, ns)); } });
+    nights.forEach((sets, r) => drawNight(c, L.x[7], L.y[r], L.x[8] - L.x[7], h, sets, th, fs, lh, sq));
   }
   function drawWeek(c, L, from) {
     const days = span(from, 7), lh = 1.32;
     const floors = WPS().map((wp, p) => {
       const [x, y0, y1, hy] = L.week[p], cells = days.map(ds => dayLines(ds, wp, A.parse(ds).getDate()));
       whiten(c, [x[0], y0, x[x.length - 1] - x[0], y1 - y0]); headTint(c, x, hy, y0, TH[wp].head);
-      return { wp, x, y0, h: y1 - y0, cells, night: x.length === 9 ? nightLines(days, wp) : [] };
+      return { wp, x, y0, h: y1 - y0, cells, night: x.length === 9 ? nightSets(days, wp) : [] };
     });
     // 세 층 글자 크기는 같게, 빽빽한 칸은 줄 간격을 좁혀서 맞춰요
     const fs = Math.min(...floors.map(f => fitSize(f.cells, f.h, L.fs, 1.12)));
     floors.forEach(({ wp, x, y0, h, cells, night }) => {
       const th = pale(wp), sq = squeeze(cells, h, fs, lh);
       cells.forEach((ls, i) => drawCell(c, x[i], y0, x[i + 1] - x[i], ls, th, fs, lh, sq));
-      if (night.length) { const [nf, ns] = fitNight(night, h, fs, lh); drawCell(c, x[7], y0, x[8] - x[7], night, th, nf, lh, Math.min(sq, ns)); }
+      drawNight(c, x[7], y0, x[8] - x[7], h, night, th, fs, lh, sq);
     });
   }
 
