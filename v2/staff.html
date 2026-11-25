@@ -3065,7 +3065,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
       const x = info.ds, isToday = x === today, members = info.night ? info.night.members : [];
       const hours = info.night ? info.night.hours : '';
       const acts = admin
-        ? `<span class="nt-acts">${info.night && !info.closed ? `<button class="btn sm" data-act="hours" data-ds="${x}" aria-label="${A.fmt(x)} 야간 시간 바꾸기">시간</button>` : ''}${info.closed ? '' : `<button class="btn sm" data-act="add" data-ds="${x}" aria-label="${A.fmt(x)} 야간에 멤버 넣기">＋ 멤버</button>`}<button class="btn sm nt-day" data-act="day" data-ds="${x}" aria-label="${A.fmt(x)} ${NIGHT_WP} 근무 고치기">${I.more}</button></span>` : '';
+        ? `<span class="nt-acts">${info.night && !info.closed ? `<button class="btn sm" data-act="hours" data-ds="${x}" aria-label="${A.fmt(x)} 야간 시간 바꾸기">시간</button>` : ''}${!info.night && !info.closed ? `<button class="btn sm" data-act="open" data-ds="${x}" aria-label="${A.fmt(x)} 야간 열기">야간 열기</button>` : ''}${info.closed ? '' : `<button class="btn sm" data-act="add" data-ds="${x}" aria-label="${A.fmt(x)} 야간에 멤버 넣기">＋ 멤버</button>`}<button class="btn sm nt-day" data-act="day" data-ds="${x}" aria-label="${A.fmt(x)} ${NIGHT_WP} 근무 고치기">${I.more}</button></span>` : '';
       const body = members.length
         ? `<div class="nt-m">${members.map(p => pill(p, admin)).join('')}</div>`
         : `<div class="nt-none${info.night ? ' wait' : ''}">${info.closed ? '휴무일이에요' : info.night ? '멤버 미정' : '야간 없음'}</div>`;
@@ -3076,6 +3076,14 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
     if (admin) {
       act(listEl, 'add', b => openAdd(b.dataset.ds, NIGHT_WP));
       act(listEl, 'hours', b => editHours(b.dataset.ds, NIGHT_WP));
+      // 멤버를 넣기 전에도 야간만 먼저 열 수 있게 (2026-11-25 사장님 "야간열기 있어야")
+      act(listEl, 'open', async b => {
+        if (b.getAttribute('aria-busy')) return;
+        b.setAttribute('aria-busy', 'true');
+        const x = b.dataset.ds, r = await A.api.rpc('admin_set_night', { p_admin_id: sid(), p_date: x, p_workplace: NIGHT_WP, p_on: true, p_hours: DEFAULT_HOURS });
+        if (r === false) { b.removeAttribute('aria-busy'); return; }
+        await after(x, '야간을 열었어요');
+      });
       act(listEl, 'day', b => A.dayEdit(b.dataset.ds, NIGHT_WP));
       act(listEl, 'rm', b => {
         const x = b.closest('[data-ds]').dataset.ds, info = A.store.day(x, NIGHT_WP);
