@@ -75,6 +75,7 @@ button.mev{border:none;cursor:pointer}
 .nt-p.has-ig{padding-right:7px}
 .nt-p.short{padding:0 14px;background:var(--red-soft);color:var(--red);font-weight:800}
 .nt-step{display:flex;align-items:center;gap:6px;margin-top:10px}
+.nt-step b{margin-right:4px;font-size:14px;font-weight:800;color:var(--ink2)}
 .nt-step .nt-tog{width:auto;height:36px;margin-right:4px;padding:0 14px;border-radius:99px;font-size:14px;font-weight:800;color:var(--ink2)}
 .nt-step .nt-tog[aria-pressed="true"]{background:var(--red-soft);color:var(--red)}
 .nt-step button{position:relative;width:36px;height:36px;padding:0;border:none;border-radius:50%;background:var(--fill);color:var(--ink);font-size:18px;font-weight:700;line-height:1;cursor:pointer}

@@ -75,7 +75,10 @@
     { id: 7001, kind: 'schedule_published', title: '11월 스케줄이 공개됐어요', body: '내 근무를 확인해 주세요', link: { tab: 'schedule', ym: '2026-11' }, created_at: ago(50), read_at: ago(40) },
   ];
 
+  const devShorts = new Set(['2026-11-27|메이드']);
   supa.rpc = (fn, args = {}, opts) => {
+    if (fn === 'staff_day_shorts') return q.get('db') === 'old' ? missing(fn) : ok([...devShorts].map(k => ({ work_date: k.split('|')[0], workplace: k.split('|')[1] })).filter(r => r.work_date >= args.p_from && r.work_date <= args.p_to));
+    if (fn === 'admin_set_day_short') { const k = args.p_date + '|' + args.p_workplace; if (args.p_on) devShorts.add(k); else devShorts.delete(k); }
     if (fn === 'admin_guest_to_staff') return missing(fn);                  // 저장소 SQL 에만 있고 실서버에는 없음
     if (DB_OLD && V2_FNS.has(fn)) return missing(fn);
     if (fn === 'my_notifications') return FAIL_STALE ? stale() : ok(SAMPLE_NOTI());

@@ -117,7 +117,13 @@
     const bad = res.find(r => r.error);
     if (bad) throw bad.error;
     const [sh, cl, ni, ev, nm, ap] = res.map(r => r.data || []);
-    const d = { shifts: new Map(), closed: new Set(), nights: new Map(), events: new Map(), members: new Map(), apps: new Map() };
+    const d = { shifts: new Map(), closed: new Set(), nights: new Map(), events: new Map(), members: new Map(), apps: new Map(), shorts: new Set() };
+    // 부족 상태 (supabase-v2-day-short.sql): 로그인한 직원만 읽어요. 함수가 아직 없으면 A.dayShort 가 꺼진 채라 버튼도 숨겨요
+    const s = A.session;
+    if (s && String(s.pin || '').startsWith('tk_')) {
+      let r; try { r = await A.supa.rpc('staff_day_shorts', { p_staff_id: s.id, p_pin: s.pin, p_from: from, p_to: to }); } catch (e) { r = { error: e }; }
+      if (!r.error) { A.dayShort = true; (r.data || []).forEach(x => d.shorts.add(x.work_date + '|' + x.workplace)); }
+    }
     const push = (m, k, v) => { if (!m.has(k)) m.set(k, []); m.get(k).push(v); };
     const key = r => r.work_date + '|' + r.workplace;
     sh.forEach(r => push(d.shifts, key(r), toShift(r)));
@@ -151,7 +157,7 @@
   function day(ds, wp) {
     const key = ds + '|' + wp, e = months.get(ymOf(ds)), d = e && e.data;
     const draft = isDraft(ds);
-    const blank = { ds, wp, closed: false, event: null, shifts: [], slots: [], night: null, draft };
+    const blank = { ds, wp, closed: false, event: null, shifts: [], slots: [], night: null, draft, short: false };
     if (!d || (draft && !isAdmin())) return blank;
     if (d.closed.has(key)) return { ...blank, closed: true };
     const all = d.shifts.get(key) || [];
@@ -162,7 +168,7 @@
       hours,
       members: (d.members.get(key) || []).slice().sort((a, b) => ((a.short ? 1 : 0) - (b.short ? 1 : 0)) || byGuestFirst(a, b)),
     } : null;
-    return { ds, wp, closed: false, event: d.events.get(key) || null, shifts, slots, night, draft };
+    return { ds, wp, closed: false, event: d.events.get(key) || null, shifts, slots, night, draft, short: d.shorts.has(key) };
   }
   function invalidate(from, to = from) {
     if (from > to) [from, to] = [to, from];
