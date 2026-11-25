@@ -265,11 +265,13 @@
     const draft = A.store.isDraft(first);
     if (draft && !admin) { listEl.innerHTML = locked(); return; }
     const today = A.today();
-    // 야간은 토요일에만 → 토요일 + (혹시 야간 잡힌 날)만 목록으로
+    // 야간 날짜는 제출 받은 야간 문항대로 (2026-11-25 사장님: 금 · 토로 늘었는데 토요일만 보이던 것).
+    // 문항이 없는 달은 예전처럼 토요일. 야간이 잡힌 날은 언제나 보여요
+    const asked = new Set((await A.store.nightQuestions(ym)).filter(n => n.wp === NIGHT_WP && n.date).map(n => n.date));
     const items = [];
     for (let d = 1; d <= N; d++) {
       const day = new Date(y, m, d), info = A.store.day(A.ymd(day), NIGHT_WP);
-      if (day.getDay() === 6 || info.night) items.push(info);
+      if ((asked.size ? asked.has(info.ds) : day.getDay() === 6) || info.night) items.push(info);
     }
     const rows = items.map(info => {
       const x = info.ds, isToday = x === today, members = info.night ? info.night.members : [];

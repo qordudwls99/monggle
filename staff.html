@@ -1908,10 +1908,13 @@ async function renderNight(){
     list.innerHTML=`<div class="empty-box"><div class="e-ic"></div><div class="e-t">아직 공개되지 않은 달이에요</div><div class="e-s">스케줄이 확정되면 볼 수 있어요</div></div>`;
     animList(); return;
   }
-  const [nmR, nvR]=await Promise.all([
+  const [nmR, nvR, nqR]=await Promise.all([
     supa.from('night_member_view').select('*').gte('work_date',ymd(first)).lte('work_date',ymd(last)),
-    supa.from('night_view').select('*').gte('work_date',ymd(first)).lte('work_date',ymd(last))
+    supa.from('night_view').select('*').gte('work_date',ymd(first)).lte('work_date',ymd(last)),
+    supa.from('submission_night_view').select('*').eq('ym', ymOfDate(selectedDate))
   ]);
+  // 야간 날짜는 제출 받은 야간 문항대로, 문항이 없는 달은 토요일 (2026-11-25)
+  const asked=new Set((nqR.data||[]).filter(x=>x.workplace===wp && x.work_date).map(x=>x.work_date));
   const mem=(nmR.data||[]).filter(x=>x.workplace===wp);
   const nightOn=new Set((nvR.data||[]).filter(x=>x.workplace===wp).map(x=>x.work_date));
   const N=last.getDate(); const days=['일','월','화','수','목','금','토']; const todayStr=ymd(new Date());
@@ -1919,7 +1922,7 @@ async function renderNight(){
   const rows=[];
   for(let d=1; d<=N; d++){
     const ds=`${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`; const dow=new Date(y,m,d).getDay();
-    if(dow===6 || nightOn.has(ds) || mem.some(x=>x.work_date===ds)) rows.push({ds,d,dow});
+    if((asked.size ? asked.has(ds) : dow===6) || nightOn.has(ds) || mem.some(x=>x.work_date===ds)) rows.push({ds,d,dow});
   }
   const cards=rows.map(({ds,d,dow})=>{
     const list2=mem.filter(x=>x.work_date===ds);
@@ -1935,7 +1938,7 @@ async function renderNight(){
       <div class="ng-names2">${body}</div>${addBtn}</div>`;
   });
   const banner=(admin&&isDraft)?`<div class="draftbar">작성 중 · 직원·손님에겐 안 보여요<button class="db-btn" data-publish="1">공개하기</button></div>`:'';
-  list.innerHTML=banner+`<div class="mc-cal-t"><span class="wp-dot 데빌"></span>데빌 야간 (토요일)</div><div class="ng-cards">${cards.join('')||'<div class="cand-none">이 달 토요일이 없어요</div>'}</div>`;
+  list.innerHTML=banner+`<div class="mc-cal-t"><span class="wp-dot 데빌"></span>데빌 야간</div><div class="ng-cards">${cards.join('')||'<div class="cand-none">이 달 야간이 없어요</div>'}</div>`;
   animList();
   list.querySelectorAll('[data-nightadd]').forEach(b=>b.addEventListener('click', e=>{
     e.stopPropagation(); openNmAdd('데빌', b.dataset.nightadd, b.dataset.non==='1');
