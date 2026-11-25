@@ -452,7 +452,8 @@ async function fetchNight(from,to){
 }
 async function fetchNightMembers(dateStr){
   const { data } = await supa.from('night_member_view').select('*').eq('work_date',dateStr);
-  const m={}; (data||[]).forEach(r=>(m[r.work_date+'|'+r.workplace]=m[r.work_date+'|'+r.workplace]||[]).push(r)); return m;
+  // '부족' 자리는 직원끼리만 보는 표시라 손님 화면에서는 빼요 (2026-11-25 사장님)
+  const m={}; (data||[]).filter(r=>!(r.staff_id==null && r.member_name==='부족')).forEach(r=>(m[r.work_date+'|'+r.workplace]=m[r.work_date+'|'+r.workplace]||[]).push(r)); return m;
 }
 
 function render(){ updateNav(); return viewMode==='week' ? renderWeek() : renderDay(); }
