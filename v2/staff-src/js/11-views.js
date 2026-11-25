@@ -281,15 +281,27 @@
       const hours = info.night ? info.night.hours : '';
       const acts = admin
         ? `<span class="nt-acts">${info.night && !info.closed ? `<button class="btn sm" data-act="hours" data-ds="${x}" aria-label="${A.fmt(x)} 야간 시간 바꾸기">시간</button>` : ''}${!info.night && !info.closed ? `<button class="btn sm" data-act="open" data-ds="${x}" aria-label="${A.fmt(x)} 야간 열기">야간 열기</button>` : ''}${info.closed ? '' : `<button class="btn sm" data-act="add" data-ds="${x}" aria-label="${A.fmt(x)} 야간에 멤버 넣기">＋ 멤버</button>`}<button class="btn sm nt-day" data-act="day" data-ds="${x}" aria-label="${A.fmt(x)} ${NIGHT_WP} 근무 고치기">${I.more}</button></span>` : '';
-      const body = members.length
-        ? `<div class="nt-m">${members.map(p => pill(p, admin)).join('')}</div>`
-        : `<div class="nt-none${info.night ? ' wait' : ''}">${info.closed ? '휴무일이에요' : info.night ? '멤버 미정' : '야간 없음'}</div>`;
+      // 부족 자리는 − 숫자 ＋ 로 (2026-11-25 사장님 "부족 + 부족 - 부족 0"). 관리자 화면에서는 부족 이름표 대신 이 숫자로 보여요
+      const shorts = members.filter(p => p.short), shown = admin ? members.filter(p => !p.short) : members;
+      const shortBtn = admin && !info.closed ? `<div class="nt-step" role="group" aria-label="${A.fmt(x)} 부족 자리"><b>부족</b><button data-act="shortdn" data-ds="${x}" aria-label="부족 자리 하나 빼기"${shorts.length ? '' : ' disabled'}>−</button><output>${shorts.length}</output><button data-act="short" data-ds="${x}" aria-label="부족 자리 하나 넣기">＋</button></div>` : '';
+      const body = shown.length
+        ? `<div class="nt-m">${shown.map(p => pill(p, admin)).join('')}</div>${shortBtn}`
+        : `<div class="nt-none${info.night ? ' wait' : ''}">${info.closed ? '휴무일이에요' : info.night ? '멤버 미정' : '야간 없음'}</div>${shortBtn}`;
       return `<li class="nt-i${isToday ? ' today' : ''}" data-ds="${x}"><div class="nt-h"><span class="nt-d">${A.fmtShort(x)}</span>${isToday ? '<span class="tag">오늘</span>' : ''}${acts}</div>${hours ? `<div class="nt-hrs">${I.moon}<span>${esc(hours)}</span></div>` : ''}${body}${(hope[x] || []).length ? `<div class="hope"><div class="hope-h"><b>희망</b><span>눌러서 넣어요</span></div><div class="hchips">${hope[x].map(a => `<button class="hchip" data-nhope="${esc(a.staffId)}" data-ds="${x}" data-hn="${esc(a.staffName)}" aria-label="${esc(a.staffName)}님을 ${A.fmt(x)} 야간에 넣기">${esc(a.staffName)}${I.plus}</button>`).join('')}</div></div>` : ''}</li>`;
     }).join('');
     const bar = admin && draft ? draftBar(first) : '';
     listEl.innerHTML = `${bar}<div class="nt-cap">${A.storeTag(NIGHT_WP)}<span>야간 멤버</span></div>${admin ? '<p class="nt-tip">멤버 이름을 누르면 뺄 수 있어요</p>' : ''}<ol class="nt-list">${rows}</ol>`;
     if (admin) {
       act(listEl, 'add', b => openAdd(b.dataset.ds, NIGHT_WP));
+      act(listEl, 'short', b => addMember(b.dataset.ds, NIGHT_WP, { staffId: null, name: '부족' }, null));
+      act(listEl, 'shortdn', async b => {
+        if (addBusy) return;
+        const x = b.dataset.ds, info = A.store.day(x, NIGHT_WP), m = info.night && info.night.members.filter(p => p.short).pop();
+        if (!m) return;
+        addBusy = true;
+        try { if (await A.api.rpc('admin_remove_night_member', { p_admin_id: sid(), p_id: Number(m.id) }) !== false) await after(x, '부족 자리를 뺐어요'); }
+        finally { addBusy = false; }
+      });
       listEl.querySelectorAll('[data-nhope]').forEach(b => b.onclick = () => { b.disabled = true; addMember(b.dataset.ds, NIGHT_WP, { staffId: Number(b.dataset.nhope), name: null }, b.dataset.hn).then(ok => { if (!ok && b.isConnected) b.disabled = false; }); });
       act(listEl, 'hours', b => editHours(b.dataset.ds, NIGHT_WP));
       // 멤버를 넣기 전에도 야간만 먼저 열 수 있게 (2026-11-25 사장님 "야간열기 있어야")
