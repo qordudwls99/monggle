@@ -273,6 +273,9 @@
       const day = new Date(y, m, d), info = A.store.day(A.ymd(day), NIGHT_WP);
       if ((asked.size ? asked.has(info.ds) : day.getDay() === 6) || info.night) items.push(info);
     }
+    // 야간 희망 (관리자): 그날 야간 일정에 '가능'이라고 낸 사람을 줄마다 보여 주고 눌러서 넣어요 (2026-11-25 사장님 "여기도 없고")
+    const hope = {};
+    if (admin && A.hopeData) for (const info of items) if (!info.closed) hope[info.ds] = (await A.hopeData(info.ds))(NIGHT_WP).n;
     const rows = items.map(info => {
       const x = info.ds, isToday = x === today, members = info.night ? info.night.members : [];
       const hours = info.night ? info.night.hours : '';
@@ -281,12 +284,13 @@
       const body = members.length
         ? `<div class="nt-m">${members.map(p => pill(p, admin)).join('')}</div>`
         : `<div class="nt-none${info.night ? ' wait' : ''}">${info.closed ? '휴무일이에요' : info.night ? '멤버 미정' : '야간 없음'}</div>`;
-      return `<li class="nt-i${isToday ? ' today' : ''}" data-ds="${x}"><div class="nt-h"><span class="nt-d">${A.fmtShort(x)}</span>${isToday ? '<span class="tag">오늘</span>' : ''}${acts}</div>${hours ? `<div class="nt-hrs">${I.moon}<span>${esc(hours)}</span></div>` : ''}${body}</li>`;
+      return `<li class="nt-i${isToday ? ' today' : ''}" data-ds="${x}"><div class="nt-h"><span class="nt-d">${A.fmtShort(x)}</span>${isToday ? '<span class="tag">오늘</span>' : ''}${acts}</div>${hours ? `<div class="nt-hrs">${I.moon}<span>${esc(hours)}</span></div>` : ''}${body}${(hope[x] || []).length ? `<div class="hope"><div class="hope-h"><b>희망</b><span>눌러서 넣어요</span></div><div class="hchips">${hope[x].map(a => `<button class="hchip" data-nhope="${esc(a.staffId)}" data-ds="${x}" data-hn="${esc(a.staffName)}" aria-label="${esc(a.staffName)}님을 ${A.fmt(x)} 야간에 넣기">${esc(a.staffName)}${I.plus}</button>`).join('')}</div></div>` : ''}</li>`;
     }).join('');
     const bar = admin && draft ? draftBar(first) : '';
     listEl.innerHTML = `${bar}<div class="nt-cap">${A.storeTag(NIGHT_WP)}<span>야간 멤버</span></div>${admin ? '<p class="nt-tip">멤버 이름을 누르면 뺄 수 있어요</p>' : ''}<ol class="nt-list">${rows}</ol>`;
     if (admin) {
       act(listEl, 'add', b => openAdd(b.dataset.ds, NIGHT_WP));
+      listEl.querySelectorAll('[data-nhope]').forEach(b => b.onclick = () => { b.disabled = true; addMember(b.dataset.ds, NIGHT_WP, { staffId: Number(b.dataset.nhope), name: null }, b.dataset.hn).then(ok => { if (!ok && b.isConnected) b.disabled = false; }); });
       act(listEl, 'hours', b => editHours(b.dataset.ds, NIGHT_WP));
       // 멤버를 넣기 전에도 야간만 먼저 열 수 있게 (2026-11-25 사장님 "야간열기 있어야")
       act(listEl, 'open', async b => {
@@ -440,5 +444,5 @@
     await after(member.date || null, short ? '부족 자리를 뺐어요' : `${name}님을 야간에서 뺐어요`);
     return true;
   }
-  A.night = { openAdd, remove, DEFAULT_HOURS };
+  A.night = { openAdd, remove, add: addMember, DEFAULT_HOURS };
 }
