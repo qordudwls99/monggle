@@ -124,8 +124,8 @@
     const t = {};
     answers.forEach(a => {
       if (!String(a.qkey || '').startsWith('n:')) return;
-      const k = a.qkey.slice(2), o = t[k] = t[k] || { yes: [], no: 0 };
-      if (a.choice === '가능') o.yes.push(a.staffName); else if (a.choice === '불가능') o.no++;
+      const k = a.qkey.slice(2), o = t[k] = t[k] || { yes: [], ids: [], no: 0 };
+      if (a.choice === '가능') { o.yes.push(a.staffName); o.ids.push(a.staffId); } else if (a.choice === '불가능') o.no++;
     });
     return t;
   };
@@ -136,7 +136,7 @@
       const title = n.date ? A.fmt(n.date) : esc(n.label);
       return `<div class="lrow ad-q"><span class="lm"><span class="lt">${title}</span><span class="ls">${esc(n.wp || '')} 야간 ${esc(hrs(n.hours))}</span>
         <span class="ls ad-yes">가능 <b>${yes.length}</b>${yes.length ? ' · ' + yes.map(esc).join(', ') : ''} · 불가능 ${no}</span></span>
-        <span class="la"><button class="btn sm danger hit" data-del="${n.id}" aria-label="${title} ${esc(n.wp || '')} 야간 일정 지우기">지우기</button></span></div>`;
+        <span class="la">${n.date && yes.length ? `<button class="btn sm hit" data-fix="${n.id}" aria-label="${title} ${esc(n.wp || '')} 야간 확정">확정</button>` : ''}<button class="btn sm danger hit" data-del="${n.id}" aria-label="${title} ${esc(n.wp || '')} 야간 일정 지우기">지우기</button></span></div>`;
     }).join('');
     return `<section class="sec ad-sec"><div class="sec-h"><h2>야간 일정</h2><span class="aside">${nights.length}건</span></div>
       ${rows || '<p class="sb-quiet">이 달 야간 일정이 없어요</p>'}
@@ -154,6 +154,10 @@
       if (!await A.confirm({ title: `${what} 일정을 지울까요?`, text: `${ans}되돌릴 수 없어요.`, ok: '지우기', danger: true })) return;
       if (await A.api.rpc('admin_del_night_q', { p_admin_id: me().id, p_id: Number(n.id) }) === false) return;
       await after(`${what} 일정을 지웠어요`, null);
+    });
+    el.querySelectorAll('[data-fix]').forEach(b => b.onclick = () => {
+      const n = nights.find(x => String(x.id) === b.dataset.fix);
+      if (n) openNightFix(n, byq[String(n.id)]);
     });
     el.querySelector('#adNightAdd').onclick = () => openNightAdd(ym);
     el.querySelector('#adNightDow').onclick = () => openNightDow(ym, nights);
@@ -201,6 +205,45 @@
         close();
         await after(null, null);
         A.toast(bad ? `${cnt}일 추가하고 ${bad}일은 못 넣었어요` : `${wp} 야간 ${cnt}일을 추가했어요`, !!bad);
+      } }],
+    });
+  }
+  // 야간 일정에서 바로 확정 (2026-11-25 사장님): '가능'이라고 낸 사람을 골라 그날 야간 멤버로 넣어요. 야간이 꺼져 있으면 켜요
+  async function openNightFix(n, tally) {
+    const ds = n.date, wp = n.wp;
+    await A.store.ensure(ds, ds);
+    const night = A.store.day(ds, wp).night, inIds = new Set((night ? night.members : []).filter(m => m.staffId != null).map(m => Number(m.staffId)));
+    const cands = tally.ids.map((id, i) => ({ id: Number(id), name: tally.yes[i] })).filter(c => !inIds.has(c.id));
+    if (!cands.length) { A.toast('가능한 사람이 모두 들어가 있어요'); return; }
+    const on = new Set(cands.map(c => c.id));
+    let busy = false;
+    A.sheet({
+      title: '야간 확정',
+      html: `<p class="sheet-p">${esc(A.fmt(ds))} ${esc(wp)}</p>
+        <div class="ad-pick" role="group" aria-label="멤버">${cands.map(c => `<button type="button" class="on" data-id="${c.id}" aria-pressed="true">${esc(c.name)}</button>`).join('')}</div>
+        <p class="sheet-err" hidden></p>`,
+      onOpen: el => el.querySelectorAll('[data-id]').forEach(b => b.onclick = () => {
+        const id = Number(b.dataset.id), v = !on.has(id);
+        if (v) on.add(id); else on.delete(id);
+        b.classList.toggle('on', v); b.setAttribute('aria-pressed', String(v)); el.querySelector('.sheet-err').hidden = true;
+      }),
+      actions: [{ label: '취소' }, { label: '확정', kind: 'primary', onClick: async (close, el) => {
+        if (busy) return;
+        const err = el.querySelector('.sheet-err'), pick = cands.filter(c => on.has(c.id));
+        if (!pick.length) { err.hidden = false; err.textContent = '멤버를 골라 주세요'; return; }
+        const btn = el.querySelector('.sheet-a .primary');
+        busy = true; btn.setAttribute('aria-busy', 'true');
+        let cnt = 0, bad = 0;
+        if (!night && await A.api.rpc('admin_set_night', { p_admin_id: me().id, p_date: ds, p_workplace: wp, p_on: true, p_hours: A.night.DEFAULT_HOURS }) === false) bad = pick.length;
+        else for (const c of pick) {
+          if (await A.api.rpc('admin_add_night_member', { p_admin_id: me().id, p_date: ds, p_workplace: wp, p_staff_id: c.id, p_name: null }, { quiet: true }) === false) { bad++; if (!A.session) break; } else cnt++;
+        }
+        busy = false; btn.removeAttribute('aria-busy');
+        if (!A.session) return;
+        A.store.invalidate(ds, ds);
+        close();
+        const d = A.parse(ds), md = `${d.getMonth() + 1}/${d.getDate()}`;
+        if (bad) A.toast(cnt ? `${cnt}명 넣고 ${bad}명은 못 넣었어요` : '야간에 넣지 못했어요', true); else A.toast(`${md} ${wp} 야간에 ${cnt}명을 넣었어요`);
       } }],
     });
   }

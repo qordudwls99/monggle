@@ -111,6 +111,9 @@
 .ad-dow button.on{border-color:var(--ink);background:var(--ink);color:#fff}
 .ad-dow button:active{transform:scale(.97)}
 .ad-dowp{margin:0 0 12px;min-height:20px;font-size:14px;font-weight:600;color:var(--ink2);word-break:keep-all;font-variant-numeric:tabular-nums}
+.ad-pick{display:flex;flex-wrap:wrap;gap:8px;margin:4px 0 8px}
+.ad-pick button{height:44px;padding:0 16px;border:1px solid var(--line);background:#fff;border-radius:12px;font-size:15px;font-weight:700;color:var(--ink2);cursor:pointer}
+.ad-pick button.on{border-color:var(--ink);background:var(--ink);color:#fff}
 .ad-addb{gap:4px;padding:0 10px 0 8px;align-self:center}
 .ad-addb svg{width:16px;height:16px}
 .ad-myr{margin-left:8px;font-size:13px;font-weight:700;color:var(--ink2);letter-spacing:0;font-variant-numeric:tabular-nums;white-space:nowrap}

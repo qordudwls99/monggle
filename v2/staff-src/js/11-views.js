@@ -432,5 +432,5 @@
     await after(member.date || null, short ? '부족 자리를 뺐어요' : `${name}님을 야간에서 뺐어요`);
     return true;
   }
-  A.night = { openAdd, remove };
+  A.night = { openAdd, remove, DEFAULT_HOURS };
 }
