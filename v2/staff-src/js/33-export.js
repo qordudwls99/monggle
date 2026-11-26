@@ -107,15 +107,25 @@
   const fitNight = (ls, h, fsMax, lh) => { let fs = fsMax; while (fs > 12 && (heightOf(ls, fs, lh) - 12) * .8 > h - 12) fs--; return [fs, Math.min(1, (h - 12) / (heightOf(ls, fs, lh) - 12))]; };
   // 야간이 있는 날마다 한 묶음: [{ d: 날짜, m: 멤버 }]
   const nightSets = (days, wp) => days.map(ds => ({ d: A.parse(ds).getDate(), m: nightOf(A.store.day(ds, wp)) })).filter(n => n.m.length);
-  // 夜 칸 그리기. 하루면 `28 야간` 한 줄로, 이틀이면 칸을 반으로 갈라 날짜별로 나란히 (2026-11-25 사장님: 금 · 토 야간, 글자 크게).
-  // 사흘부터는 한 줄로 이어 붙여요. 반 칸은 좁아서 세 글자 이름이 들어가는 크기까지만 키워요
+  // 夜 칸 그리기. 하루면 `28 야간` 한 줄로, 이틀이면 칸을 위아래 반으로 갈라 날짜별로 (2026-11-26 사장님: 좌우로 가르면 글자가 너무 작아요).
+  // 위아래로 가르면 칸 너비를 다 써서 글자가 커요. 이름이 많아 반 높이에 안 들어가 글자가 더 작아질 때만 좌우로 갈라요.
+  // 사흘부터는 한 줄로 이어 붙여요
   function drawNight(c, x, y, w, h, sets, th, fs, lh, sq) {
     if (!sets.length) return;
     if (sets.length !== 2) {
       const ls = sets.flatMap(n => [line('date', `${n.d} 야간`), ...people(n.m)]), [nf, ns] = fitNight(ls, h, fs, lh);
       drawCell(c, x, y, w, ls, th, nf, lh, Math.min(sq, ns)); return;
     }
+    const hh = h / 2, rows = sets.map(n => [line('date', `${n.d} 야간`), ...people(n.m)]);
+    const rfits = rows.map(ls => fitNight(ls, hh, fs, lh)), rf = Math.min(...rfits.map(f => f[0]));
     const hw = w / 2, cols = sets.map(n => [line('date', n.d), ...people(n.m)]);
+    const cf = Math.min(...cols.map(ls => fitNight(ls, h, Math.min(fs, Math.floor((hw - 6) / 3.05)), lh)[0]));
+    if (rf >= cf) {
+      const rs = Math.min(sq, ...rows.map(ls => Math.min(1, (hh - 12) / (heightOf(ls, rf, lh) - 12))));
+      rows.forEach((ls, i) => drawCell(c, x, y + hh * i, w, ls, th, rf, lh, rs));
+      c.save(); c.globalAlpha = .45; c.fillStyle = th.sub; c.fillRect(x + 8, y + hh - .75, w - 16, 1.5); c.restore();
+      return;
+    }
     const fits = cols.map(ls => fitNight(ls, h, Math.min(fs, Math.floor((hw - 6) / 3.05)), lh));
     const nf = Math.min(...fits.map(f => f[0])), ns = Math.min(sq, ...cols.map(ls => Math.min(1, (h - 12) / (heightOf(ls, nf, lh) - 12))));
     cols.forEach((ls, i) => drawCell(c, x + hw * i, y, hw, ls, th, nf, lh, ns));
