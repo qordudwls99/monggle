@@ -3,12 +3,12 @@
 <head>
 <meta charset="UTF-8" />
 <script>
-/* 새 화면(v2) 켜기 · 끄기 (2026-11-11 사장님): 이 기기에서 켜 두면 /staff.html 이 /v2/staff.html 을 열어요. 주소 그대로 공유해요.
-   ?ui=new 켜기 · ?ui=old 끄기 (새 화면이 안 열릴 때 돌아오는 길). 새 화면의 내 정보 › 예전 화면으로 도 꺼요 */
+/* 모두 새 화면(v2)으로 (2026-11-26 사장님): /staff.html 은 늘 /v2/staff.html 을 열어요. 주소 그대로 공유해요.
+   ?ui=old 는 이번 한 번만 예전 화면 (새 화면이 안 열릴 때 쓰는 비상용, 화면에는 길이 없어요) */
 (function(){try{var u=new URL(location.href),q=u.searchParams.get('ui');
-if(q==='new')localStorage.setItem('ui_v2','1');else if(q==='old'){localStorage.removeItem('ui_v2');var d=new Date();localStorage.setItem('ui_v2_notice',d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate());}
 if(q){u.searchParams.delete('ui');history.replaceState(null,'',u.pathname+u.search+u.hash);}
-if(localStorage.getItem('ui_v2')==='1'){document.documentElement.style.display='none';location.replace('/v2/staff.html'+u.search+u.hash);}
+if(q==='old'){try{var d=new Date();localStorage.setItem('ui_v2_notice',d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate());}catch(e){}return;}
+document.documentElement.style.display='none';location.replace('/v2/staff.html'+u.search+u.hash);
 }catch(e){}})();
 </script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
